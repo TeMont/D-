@@ -1,18 +1,4 @@
-#pragma once
-#include <iostream>
-#include <optional>
-#include <vector>
-#include <map>
-#include "../head/filesys.h"
-
-enum Tokens
-{
-    _return,
-    int_lit,
-    output,
-    input,
-    semi
-};
+#include "token.hpp"
 
 std::map<std::string, Tokens> TokensMap =
 {
@@ -23,13 +9,7 @@ std::map<std::string, Tokens> TokensMap =
     {";", semi}
 };
 
-struct Token
-{
-    Tokens type;
-    std::string value;
-};
-
-std::vector<Token> getTokens(std::string str)
+std::vector<Token> getTokens(std::string str) 
 {
     std::vector<Token> resVec;
     std::string buffer;

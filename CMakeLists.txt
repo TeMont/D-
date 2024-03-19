@@ -6,8 +6,11 @@ set(CMAKE_CXX_STANDARD 23)
 
 set (
     SOURCE
-    "src/main.cpp"
-    "src/filesys.cpp"
+    source/main.cpp
+    source/filesys.cpp
+    source/Assembly/compile.cpp
+    source/Lexer/lexer.cpp
+    source/Token/token.cpp
 )
 
 add_executable(XComp ${SOURCE})
