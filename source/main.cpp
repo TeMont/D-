@@ -1,10 +1,15 @@
 #include <iostream>
 #include <optional>
 #include <vector>
+#include <string>
 #include <map>
+#include <thread>
+#include <chrono>
+#include <filesystem>
 #include "../headers/filesys.hpp"
 #include "Token/token.hpp"
-#include "Assembly/compile.hpp"
+#include "Lexer/lexer.hpp"
+#include "Compile/compile.hpp"
 
 
 int main(int argc, char *argv[]) 
@@ -18,22 +23,40 @@ int main(int argc, char *argv[])
     {
         if (std::strcmp(argv[1], "--help") == 0)
         {
-            std::cout << "Build:\n\tXComp <filename>.xy";
+            std::cout << "Build:\n\tXComp <filename>.xy <executableName>";
         }
         else
         {
             if (CheckFileExtension(argv[1], "xy"))
             {
-                std::string entireFile = ReadEntireFile(argv[1]);     
-                std::vector<Token> TokenVec = getTokens(entireFile);    
-                for (int i = 0; i < TokenVec.size(); ++i)
-                {
-                    std::cout << "Index: " << TokenVec[i].type << "\tValue: " << TokenVec[i].value << std::endl;
-                }
+                std::string source = ReadSource(argv[1]);     
+                std::vector<Token> TokenVec = tokenize(source);    
                 std::stringstream AsmCode = TokensToAsm(TokenVec);
+
                 std::ofstream asembly;
-                asembly.open("res.asm");
+                asembly.open("result.asm");
                 asembly << AsmCode.str();
+                asembly.close();
+
+                if (CreateObjectFile("result.asm"))
+                {
+                    system("del result.asm");
+                    if (LinkObjectFiles("result.obj"))
+                    {
+                        system("del result.obj");
+                        std::cout << argv[1] << " Was succesfully compiled!";
+                    }
+                    else 
+                    {
+                        std::cerr << "Error Linking File";
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                else
+                {
+                    std::cerr << "Error Creating Object File";
+                    exit(EXIT_FAILURE);
+                }
             }
             else 
             {

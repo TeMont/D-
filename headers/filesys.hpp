@@ -5,6 +5,6 @@
 #include <algorithm>
 #include <cctype>
 
-std::string ReadEntireFile(std::string Path);
+std::string ReadSource(std::string Path);
 
 bool CheckFileExtension(std::string Path, std::string Extension);

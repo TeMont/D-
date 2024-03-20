@@ -1,6 +1,6 @@
 #include "../headers/filesys.hpp"
 
-std::string ReadEntireFile(std::string Path)
+std::string ReadSource(std::string Path)
 {
     std::fstream file;
     file.open(Path);

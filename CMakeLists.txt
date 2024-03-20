@@ -8,7 +8,7 @@ set (
     SOURCE
     source/main.cpp
     source/filesys.cpp
-    source/Assembly/compile.cpp
+    source/Compile/compile.cpp
     source/Lexer/lexer.cpp
     source/Token/token.cpp
 )

@@ -1,17 +1,22 @@
 #pragma once
 #include <iostream>
 #include <optional>
+#pragma once
 #include <vector>
 #include <map>
 #include "../../headers/filesys.hpp"
 
 enum Tokens
 {
-    _return,
-    int_lit,
-    output,
-    input,
-    semi
+    RETURN,
+    INT_LITERAL,
+    OUTPUT,
+    INPUT,
+    SEMICOLON,
+    STRING_LITERAL,
+    QOUTE,
+    LBRACKET,
+    RBRACKET
 };
 
 extern std::map<std::string, Tokens> TokensMap;
@@ -20,6 +25,5 @@ struct Token
 {
     Tokens type;
     std::string value;
+    
 };
-
-std::vector<Token> getTokens(std::string str);
