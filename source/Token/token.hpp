@@ -1,8 +1,8 @@
 #pragma once
 #include <iostream>
-#include <optional>
-#pragma once
 #include <vector>
+#include <string>
+#include <optional>
 #include <map>
 #include "../../headers/filesys.hpp"
 
@@ -25,5 +25,22 @@ struct Token
 {
     Tokens type;
     std::string value;
-    
 };
+
+class tokenizer
+{
+public:
+    inline tokenizer(std::string source) : m_src(std::move(source)){}
+
+    std::vector<Token> tokenize();
+
+private:
+
+    std::optional<char> peek(int pos = 1) const;
+
+    char consume();
+
+    const std::string m_src;   
+    size_t m_index = 0;   
+};
+

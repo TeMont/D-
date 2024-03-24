@@ -1,111 +1,66 @@
 #include "lexer.hpp"
 
-
-std::vector<Token> tokenize(std::string str) 
+std::optional<Token> parser::peek(int ahead) const 
 {
-    std::vector<Token> resVec;
-    std::string buffer;
-    char ch;
-    for (int i = 0; i < str.length(); ++i)
+    if ((m_index + ahead) > m_tokens.size())
     {
-        ch = str[i];
-        if (std::isalpha(ch))
+        return {};
+    }
+    else 
+    {
+        return m_tokens[m_index];
+    }
+}
+
+Token parser::consume()
+{
+    return m_tokens[m_index++];
+}
+
+std::optional<node::Expr> parser::parseExpr()
+{
+    if (peek().has_value() && peek().value().type == Tokens::INT_LITERAL)
+    {
+        node::Expr expr_node;
+        expr_node.int_lit = consume();
+        return expr_node;
+    }
+    else 
+    {
+        return {};
+    }
+}
+
+std::optional<node::RETURN> parser::parse()
+{
+    std::optional<node::RETURN> return_node;
+    while (peek().has_value())
+    {
+        if (peek().value().type == Tokens::RETURN)
         {
-            buffer.push_back(ch);
-        }
-        else if (std::isdigit(ch) && buffer.empty())
-        {
-            buffer.push_back(ch);
-            ++i;
-            while (std::isdigit(str[i]))
+            consume();
+            if (auto node_expr = parseExpr())
             {
-                ch = str[i];
-                buffer.push_back(ch);
-                ++i;
-            }
-            --i;
-            resVec.push_back({TokensMap["integer"], buffer});
-            buffer.clear();
-        }
-        else
-        {
-            if (!buffer.empty())
-            {
-                resVec.push_back({TokensMap[buffer]});
-                buffer.clear();
-            }
-            if (isspace(ch))
-            {
-                if (!buffer.empty())
+                return_node = node::RETURN{ node_expr.value() };
+
+                if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                 {
-                    auto it = TokensMap.find(buffer);
-                    if (it != TokensMap.end())
-                    {
-                        resVec.push_back({TokensMap[buffer]});
-                        buffer.clear();
-                    }
-                    else
-                    {
-                        std::cerr << "ERR001 Syntax Error character: " << i;
-                        exit(EXIT_FAILURE);
-                    }
+                    consume();
+                    
+                }
+                else 
+                {
+                    std::cerr << "ERR001 Invalid Syntax Expected ';'\n";
+                    exit(EXIT_FAILURE);
                 }
             }
-            else if (ch == ';')
+            else 
             {
-                buffer.push_back(';');
-                resVec.push_back({TokensMap[buffer]});
-                buffer.clear();
-            }
-            else if (ch == '(')
-            {
-                buffer.push_back('(');
-                resVec.push_back({TokensMap[buffer]});
-                buffer.clear();
-            }
-            else if (ch == ')')
-            {
-                buffer.push_back(')');
-                resVec.push_back({TokensMap[buffer]});
-                buffer.clear();
-            }
-            else if (ch == '\"')
-            {
-                buffer.push_back('\"');
-                resVec.push_back({TokensMap[buffer]});
-                buffer.clear();
-                ++i;
-                ch = str[i];
-                while (ch != '\"')
-                {
-                    buffer.push_back(ch);
-                    ++i;
-                    ch = str[i];
-                }
-                resVec.push_back({TokensMap["string"], buffer});
-                buffer.clear();
-            }
-            else
-            {
-                std::cerr << "ERR001 Syntax Error character: " << i;
+                std::cerr << "ERR002 Invalid Expresion\n";
                 exit(EXIT_FAILURE);
             }
         }
     }
-
-    if (isalpha(str[str.length()-1]))
-    {
-        auto it = TokensMap.find(buffer);
-        if (it != TokensMap.end())
-        {
-            resVec.push_back({TokensMap[buffer]});
-            buffer.clear();
-        }
-        else
-        {
-            std::cerr << "ERR001 Syntax Error character: " << str.length();
-            exit(EXIT_FAILURE);
-        }
-    }
-    return resVec;
+    return return_node;
 }
+

@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
     if (argc < 2)
     {
         std::cerr << "Incorrect Usage, Use XComp --help" << std::endl;
-        return EXIT_FAILURE;
+        return(EXIT_FAILURE);
     }
     else if (argc == 2)
     {
@@ -30,8 +30,21 @@ int main(int argc, char *argv[])
             if (CheckFileExtension(argv[1], "xy"))
             {
                 std::string source = ReadSource(argv[1]);     
-                std::vector<Token> TokenVec = tokenize(source);    
-                std::stringstream AsmCode = TokensToAsm(TokenVec);
+                tokenizer Tokenize(std::move(source));
+                std::vector<Token> TokenVec = Tokenize.tokenize();  
+
+                parser parse(std::move(TokenVec));
+                std::optional<node::RETURN> tree = parse.parse();
+
+                std::stringstream AsmCode;
+                if (tree.has_value())
+                {
+                    compiler compile(tree.value());
+                    AsmCode = compile.compile();
+                }
+                else 
+                {
+                }
 
                 std::ofstream asembly;
                 asembly.open("result.asm");
@@ -44,7 +57,8 @@ int main(int argc, char *argv[])
                     if (LinkObjectFiles("result.obj"))
                     {
                         system("del result.obj");
-                        std::cout << argv[1] << " Was succesfully compiled!";
+                        std::cout << argv[1] << " Was succesfully compiled!\n";
+                        std::cout << system("result.exe");
                     }
                     else 
                     {
