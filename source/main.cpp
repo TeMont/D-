@@ -34,17 +34,19 @@ int main(int argc, char *argv[])
                 std::vector<Token> TokenVec = Tokenize.tokenize();  
 
                 parser parse(std::move(TokenVec));
-                std::optional<node::RETURN> tree = parse.parse();
+                std::optional<node::Prog> prog = parse.parseProg();
+
+                if (!prog.has_value())
+                {
+                    std::cerr << "Invalid Program";
+                }
 
                 std::stringstream AsmCode;
-                if (tree.has_value())
-                {
-                    compiler compile(tree.value());
-                    AsmCode = compile.compile();
-                }
-                else 
-                {
-                }
+                
+                compiler compile(prog.value());
+                AsmCode = compile.compile();
+
+
 
                 std::ofstream asembly;
                 asembly.open("result.asm");
@@ -53,12 +55,11 @@ int main(int argc, char *argv[])
 
                 if (CreateObjectFile("result.asm"))
                 {
-                    system("del result.asm");
                     if (LinkObjectFiles("result.obj"))
                     {
                         system("del result.obj");
                         std::cout << argv[1] << " Was succesfully compiled!\n";
-                        std::cout << system("result.exe");
+                        std::cout << "Code ended with: " << system("result.exe");
                     }
                     else 
                     {
@@ -83,5 +84,6 @@ int main(int argc, char *argv[])
     {
 
     }
+    // std::cout << system("result.exe");
     return EXIT_SUCCESS;
 }

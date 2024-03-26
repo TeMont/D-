@@ -1,17 +1,57 @@
 #pragma once
 #include "../Token/token.hpp"
+#include <variant>
 
 namespace node 
 {
-    struct Expr
+    struct ExprIntLit
     {
         Token int_lit;
     };
 
-    struct RETURN
+    struct ExprStrLit
+    {
+        Token str_lit;
+    };
+    
+    struct ExprIdent
+    {
+        Token ident;
+    };
+    
+    struct Expr
+    {
+        std::variant<ExprIntLit, ExprStrLit, ExprIdent> var;
+    };
+
+    struct StmtReturn
     {
         node::Expr Expr;
     };
+
+    struct StmtIntLet
+    {
+        Token ident;
+        Expr expr;
+    };
+    
+    struct StmtStrLet
+    {
+        Token ident;
+        Expr expr;
+    };
+
+    struct Stmt
+    {
+        std::variant<StmtReturn, StmtIntLet, StmtStrLet> var; 
+    };
+    
+
+    struct Prog
+    {
+        std::vector<Stmt> statements;
+    };
+    
 
 }
 
@@ -22,12 +62,13 @@ public:
     : m_tokens(std::move(tokens)) {}
 
     std::optional<node::Expr> parseExpr();
+    std::optional<node::Stmt> parseStmt();
 
-    std::optional<node::RETURN> parse();
+    std::optional<node::Prog> parseProg();
 
 private:
 
-    std::optional<Token> peek(int pos = 1) const;
+    std::optional<Token> peek(int offset = 0) const;
 
     Token consume();
 

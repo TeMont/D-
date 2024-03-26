@@ -16,7 +16,13 @@ enum Tokens
     STRING_LITERAL,
     QOUTE,
     LBRACKET,
-    RBRACKET
+    RBRACKET,
+    LPAREN,
+    RPAREN,
+    IDENT,
+    INT_LET,
+    STRING_LET,
+    EQUALS,
 };
 
 extern std::map<std::string, Tokens> TokensMap;
@@ -36,7 +42,7 @@ public:
 
 private:
 
-    std::optional<char> peek(int pos = 1) const;
+    std::optional<char> peek(int offset = 0) const;
 
     char consume();
 

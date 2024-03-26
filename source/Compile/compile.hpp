@@ -3,8 +3,7 @@
 #include <thread>
 #include <chrono>
 #include <iostream>
-
-std::stringstream TokensToAsm(std::vector<Token> TokensVec);
+#include <unordered_map>
 
 bool CreateObjectFile(std::string Path);
 
@@ -13,21 +12,29 @@ bool LinkObjectFiles(std::string Path);
 class compiler
 {
 public:
-    compiler(node::RETURN root) : m_root(std::move(root)){}
+    compiler(node::Prog prog) : m_prog(std::move(prog)){}
 
-    std::stringstream compile() const
-    {
-        std::stringstream output;
-        output << "section .text\nglobal _start\n_start:\n";
-        output << "\tmov rax, " << m_root.Expr.int_lit.value << '\n';
-        output << "\tret\n";
+    void comp_expr(const node::Expr& expr);
 
-        return output;
-    }        
+    void comp_stmt(const node::Stmt& stmt);
+
+    std::stringstream compile();
 
 private:
-    const node::RETURN m_root;
 
+    static void push(const std::string& reg);
 
+    static void pop(const std::string& reg);
+
+    struct Var
+    {
+        size_t stack_loc;
+    };
+    
+
+    const node::Prog m_prog;
+    static std::stringstream m_output; 
+    static size_t m_stack_size;
+    static std::unordered_map<std::string, Var> m_vars;
 };
 

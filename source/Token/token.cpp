@@ -3,14 +3,20 @@
 std::map<std::string, Tokens> TokensMap =
 {
     {"return", RETURN},
-    {"integer", INT_LITERAL},
+    {"intLit", INT_LITERAL},
     {"stdOut", OUTPUT},
     {"stdInp", INPUT},
     {";", SEMICOLON},
-    {"string", STRING_LITERAL},
+    {"stringLit", STRING_LITERAL},
     {"\"", QOUTE},
-    {"(", LBRACKET},
-    {")", RBRACKET}
+    {"{", LBRACKET},
+    {"}", RBRACKET},
+    {"(", LPAREN},
+    {")", RPAREN},
+    {"identifier", IDENT},
+    {"int", INT_LET},
+    {"string", STRING_LET},
+    {"=", EQUALS},
 };
 
 std::vector<Token> tokenizer::tokenize()
@@ -37,8 +43,9 @@ std::vector<Token> tokenizer::tokenize()
             }
             else
             {
-                std::cerr << "ERR001 Syntax Error character: " << m_index;
-                exit(EXIT_FAILURE);
+                tokens.push_back({TokensMap["identifier"], buffer});
+                buffer.clear();
+                continue;
             }
         }
         else if (std::isdigit(peek().value()))
@@ -48,7 +55,7 @@ std::vector<Token> tokenizer::tokenize()
             {
                 buffer.push_back(consume());  
             }
-            tokens.push_back({TokensMap["integer"], buffer});
+            tokens.push_back({TokensMap["intLit"], buffer});
             buffer.clear();
             continue;
         }
@@ -57,27 +64,49 @@ std::vector<Token> tokenizer::tokenize()
             consume();
             continue;
         }
-        else if (peek().value() == ';' || peek().value() == '(' || peek().value() == ')' || peek().value() == '\"')
+        else if (peek().value() == '"')
+        {
+            buffer.push_back(consume());
+            tokens.push_back({TokensMap[buffer]});
+            buffer.clear();
+            while (peek().has_value() && peek().value() != '"')
+            {
+                buffer.push_back(consume());
+            }
+            tokens.push_back({TokensMap["stringLit"], buffer});
+            buffer.clear();
+            buffer.push_back(consume());
+            tokens.push_back({TokensMap[buffer]});
+            buffer.clear();
+            
+            continue;
+        }
+        else if (peek().value() == ';' || peek().value() == '(' || peek().value() == ')' || peek().value() == '=')
         {
             buffer.push_back(consume());
             tokens.push_back({TokensMap[buffer]});
             buffer.clear();
             continue;
         }
+        else 
+        {
+            std::cerr << "ERR001 Syntax Error";
+            exit(EXIT_FAILURE);
+        }
     }
 
     return tokens;
 }
 
-std::optional<char> tokenizer::peek(int ahead) const 
+std::optional<char> tokenizer::peek(int offset) const 
 {
-    if (m_index + ahead> m_src.length())
+    if (m_index + offset >= m_src.length())
     {
         return {};
     }
     else 
     {
-        return m_src[m_index];
+        return m_src[m_index+offset];
     }
 }
 
