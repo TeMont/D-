@@ -1,5 +1,7 @@
-int x = 20;
-int y = 26;
-y = 2;
+int y;
+int x;
+
+x = 15;
+y = x;
 
 return y;

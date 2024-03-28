@@ -14,9 +14,11 @@ class compiler
 public:
     compiler(node::Prog prog) : m_prog(std::move(prog)){}
 
-    void comp_expr(const node::Expr& expr);
+    void comp_expr(const node::Expr& expr, std::string ExpectedType);
+
 
     void comp_stmt(const node::Stmt& stmt);
+
 
     std::stringstream compile();
 
@@ -29,6 +31,7 @@ private:
     struct Var
     {
         size_t stack_loc;
+        std::string Type;
     };
     
 

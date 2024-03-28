@@ -2,6 +2,7 @@
 #include "../Token/token.hpp"
 #include <variant>
 
+
 namespace node 
 {
     struct ExprIntLit
@@ -41,18 +42,27 @@ namespace node
         Expr expr;
     };
 
-    struct Stmt
+    struct StmtIntVar
     {
-        std::variant<StmtReturn, StmtIntLet, StmtStrLet> var; 
+        Token ident;
+        Expr expr;
     };
     
+    struct StmtStrVar
+    {
+        Token ident;
+        Expr expr;
+    };
 
+    struct Stmt
+    {
+        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtStrVar, StmtIntVar> var; 
+    };
+    
     struct Prog
     {
         std::vector<Stmt> statements;
     };
-    
-
 }
 
 class parser
@@ -61,7 +71,7 @@ public:
     explicit parser(std::vector<Token> tokens) 
     : m_tokens(std::move(tokens)) {}
 
-    std::optional<node::Expr> parseExpr();
+    std::optional<node::Expr> parseExpr(std::string ExpectedType);
     std::optional<node::Stmt> parseStmt();
 
     std::optional<node::Prog> parseProg();

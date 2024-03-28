@@ -6,6 +6,10 @@
 #include <map>
 #include "../../headers/filesys.hpp"
 
+#define INT_TYPE "integer"
+#define STR_TYPE "string"
+#define ANY_TYPE "any"
+
 enum Tokens
 {
     RETURN,
@@ -30,7 +34,7 @@ extern std::map<std::string, Tokens> TokensMap;
 struct Token
 {
     Tokens type;
-    std::string value;
+    std::optional<std::string> value;
 };
 
 class tokenizer
