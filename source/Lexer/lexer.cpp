@@ -17,18 +17,68 @@ Token parser::consume()
     return m_tokens[m_index++];
 }
 
-std::optional<node::Expr> parser::parseExpr(std::string ExpectedType)
+std::optional<node::BinExpr> parser::parseBinExpr(std::string ExpectedType)
 {
     if (peek().has_value())
     {
-        node::Expr expr;
+        node::BinExpr binExpr;
+        if (peek().value().type == Tokens::INT_LITERAL || peek().value().type == Tokens::STRING_LITERAL || peek().value().type == Tokens::IDENT)
+        {
+            if (peek(1).has_value())
+            {
+                if (peek(1).value().type == Tokens::PLUS)
+                {
+                    auto FirVal = parseValExpr(ExpectedType).value();
+                    consume();
+                    auto SecVal = parseValExpr(ExpectedType).value();
+                    binExpr = {node::BinExprAdd{FirVal, SecVal}};
+                }
+                else if (peek(1).value().type == Tokens::MINUS)
+                {
+                    auto FirVal = parseValExpr(ExpectedType).value();
+                    consume();
+                    auto SecVal = parseValExpr(ExpectedType).value();
+                    binExpr = {node::BinExprSub{FirVal, SecVal}};
+                }
+                else if (peek(1).value().type == Tokens::MULT)
+                {
+                    auto FirVal = parseValExpr(ExpectedType).value();
+                    consume();
+                    auto SecVal = parseValExpr(ExpectedType).value();
+                    binExpr = {node::BinExprMul{FirVal, SecVal}};
+                }
+                else if (peek(1).value().type == Tokens::DIV)
+                {
+                    auto FirVal = parseValExpr(ExpectedType).value();
+                    consume();
+                    auto SecVal = parseValExpr(ExpectedType).value();
+                    binExpr = {node::BinExprDiv{FirVal, SecVal}};
+                }
+            }
+        }
+        else
+        {
+            return {};
+        }
+        return binExpr;
+    }
+    else
+    {
+        return {};
+    }
+}
+
+std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
+{
+    if (peek().has_value())
+    {
+        node::ValExpr expr;
+        auto x = peek().value().type;
         if (peek().value().type == Tokens::INT_LITERAL)
         {
             if (ExpectedType == INT_TYPE || ExpectedType == ANY_TYPE)
             {
-                node::ExprIntLit intExpr;
-                intExpr.int_lit = consume();
-                expr.var = intExpr;
+                expr = {node::ExprIntLit{consume()}};
             }
             else
             {
@@ -40,9 +90,7 @@ std::optional<node::Expr> parser::parseExpr(std::string ExpectedType)
         {
             if (ExpectedType == STR_TYPE || ExpectedType == ANY_TYPE)
             {
-                node::ExprStrLit strExpr;
-                strExpr.str_lit = consume();
-                expr.var = strExpr;
+                expr = {node::ExprStrLit{consume()}};
             }
             else
             {
@@ -52,9 +100,38 @@ std::optional<node::Expr> parser::parseExpr(std::string ExpectedType)
         }
         else if (peek().value().type == Tokens::IDENT)
         {
-            node::ExprIdent identExpr;
-            identExpr.ident = consume();
-            expr.var = identExpr;
+            expr = {node::ExprIdent{consume()}};
+        }
+        else
+        {
+            return {};
+        }
+        return expr;
+    }
+    else
+    {
+        return {};
+    }
+}
+
+std::optional<node::Expr> parser::parseExpr(std::string ExpectedType)
+{
+    if (peek().has_value())
+    {
+        node::Expr expr;
+        if (peek().value().type == Tokens::INT_LITERAL || peek().value().type == Tokens::STRING_LITERAL || peek().value().type == Tokens::IDENT)
+        {
+            if (peek(1).has_value())
+            {
+                if (peek(1).value().type == Tokens::PLUS || peek(1).value().type == Tokens::MINUS || peek(1).value().type == Tokens::MULT || peek(1).value().type == Tokens::DIV)
+                {
+                    expr = {parseBinExpr(ExpectedType).value()};
+                }
+                else
+                {
+                    expr = {parseValExpr(ExpectedType).value()};
+                }
+            }
         }
         else
         {
@@ -263,7 +340,6 @@ std::optional<node::Stmt> parser::parseStmt()
                         std::cerr << "ERR001 Invalid Syntax Expected ';'";
                         exit(EXIT_FAILURE);
                     }
-                    
                 }
             }
             else
@@ -274,7 +350,7 @@ std::optional<node::Stmt> parser::parseStmt()
         }
         else
         {
-            std::cerr << peek().value().type;
+            std::cerr << "ERR001 Syntax Error";
             exit(EXIT_FAILURE);
         }
     }

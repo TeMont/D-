@@ -9,49 +9,75 @@ namespace node
     {
         Token int_lit;
     };
-
     struct ExprStrLit
     {
         Token str_lit;
     };
-    
     struct ExprIdent
     {
         Token ident;
     };
-    
-    struct Expr
+    struct ValExpr
     {
         std::variant<ExprIntLit, ExprStrLit, ExprIdent> var;
     };
 
+    struct BinExprAdd
+    {
+        ValExpr fvl;
+        ValExpr svl;
+    };
+    struct BinExprSub
+    {
+        ValExpr fvl;
+        ValExpr svl;
+    };
+    struct BinExprMul
+    {
+        ValExpr fvl;
+        ValExpr svl;
+    };
+    struct BinExprDiv
+    {
+        ValExpr fvl;
+        ValExpr svl;
+    };
+    struct BinExpr
+    {
+        std::variant<BinExprAdd, BinExprSub, BinExprMul, BinExprDiv> var;
+    };
+    struct Expr
+    {
+        std::variant<ValExpr, BinExpr> var;
+    };
+    
     struct StmtReturn
     {
-        node::Expr Expr;
+        Expr Expr;
     };
 
     struct StmtIntLet
     {
         Token ident;
-        Expr expr;
+        Expr Expr;
     };
     
     struct StmtStrLet
     {
         Token ident;
-        Expr expr;
+        Expr Expr;
     };
 
     struct StmtIntVar
     {
         Token ident;
-        Expr expr;
+        Expr Expr;
     };
     
     struct StmtStrVar
     {
         Token ident;
-        Expr expr;
+        Expr Expr;
     };
 
     struct Stmt
@@ -72,6 +98,11 @@ public:
     : m_tokens(std::move(tokens)) {}
 
     std::optional<node::Expr> parseExpr(std::string ExpectedType);
+
+    std::optional<node::BinExpr> parseBinExpr(std::string ExpectedType);
+
+    std::optional<node::ValExpr> parseValExpr(std::string ExpectedType);
+
     std::optional<node::Stmt> parseStmt();
 
     std::optional<node::Prog> parseProg();

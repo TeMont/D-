@@ -27,6 +27,10 @@ enum Tokens
     INT_LET,
     STRING_LET,
     EQUALS,
+    PLUS,
+    MINUS,
+    MULT,
+    DIV,
 };
 
 extern std::map<std::string, Tokens> TokensMap;

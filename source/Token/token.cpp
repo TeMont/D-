@@ -17,6 +17,10 @@ std::map<std::string, Tokens> TokensMap =
     {"int", INT_LET},
     {"string", STRING_LET},
     {"=", EQUALS},
+    {"+", PLUS},
+    {"-", MINUS},
+    {"*", MULT},
+    {"/", DIV},
 };
 
 std::vector<Token> tokenizer::tokenize()
@@ -81,17 +85,21 @@ std::vector<Token> tokenizer::tokenize()
             
             continue;
         }
-        else if (peek().value() == ';' || peek().value() == '(' || peek().value() == ')' || peek().value() == '=')
-        {
-            buffer.push_back(consume());
-            tokens.push_back({TokensMap[buffer]});
-            buffer.clear();
-            continue;
-        }
         else 
         {
-            std::cerr << "ERR001 Syntax Error";
-            exit(EXIT_FAILURE);
+            buffer.push_back(consume());
+            auto it = TokensMap.find(buffer);
+            if (it != TokensMap.end())
+            {
+                tokens.push_back({TokensMap[buffer]});
+                buffer.clear();
+                continue;
+            }
+            else 
+            {
+                std::cerr << "ERR001 Syntax Error";
+                exit(EXIT_FAILURE);
+            }
         }
     }
 

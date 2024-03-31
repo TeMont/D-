@@ -1,7 +1,8 @@
 int y;
 int x;
 
-x = 15;
+y = 200;
+x = y / 100;
 y = x;
 
 return y;
