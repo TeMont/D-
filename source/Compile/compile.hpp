@@ -14,9 +14,6 @@ class compiler
 public:
     compiler(node::Prog prog) : m_prog(std::move(prog)){}
 
-    void comp_expr(const node::Expr& expr, std::string ExpectedType);
-
-    void comp_stmt(const node::Stmt& stmt);
 
     std::stringstream compile();
 
@@ -26,10 +23,15 @@ private:
 
     static void pop(const std::string& reg);
 
+    static void comp_expr(const node::Expr& expr, std::string ExpectedType);
+
     static void comp_bin_expr(const node::BinExpr& expr, std::string ExpectedType);
 
     static void comp_val_expr(const node::ValExpr& expr, std::string ExpectedType);
 
+    static void comp_stmt(const node::Stmt& stmt);
+    
+    
     struct Var
     {
         size_t stack_loc;

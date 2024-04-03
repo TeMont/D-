@@ -5,6 +5,7 @@
 
 namespace node 
 {
+    struct Expr;
     struct ExprIntLit
     {
         Token int_lit;
@@ -24,60 +25,60 @@ namespace node
 
     struct BinExprAdd
     {
-        ValExpr fvl;
-        ValExpr svl;
+        Expr* fvl;
+        Expr* svl;
     };
     struct BinExprSub
     {
-        ValExpr fvl;
-        ValExpr svl;
+        Expr* fvl;
+        Expr* svl;
     };
     struct BinExprMul
     {
-        ValExpr fvl;
-        ValExpr svl;
+        Expr* fvl;
+        Expr* svl;
     };
     struct BinExprDiv
     {
-        ValExpr fvl;
-        ValExpr svl;
+        Expr* fvl;
+        Expr* svl;
     };
     struct BinExpr
     {
-        std::variant<BinExprAdd, BinExprSub, BinExprMul, BinExprDiv> var;
+        std::variant<BinExprAdd*, BinExprSub*, BinExprMul*, BinExprDiv*> var;
     };
     struct Expr
     {
-        std::variant<ValExpr, BinExpr> var;
+        std::variant<ValExpr*, BinExpr*> var;
     };
     
     struct StmtReturn
     {
-        Expr Expr;
+        Expr* Expr;
     };
 
     struct StmtIntLet
     {
         Token ident;
-        Expr Expr;
+        Expr* Expr;
     };
     
     struct StmtStrLet
     {
         Token ident;
-        Expr Expr;
+        Expr* Expr;
     };
 
     struct StmtIntVar
     {
         Token ident;
-        Expr Expr;
+        Expr* Expr;
     };
     
     struct StmtStrVar
     {
         Token ident;
-        Expr Expr;
+        Expr* Expr;
     };
 
     struct Stmt
@@ -97,7 +98,7 @@ public:
     explicit parser(std::vector<Token> tokens) 
     : m_tokens(std::move(tokens)) {}
 
-    std::optional<node::Expr> parseExpr(std::string ExpectedType);
+    std::optional<node::Expr> parseExpr(std::string ExpectedType = ANY_TYPE, uint8_t min_priority = 1);
 
     std::optional<node::BinExpr> parseBinExpr(std::string ExpectedType);
 
@@ -107,11 +108,31 @@ public:
 
     std::optional<node::Prog> parseProg();
 
+
 private:
 
     std::optional<Token> peek(int offset = 0) const;
 
     Token consume();
+
+    std::optional<uint8_t> op_to_prior(Tokens op)
+    {
+        switch (op)
+        {
+        case Tokens::PLUS:
+        case Tokens::MINUS:
+            return 1;
+            break;
+
+        case Tokens::MULT:
+        case Tokens::DIV:
+            return 2;
+            break;
+        
+        default:
+            return {};
+        }
+    }
 
     const std::vector<Token> m_tokens;
     size_t m_index = 0;

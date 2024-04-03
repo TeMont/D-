@@ -11,74 +11,21 @@ std::optional<Token> parser::peek(int offset) const
         return m_tokens[m_index + offset];
     }
 }
-
 Token parser::consume()
 {
     return m_tokens[m_index++];
-}
-
-std::optional<node::BinExpr> parser::parseBinExpr(std::string ExpectedType)
-{
-    if (peek().has_value())
-    {
-        node::BinExpr binExpr;
-        if (peek().value().type == Tokens::INT_LITERAL || peek().value().type == Tokens::STRING_LITERAL || peek().value().type == Tokens::IDENT)
-        {
-            if (peek(1).has_value())
-            {
-                if (peek(1).value().type == Tokens::PLUS)
-                {
-                    auto FirVal = parseValExpr(ExpectedType).value();
-                    consume();
-                    auto SecVal = parseValExpr(ExpectedType).value();
-                    binExpr = {node::BinExprAdd{FirVal, SecVal}};
-                }
-                else if (peek(1).value().type == Tokens::MINUS)
-                {
-                    auto FirVal = parseValExpr(ExpectedType).value();
-                    consume();
-                    auto SecVal = parseValExpr(ExpectedType).value();
-                    binExpr = {node::BinExprSub{FirVal, SecVal}};
-                }
-                else if (peek(1).value().type == Tokens::MULT)
-                {
-                    auto FirVal = parseValExpr(ExpectedType).value();
-                    consume();
-                    auto SecVal = parseValExpr(ExpectedType).value();
-                    binExpr = {node::BinExprMul{FirVal, SecVal}};
-                }
-                else if (peek(1).value().type == Tokens::DIV)
-                {
-                    auto FirVal = parseValExpr(ExpectedType).value();
-                    consume();
-                    auto SecVal = parseValExpr(ExpectedType).value();
-                    binExpr = {node::BinExprDiv{FirVal, SecVal}};
-                }
-            }
-        }
-        else
-        {
-            return {};
-        }
-        return binExpr;
-    }
-    else
-    {
-        return {};
-    }
 }
 
 std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
 {
     if (peek().has_value())
     {
-        node::ValExpr expr;
-        auto x = peek().value().type;
+        node::ValExpr valExpr;
         if (peek().value().type == Tokens::INT_LITERAL)
         {
             if (ExpectedType == INT_TYPE || ExpectedType == ANY_TYPE)
             {
-                expr = {node::ExprIntLit{consume()}};
+                valExpr = {node::ExprIntLit{consume()}};
             }
             else
             {
@@ -88,25 +35,25 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
         }
         else if (peek().value().type == Tokens::STRING_LITERAL)
         {
-            if (ExpectedType == STR_TYPE || ExpectedType == ANY_TYPE)
+           if (ExpectedType == STR_TYPE || ExpectedType == ANY_TYPE)
             {
-                expr = {node::ExprStrLit{consume()}};
+                valExpr = {node::ExprStrLit{consume()}};
             }
             else
             {
                 std::cerr << "ERR006 Value Doesn't Matches Type";
                 exit(EXIT_FAILURE);
-            }
+            } 
         }
         else if (peek().value().type == Tokens::IDENT)
         {
-            expr = {node::ExprIdent{consume()}};
+            valExpr = {node::ExprIdent{consume()}};
         }
         else
         {
             return {};
         }
-        return expr;
+        return valExpr;
     }
     else
     {
@@ -114,32 +61,79 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
     }
 }
 
-std::optional<node::Expr> parser::parseExpr(std::string ExpectedType)
+std::optional<node::Expr> parser::parseExpr(std::string ExpectedType, uint8_t min_priority)
 {
-    if (peek().has_value())
+    std::optional<node::ValExpr> val_fvl = parseValExpr(ExpectedType);
+    if (val_fvl.has_value())
     {
-        node::Expr expr;
-        if (peek().value().type == Tokens::INT_LITERAL || peek().value().type == Tokens::STRING_LITERAL || peek().value().type == Tokens::IDENT)
+        node::Expr expr_fvl = {new node::ValExpr(val_fvl.value())};
+
+        while (1)
         {
-            if (peek(1).has_value())
+            std::optional<uint8_t> priority;
+            if (peek().has_value())
             {
-                if (peek(1).value().type == Tokens::PLUS || peek(1).value().type == Tokens::MINUS || peek(1).value().type == Tokens::MULT || peek(1).value().type == Tokens::DIV)
+                priority = op_to_prior(peek().value().type);
+                if (!priority.has_value() || priority < min_priority)
                 {
-                    expr = {parseBinExpr(ExpectedType).value()};
-                }
-                else
-                {
-                    expr = {parseValExpr(ExpectedType).value()};
+                    break;
                 }
             }
+            else 
+            {
+                break;
+            }
+            Token opr = consume();
+            uint8_t next_min_priority = priority.value() + 1;
+            auto expr_svl = parseExpr(ExpectedType, next_min_priority);
+
+            if (expr_svl.has_value())
+            {
+                node::BinExpr expr;
+                node::Expr expr_fvl2;
+                if (opr.type == Tokens::PLUS)
+                {
+                    node::BinExprAdd add;
+                    expr_fvl2 = expr_fvl;
+                    add.fvl = new node::Expr(expr_fvl2);
+                    add.svl = new node::Expr(expr_svl.value());
+                    expr.var = new node::BinExprAdd(add);
+                }
+                else if (opr.type == Tokens::MINUS)
+                {
+                    node::BinExprSub sub;
+                    expr_fvl2 = expr_fvl;
+                    sub.fvl = new node::Expr(expr_fvl2);
+                    sub.svl = new node::Expr(expr_svl.value());
+                    expr.var = new node::BinExprSub(sub);
+                }
+                else if (opr.type == Tokens::MULT)
+                {
+                    node::BinExprMul mul;
+                    expr_fvl2 = expr_fvl;
+                    mul.fvl = new node::Expr(expr_fvl2);
+                    mul.svl = new node::Expr(expr_svl.value());
+                    expr.var = new node::BinExprMul(mul);
+                }
+                else if (opr.type == Tokens::DIV)
+                {
+                    node::BinExprDiv div;
+                    expr_fvl2 = expr_fvl;
+                    div.fvl = new node::Expr(expr_fvl2);
+                    div.svl = new node::Expr(expr_svl.value());
+                    expr.var = new node::BinExprDiv(div);
+                }
+                expr_fvl.var = new node::BinExpr(expr);
+            }   
+            else 
+            {
+                std::cerr << "Expected Value After Operator";
+                exit(EXIT_FAILURE);
+            }
         }
-        else
-        {
-            return {};
-        }
-        return expr;
+        return expr_fvl;
     }
-    else
+    else 
     {
         return {};
     }
@@ -155,8 +149,7 @@ std::optional<node::Stmt> parser::parseStmt()
             consume();
             if (auto node_expr = parseExpr(INT_TYPE))
             {
-
-                stmt_node = {{node::StmtReturn{node_expr.value()}}};
+                stmt_node = {{node::StmtReturn{new node::Expr(node_expr.value())}}};
 
                 if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                 {
@@ -180,7 +173,7 @@ std::optional<node::Stmt> parser::parseStmt()
                     consume();
                     if (auto node_expr = parseExpr(INT_TYPE))
                     {
-                        stmt_node = {{node::StmtIntLet{var_ident, node_expr.value()}}};
+                        stmt_node = {{node::StmtIntLet{var_ident, new node::Expr(node_expr.value())}}};
                         if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                         {
                             consume();
@@ -231,7 +224,7 @@ std::optional<node::Stmt> parser::parseStmt()
                         consume();
                         if (auto node_expr = parseExpr(STR_TYPE))
                         {
-                            stmt_node = {{node::StmtStrLet{var_ident, node_expr.value()}}};
+                            stmt_node = {{node::StmtStrLet{var_ident, new node::Expr(node_expr.value())}}};
                             if (peek().has_value() && peek().value().type == Tokens::QOUTE)
                             {
                                 consume();
@@ -261,7 +254,7 @@ std::optional<node::Stmt> parser::parseStmt()
                     {
                         if (auto node_expr = parseExpr(STR_TYPE))
                         {
-                            stmt_node = {{node::StmtStrLet{var_ident, node_expr.value()}}};
+                            stmt_node = {{node::StmtStrLet{var_ident, new node::Expr(node_expr.value())}}};
                             if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                             {
                                 consume();
@@ -302,7 +295,7 @@ std::optional<node::Stmt> parser::parseStmt()
                 {
                     if (auto node_expr = parseExpr(STR_TYPE))
                     {
-                        stmt_node = {{node::StmtStrVar{var_ident, node_expr.value()}}};
+                        stmt_node = {{node::StmtStrVar{var_ident, new node::Expr(node_expr.value())}}};
                         if (peek().has_value() && peek().value().type == Tokens::QOUTE)
                         {
                             consume();
@@ -328,9 +321,9 @@ std::optional<node::Stmt> parser::parseStmt()
                         exit(EXIT_FAILURE);
                     }
                 }
-                else if (auto node_expr = parseExpr(ANY_TYPE))
+                else if (auto node_expr = parseExpr())
                 {
-                    stmt_node = {{node::StmtIntVar{var_ident, node_expr.value()}}};
+                    stmt_node = {{node::StmtIntVar{var_ident, new node::Expr(node_expr.value())}}};
                     if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                     {
                         consume();

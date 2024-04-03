@@ -105,37 +105,37 @@ void compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
 
         ExprVisitor(std::string expectedType) : ExpectedType(std::move(expectedType)) {}
 
-        void operator()(const node::BinExprAdd &bin_expr_add)
+        void operator()(const node::BinExprAdd* bin_expr_add)
         {
-            comp_val_expr(bin_expr_add.fvl, ExpectedType);
-            comp_val_expr(bin_expr_add.svl, ExpectedType);
+            comp_expr(*bin_expr_add->fvl, ExpectedType);
+            comp_expr(*bin_expr_add->svl, ExpectedType);
             pop("rdi");
             pop("rdx");
             m_output << "\tadd rdx, rdi\n";
             push("rdx");
         }
-        void operator()(const node::BinExprSub &bin_expr_sub)
+        void operator()(const node::BinExprSub* bin_expr_sub)
         {
-            comp_val_expr(bin_expr_sub.fvl, ExpectedType);
-            comp_val_expr(bin_expr_sub.svl, ExpectedType);
+            comp_expr(*bin_expr_sub->fvl, ExpectedType);
+            comp_expr(*bin_expr_sub->svl, ExpectedType);
             pop("rdi");
             pop("rdx");
             m_output << "\tsub rdx, rdi\n";
             push("rdx");
         }
-        void operator()(const node::BinExprMul &bin_expr_mul)
+        void operator()(const node::BinExprMul* bin_expr_mul)
         {
-            comp_val_expr(bin_expr_mul.fvl, ExpectedType);
-            comp_val_expr(bin_expr_mul.svl, ExpectedType);
+            comp_expr(*bin_expr_mul->fvl, ExpectedType);
+            comp_expr(*bin_expr_mul->svl, ExpectedType);
             pop("rdi");
             pop("rdx");
             m_output << "\timul rdx, rdi\n";
             push("rdx");
         }
-        void operator()(const node::BinExprDiv &bin_expr_div)
+        void operator()(const node::BinExprDiv* bin_expr_div)
         {
-            comp_val_expr(bin_expr_div.fvl, ExpectedType);
-            comp_val_expr(bin_expr_div.svl, ExpectedType);
+            comp_expr(*bin_expr_div->fvl, ExpectedType);
+            comp_expr(*bin_expr_div->svl, ExpectedType);
             pop("rdi");
             pop("rdx");
             m_output << "\tmov rax, rdx\n";
@@ -158,14 +158,14 @@ void compiler::comp_expr(const node::Expr &expr, std::string ExpectedType)
 
         ExprVisitor(std::string expectedType) : ExpectedType(std::move(expectedType)) {}
 
-        void operator()(const node::BinExpr &BinExpr)
+        void operator()(const node::BinExpr* BinExpr)
         {
-            comp_bin_expr(BinExpr, ExpectedType);
+            comp_bin_expr(*BinExpr, ExpectedType);
         }
 
-        void operator()(const node::ValExpr &ValExpr)
+        void operator()(const node::ValExpr* ValExpr)
         {
-            comp_val_expr(ValExpr, ExpectedType);
+            comp_val_expr(*ValExpr, ExpectedType);
         }
     };
 
@@ -180,7 +180,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
         compiler *comp;
         void operator()(const node::StmtReturn &stmt_ret)
         {
-            comp->comp_expr(stmt_ret.Expr, INT_TYPE);
+            comp->comp_expr(*stmt_ret.Expr, INT_TYPE);
             pop("rcx");
             m_output << "\tcall ExitProcess"
                      << "\n";
@@ -195,7 +195,14 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             else
             {
                 m_vars.insert({stmt_int_let.ident.value.value(), Var{m_stack_size, INT_TYPE}});
-                comp->comp_expr(stmt_int_let.Expr, INT_TYPE);
+                if (&stmt_int_let.Expr->var != nullptr)
+                {
+                    comp->comp_expr(*stmt_int_let.Expr, INT_TYPE);
+                }
+                else 
+                {
+                    push("rdx");
+                }
             }
         }
         void operator()(const node::StmtStrLet &stmt_str_let)
@@ -208,7 +215,15 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             else
             {
                 m_vars.insert({stmt_str_let.ident.value.value(), Var{m_stack_size, STR_TYPE}});
-                comp->comp_expr(stmt_str_let.Expr, STR_TYPE);
+                
+                if (&stmt_str_let.Expr->var != nullptr)
+                {
+                    comp->comp_expr(*stmt_str_let.Expr, STR_TYPE);
+                }
+                else 
+                {
+                    push("rdx");
+                }
             }
         }
         void operator()(const node::StmtIntVar &stmt_int_var)
@@ -216,7 +231,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             if (m_vars.count(stmt_int_var.ident.value.value()))
             {
                 const auto &var = m_vars[stmt_int_var.ident.value.value()];
-                comp->comp_expr(stmt_int_var.Expr, INT_TYPE);
+                comp->comp_expr(*stmt_int_var.Expr, INT_TYPE);
                 pop("rdx");
                 m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
             }
@@ -230,7 +245,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
         {
             if (m_vars.count(stmt_str_var.ident.value.value()))
             {
-                comp->comp_expr(stmt_str_var.Expr, STR_TYPE);
+                comp->comp_expr(*stmt_str_var.Expr, STR_TYPE);
             }
             else
             {
