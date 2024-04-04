@@ -35,7 +35,7 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
         }
         else if (peek().value().type == Tokens::STRING_LITERAL)
         {
-           if (ExpectedType == STR_TYPE || ExpectedType == ANY_TYPE)
+            if (ExpectedType == STR_TYPE || ExpectedType == ANY_TYPE)
             {
                 valExpr = {node::ExprStrLit{consume()}};
             }
@@ -274,8 +274,16 @@ std::optional<node::Stmt> parser::parseStmt()
                 }
                 else
                 {
-                    std::cerr << "ERR001 Invalid Syntax Expected '='";
-                    exit(EXIT_FAILURE);
+                    stmt_node = {{node::StmtStrLet{var_ident}}};
+                    if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
+                    {
+                        consume();
+                    }
+                    else
+                    {
+                        std::cerr << "ERR001 Invalid Syntax Expected ';'";
+                        exit(EXIT_FAILURE);
+                    }
                 }
             }
             else
@@ -293,6 +301,7 @@ std::optional<node::Stmt> parser::parseStmt()
                 consume();
                 if (peek().has_value() && peek().value().type == Tokens::QOUTE)
                 {
+                    consume();
                     if (auto node_expr = parseExpr(STR_TYPE))
                     {
                         stmt_node = {{node::StmtStrVar{var_ident, new node::Expr(node_expr.value())}}};

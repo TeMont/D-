@@ -1,7 +1,5 @@
-int y;
-int x;
+string x;
 
-y = 2 * 2 + 2;
-x = y / 2 - 9 * 3;
+x = "6 / 2 - 9 * 3";
 
 return x;
