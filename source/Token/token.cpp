@@ -3,19 +3,21 @@
 std::map<std::string, Tokens> TokensMap =
 {
     {"return", RETURN},
+    {"int", INT_LET},
     {"intLit", INT_LITERAL},
+    {"string", STRING_LET},
+    {"stringLit", STRING_LITERAL},
+    {"bool", BOOL_LET}, 
+    {"boolLit", BOOL_LITERAL}, 
     {"stdOut", OUTPUT},
     {"stdInp", INPUT},
     {";", SEMICOLON},
-    {"stringLit", STRING_LITERAL},
     {"\"", QOUTE},
     {"{", LBRACKET},
     {"}", RBRACKET},
     {"(", LPAREN},
     {")", RPAREN},
     {"identifier", IDENT},
-    {"int", INT_LET},
-    {"string", STRING_LET},
     {"=", EQUALS},
     {"+", PLUS},
     {"-", MINUS},
@@ -47,7 +49,14 @@ std::vector<Token> tokenizer::tokenize()
             }
             else
             {
-                tokens.push_back({TokensMap["identifier"], buffer});
+                if (buffer == "true" || buffer == "false")
+                {
+                    tokens.push_back({TokensMap["boolLit"], buffer});
+                }
+                else
+                {
+                    tokens.push_back({TokensMap["identifier"], buffer});
+                }
                 buffer.clear();
                 continue;
             }

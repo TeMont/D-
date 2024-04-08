@@ -29,8 +29,7 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
             }
             else
             {
-                std::cerr << "ERR006 Value Doesn't Matches Type";
-                exit(EXIT_FAILURE);
+                return {};
             }
         }
         else if (peek().value().type == Tokens::STRING_LITERAL)
@@ -41,9 +40,19 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
             }
             else
             {
-                std::cerr << "ERR006 Value Doesn't Matches Type";
-                exit(EXIT_FAILURE);
-            } 
+                return {};
+            }
+        }
+        else if (peek().value().type == Tokens::BOOL_LITERAL)
+        {
+            if (ExpectedType == BOOL_TYPE || ExpectedType == ANY_TYPE)
+            {
+                valExpr = {node::ExprBoolLit{consume()}};
+            }
+            else
+            {
+                return {};
+            }
         }
         else if (peek().value().type == Tokens::IDENT)
         {
@@ -51,7 +60,8 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
         }
         else
         {
-            return {};
+            std::cerr << "ERR001 Invalid Syntax Expected Expression";
+            exit(EXIT_FAILURE);
         }
         return valExpr;
     }
@@ -79,61 +89,67 @@ std::optional<node::Expr> parser::parseExpr(std::string ExpectedType, uint8_t mi
                     break;
                 }
             }
-            else 
+            else
             {
                 break;
             }
             Token opr = consume();
             uint8_t next_min_priority = priority.value() + 1;
-            auto expr_svl = parseExpr(ExpectedType, next_min_priority);
-
-            if (expr_svl.has_value())
+            if (auto expr_svl = parseExpr(ExpectedType, next_min_priority))
             {
-                node::BinExpr expr;
-                node::Expr expr_fvl2;
-                if (opr.type == Tokens::PLUS)
+                if (expr_svl.has_value())
                 {
-                    node::BinExprAdd add;
-                    expr_fvl2 = expr_fvl;
-                    add.fvl = new node::Expr(expr_fvl2);
-                    add.svl = new node::Expr(expr_svl.value());
-                    expr.var = new node::BinExprAdd(add);
+                    node::BinExpr expr;
+                    node::Expr expr_fvl2;
+                    if (opr.type == Tokens::PLUS)
+                    {
+                        node::BinExprAdd add;
+                        expr_fvl2 = expr_fvl;
+                        add.fvl = new node::Expr(expr_fvl2);
+                        add.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::BinExprAdd(add);
+                    }
+                    else if (opr.type == Tokens::MINUS)
+                    {
+                        node::BinExprSub sub;
+                        expr_fvl2 = expr_fvl;
+                        sub.fvl = new node::Expr(expr_fvl2);
+                        sub.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::BinExprSub(sub);
+                    }
+                    else if (opr.type == Tokens::MULT)
+                    {
+                        node::BinExprMul mul;
+                        expr_fvl2 = expr_fvl;
+                        mul.fvl = new node::Expr(expr_fvl2);
+                        mul.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::BinExprMul(mul);
+                    }
+                    else if (opr.type == Tokens::DIV)
+                    {
+                        node::BinExprDiv div;
+                        expr_fvl2 = expr_fvl;
+                        div.fvl = new node::Expr(expr_fvl2);
+                        div.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::BinExprDiv(div);
+                    }
+                    expr_fvl.var = new node::BinExpr(expr);
                 }
-                else if (opr.type == Tokens::MINUS)
+                else
                 {
-                    node::BinExprSub sub;
-                    expr_fvl2 = expr_fvl;
-                    sub.fvl = new node::Expr(expr_fvl2);
-                    sub.svl = new node::Expr(expr_svl.value());
-                    expr.var = new node::BinExprSub(sub);
+                    std::cerr << "Expected Value After Operator";
+                    exit(EXIT_FAILURE);
                 }
-                else if (opr.type == Tokens::MULT)
-                {
-                    node::BinExprMul mul;
-                    expr_fvl2 = expr_fvl;
-                    mul.fvl = new node::Expr(expr_fvl2);
-                    mul.svl = new node::Expr(expr_svl.value());
-                    expr.var = new node::BinExprMul(mul);
-                }
-                else if (opr.type == Tokens::DIV)
-                {
-                    node::BinExprDiv div;
-                    expr_fvl2 = expr_fvl;
-                    div.fvl = new node::Expr(expr_fvl2);
-                    div.svl = new node::Expr(expr_svl.value());
-                    expr.var = new node::BinExprDiv(div);
-                }
-                expr_fvl.var = new node::BinExpr(expr);
-            }   
-            else 
+            }
+            else
             {
-                std::cerr << "Expected Value After Operator";
+                std::cerr << "ERR006 Value Doesn't Matches Type";
                 exit(EXIT_FAILURE);
             }
         }
         return expr_fvl;
     }
-    else 
+    else
     {
         return {};
     }
@@ -147,7 +163,31 @@ std::optional<node::Stmt> parser::parseStmt()
         if (peek().value().type == Tokens::RETURN)
         {
             consume();
-            if (auto node_expr = parseExpr(INT_TYPE))
+            if (peek().value().type == Tokens::QOUTE)
+            {
+                if (auto node_expr = parseExpr(STR_TYPE))
+                {
+                    stmt_node = {{node::StmtReturn{new node::Expr(node_expr.value())}}};
+                    if (peek().value().type == Tokens::QOUTE)
+                    {
+                        if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
+                        {
+                            consume();
+                        }
+                        else
+                        {
+                            std::cerr << "ERR001 Invalid Syntax Expected ';'\n";
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                }
+                else
+                {
+                    std::cerr << "ERR006 Value Doesn't Matches Type";
+                    exit(EXIT_FAILURE);
+                }
+            }
+            if (auto node_expr = parseExpr(ANY_TYPE))
             {
                 stmt_node = {{node::StmtReturn{new node::Expr(node_expr.value())}}};
 
@@ -186,7 +226,7 @@ std::optional<node::Stmt> parser::parseStmt()
                     }
                     else
                     {
-                        std::cerr << "ERR001 Invalid Syntax Expected Expression";
+                        std::cerr << "ERR006 Value Doesn't Matches Type";
                         exit(EXIT_FAILURE);
                     }
                 }
@@ -246,7 +286,7 @@ std::optional<node::Stmt> parser::parseStmt()
                         }
                         else
                         {
-                            std::cerr << "ERR001 Invalid Syntax Expected Expression";
+                            std::cerr << "ERR006 Value Doesn't Matches Type";
                             exit(EXIT_FAILURE);
                         }
                     }
@@ -264,6 +304,11 @@ std::optional<node::Stmt> parser::parseStmt()
                                 std::cerr << "ERR001 Invalid Syntax Expected ';'";
                                 exit(EXIT_FAILURE);
                             }
+                        }
+                        else
+                        {
+                            std::cerr << "ERR006 Value Doesn't Matches Type";
+                            exit(EXIT_FAILURE);
                         }
                     }
                     else
@@ -292,7 +337,49 @@ std::optional<node::Stmt> parser::parseStmt()
                 exit(EXIT_FAILURE);
             }
         }
-
+        else if (peek().value().type == Tokens::BOOL_LET)
+        {
+            consume();
+            if (peek().has_value() && peek().value().type == Tokens::IDENT)
+            {
+                auto var_ident = consume();
+                if (peek().has_value() && peek().value().type == Tokens::EQUALS)
+                {
+                    consume();
+                    if (auto node_expr = parseExpr(ANY_TYPE))
+                    {
+                        stmt_node = {{node::StmtBoolLet{var_ident, new node::Expr(node_expr.value())}}};
+                        if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
+                        {
+                            consume();
+                        }
+                        else
+                        {
+                            std::cerr << "ERR001 Invalid Syntax Expected ';'";
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                }
+                else
+                {
+                    stmt_node = {{node::StmtBoolLet{var_ident}}};
+                    if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
+                    {
+                        consume();
+                    }
+                    else
+                    {
+                        std::cerr << "ERR001 Invalid Syntax Expected ';'";
+                        exit(EXIT_FAILURE);
+                    }
+                }
+            }
+            else
+            {
+                std::cerr << "ERR002 Expected An Identifier";
+                exit(EXIT_FAILURE);
+            }
+        }
         else if (peek().value().type == Tokens::IDENT)
         {
             auto var_ident = consume();
@@ -326,11 +413,11 @@ std::optional<node::Stmt> parser::parseStmt()
                     }
                     else
                     {
-                        std::cerr << "ERR001 Invalid Syntax Expected String Literal";
+                        std::cerr << "ERR006 Value Doesn't Matches Type";
                         exit(EXIT_FAILURE);
                     }
                 }
-                else if (auto node_expr = parseExpr())
+                else if (auto node_expr = parseExpr(INT_TYPE))
                 {
                     stmt_node = {{node::StmtIntVar{var_ident, new node::Expr(node_expr.value())}}};
                     if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
@@ -342,6 +429,24 @@ std::optional<node::Stmt> parser::parseStmt()
                         std::cerr << "ERR001 Invalid Syntax Expected ';'";
                         exit(EXIT_FAILURE);
                     }
+                }
+                else if (auto node_expr = parseExpr(BOOL_TYPE))
+                {
+                    stmt_node = {{node::StmtBoolVar{var_ident, new node::Expr(node_expr.value())}}};
+                    if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
+                    {
+                        consume();
+                    }
+                    else
+                    {
+                        std::cerr << "ERR001 Invalid Syntax Expected ';'";
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                else 
+                {
+                    std::cerr << "ERR006 Value Doesn't Matches Type";
+                    exit(EXIT_FAILURE);
                 }
             }
             else

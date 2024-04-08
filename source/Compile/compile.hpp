@@ -43,5 +43,8 @@ private:
     static std::stringstream m_output; 
     static size_t m_stack_size;
     static std::unordered_map<std::string, Var> m_vars;
+
+    static uint64_t m_end_label_count;
+    static uint64_t m_false_label_count;
 };
 

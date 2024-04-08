@@ -1,5 +1,7 @@
-string x;
+bool x;
 
-x = "6 / 2 - 9 * 3";
+x = 123;
+x = "";
+x = "213";
 
 return x;

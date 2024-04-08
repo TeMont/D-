@@ -14,13 +14,17 @@ namespace node
     {
         Token str_lit;
     };
+    struct ExprBoolLit
+    {
+        Token bool_lit;
+    };
     struct ExprIdent
     {
         Token ident;
     };
     struct ValExpr
     {
-        std::variant<ExprIntLit, ExprStrLit, ExprIdent> var;
+        std::variant<ExprIntLit, ExprStrLit, ExprBoolLit, ExprIdent> var;
     };
 
     struct BinExprAdd
@@ -69,6 +73,12 @@ namespace node
         Expr* Expr;
     };
 
+    struct StmtBoolLet
+    {
+        Token ident;
+        Expr* Expr;
+    };
+
     struct StmtIntVar
     {
         Token ident;
@@ -81,9 +91,15 @@ namespace node
         Expr* Expr;
     };
 
+    struct StmtBoolVar
+    {
+        Token ident;
+        Expr* Expr;
+    };
+
     struct Stmt
     {
-        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtStrVar, StmtIntVar> var; 
+        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtStrVar, StmtIntVar, StmtBoolVar> var; 
     };
     
     struct Prog

@@ -29,6 +29,8 @@ bool LinkObjectFiles(std::string Path)
 size_t compiler::m_stack_size;
 std::stringstream compiler::m_output;
 std::unordered_map<std::string, compiler::Var> compiler::m_vars;
+uint64_t compiler::m_end_label_count = 0;
+uint64_t compiler::m_false_label_count = 0;
 
 void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType)
 {
@@ -91,6 +93,29 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 exit(EXIT_FAILURE);
             }
         }
+        void operator()(const node::ExprBoolLit &expr_bool)
+        {
+            if (ExpectedType == ANY_TYPE || ExpectedType == BOOL_TYPE)
+            {
+                if ((expr_bool.bool_lit.value.has_value()))
+                {
+                    if (expr_bool.bool_lit.value.value() == "false")
+                    {
+                        m_output << "\tmov rdx, 0\n";
+                    }
+                    else if (expr_bool.bool_lit.value.value() == "true")
+                    {
+                        m_output << "\tmov rdx, 1\n";
+                    }
+                }
+                push("rdx");
+            }
+            else
+            {
+                std::cerr << "ERR006 Value Doesn't Matches Type";
+                exit(EXIT_FAILURE);
+            }
+        }
     };
 
     ExprVisitor visitor(ExpectedType);
@@ -105,7 +130,7 @@ void compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
 
         ExprVisitor(std::string expectedType) : ExpectedType(std::move(expectedType)) {}
 
-        void operator()(const node::BinExprAdd* bin_expr_add)
+        void operator()(const node::BinExprAdd *bin_expr_add)
         {
             comp_expr(*bin_expr_add->fvl, ExpectedType);
             comp_expr(*bin_expr_add->svl, ExpectedType);
@@ -114,7 +139,7 @@ void compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
             m_output << "\tadd rdx, rdi\n";
             push("rdx");
         }
-        void operator()(const node::BinExprSub* bin_expr_sub)
+        void operator()(const node::BinExprSub *bin_expr_sub)
         {
             comp_expr(*bin_expr_sub->fvl, ExpectedType);
             comp_expr(*bin_expr_sub->svl, ExpectedType);
@@ -123,7 +148,7 @@ void compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
             m_output << "\tsub rdx, rdi\n";
             push("rdx");
         }
-        void operator()(const node::BinExprMul* bin_expr_mul)
+        void operator()(const node::BinExprMul *bin_expr_mul)
         {
             comp_expr(*bin_expr_mul->fvl, ExpectedType);
             comp_expr(*bin_expr_mul->svl, ExpectedType);
@@ -132,7 +157,7 @@ void compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
             m_output << "\timul rdx, rdi\n";
             push("rdx");
         }
-        void operator()(const node::BinExprDiv* bin_expr_div)
+        void operator()(const node::BinExprDiv *bin_expr_div)
         {
             comp_expr(*bin_expr_div->fvl, ExpectedType);
             comp_expr(*bin_expr_div->svl, ExpectedType);
@@ -158,12 +183,12 @@ void compiler::comp_expr(const node::Expr &expr, std::string ExpectedType)
 
         ExprVisitor(std::string expectedType) : ExpectedType(std::move(expectedType)) {}
 
-        void operator()(const node::BinExpr* BinExpr)
+        void operator()(const node::BinExpr *BinExpr)
         {
             comp_bin_expr(*BinExpr, ExpectedType);
         }
 
-        void operator()(const node::ValExpr* ValExpr)
+        void operator()(const node::ValExpr *ValExpr)
         {
             comp_val_expr(*ValExpr, ExpectedType);
         }
@@ -180,7 +205,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
         compiler *comp;
         void operator()(const node::StmtReturn &stmt_ret)
         {
-            comp->comp_expr(*stmt_ret.Expr, INT_TYPE);
+            comp->comp_expr(*stmt_ret.Expr, ANY_TYPE);
             pop("rcx");
             m_output << "\tcall ExitProcess"
                      << "\n";
@@ -199,7 +224,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 {
                     comp->comp_expr(*stmt_int_let.Expr, INT_TYPE);
                 }
-                else 
+                else
                 {
                     push("rdx");
                 }
@@ -215,26 +240,82 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             else
             {
                 m_vars.insert({stmt_str_let.ident.value.value(), Var{m_stack_size, STR_TYPE}});
-                
+
                 if (&stmt_str_let.Expr->var != nullptr)
                 {
                     comp->comp_expr(*stmt_str_let.Expr, STR_TYPE);
                 }
-                else 
+                else
                 {
                     push("rdx");
                 }
+            }
+        }
+        void operator()(const node::StmtBoolLet &stmt_bool_let)
+        {
+            if (m_vars.count(stmt_bool_let.ident.value.value()))
+            {
+                std::cerr << "ERR004 Identefier '" << stmt_bool_let.ident.value.value() << "' Is Already Declared";
+                exit(EXIT_FAILURE);
+            }
+            else
+            {
+                m_vars.insert({stmt_bool_let.ident.value.value(), Var{m_stack_size, BOOL_TYPE}});
+                if (&stmt_bool_let.Expr->var != nullptr)
+                {
+                    comp->comp_expr(*stmt_bool_let.Expr, ANY_TYPE);
+                }
+                else
+                {
+                    push("rdx");
+                }
+                pop("rdx");
+                m_output << "\tcmp rdx, 0\n";
+                m_output << "\tjle false" << m_false_label_count << "\n";
+                m_output << "\tmov rdx, 1\n";
+                m_output << "\tjmp end" << m_end_label_count << "\n";
+                m_output << "\tfalse" << m_false_label_count << ":\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\tend" << m_end_label_count << ":\n";
+                push("rdx");
+                ++m_end_label_count;
+                ++m_false_label_count;
             }
         }
         void operator()(const node::StmtIntVar &stmt_int_var)
         {
             if (m_vars.count(stmt_int_var.ident.value.value()))
             {
+                m_vars;
                 const auto &var = m_vars[stmt_int_var.ident.value.value()];
-                comp->comp_expr(*stmt_int_var.Expr, INT_TYPE);
-                pop("rdx");
-                m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
+                if (var.Type == INT_TYPE)
+                {
+                    comp->comp_expr(*stmt_int_var.Expr, INT_TYPE);
+                    pop("rdx");
+                    m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
+                }
+                else if (var.Type == BOOL_TYPE)
+                {
+                    comp->comp_expr(*stmt_int_var.Expr, ANY_TYPE);
+                    pop("rdx");
+                    m_output << "\tcmp rdx, 0\n";
+                    m_output << "\tjle false" << m_false_label_count << "\n";
+                    m_output << "\tmov rdx, 1\n";
+                    m_output << "\tjmp end" << m_end_label_count << "\n";
+                    m_output << "\tfalse" << m_false_label_count << ":\n";
+                    m_output << "\tmov rdx, 0\n";
+                    m_output << "\tend" << m_end_label_count << ":\n";
+                    m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
+                    ++m_end_label_count;
+                    ++m_false_label_count;
+                }
+                else
+                {
+                    std::cerr << "Value Doesnt Mathces Type";
+                    exit(EXIT_FAILURE);
+                }
             }
+
             else
             {
                 std::cerr << "ERR004 Identefier '" << stmt_int_var.ident.value.value() << "' Was Not Declared";
@@ -245,11 +326,61 @@ void compiler::comp_stmt(const node::Stmt &stmt)
         {
             if (m_vars.count(stmt_str_var.ident.value.value()))
             {
-                comp->comp_expr(*stmt_str_var.Expr, STR_TYPE);
+                const auto &var = m_vars[stmt_str_var.ident.value.value()];
+                if (var.Type == STR_TYPE)
+                {
+                    comp->comp_expr(*stmt_str_var.Expr, STR_TYPE);
+                    pop("rdx");
+                    m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
+                }
+                else if (var.Type == BOOL_TYPE)
+                {
+                    comp->comp_expr(*stmt_str_var.Expr, ANY_TYPE);
+                    pop("rdx");
+                    m_output << "\tcmp rdx, 0\n";
+                    m_output << "\tjle false" << m_false_label_count << "\n";
+                    m_output << "\tmov rdx, 1\n";
+                    m_output << "\tjmp end" << m_end_label_count << "\n";
+                    m_output << "\tfalse" << m_false_label_count << ":\n";
+                    m_output << "\tmov rdx, 0\n";
+                    m_output << "\tend" << m_end_label_count << ":\n";
+                    m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
+                    ++m_false_label_count;
+                    ++m_end_label_count;
+                }
+                else
+                {
+                    std::cerr << "Value Doesnt Mathces Type";
+                    exit(EXIT_FAILURE);
+                }
             }
             else
             {
                 std::cerr << "ERR004 Identefier '" << stmt_str_var.ident.value.value() << "' Was Not Declared";
+                exit(EXIT_FAILURE);
+            }
+        }
+        void operator()(const node::StmtBoolVar &stmt_bool_var)
+        {
+            if (m_vars.count(stmt_bool_var.ident.value.value()))
+            {
+                const auto &var = m_vars[stmt_bool_var.ident.value.value()];
+                comp->comp_expr(*stmt_bool_var.Expr, ANY_TYPE);
+                pop("rdx");
+                m_output << "\tcmp rdx, 0\n";
+                m_output << "\tjle false" << m_false_label_count << "\n";
+                m_output << "\tmov rdx, 1\n";
+                m_output << "\tjmp end" << m_end_label_count << "\n";
+                m_output << "\tfalse" << m_false_label_count << ":\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\tend" << m_end_label_count << ":\n";
+                m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
+                ++m_false_label_count;
+                ++m_end_label_count;
+            }
+            else
+            {
+                std::cerr << "ERR004 Identefier '" << stmt_bool_var.ident.value.value() << "' Was Not Declared";
                 exit(EXIT_FAILURE);
             }
         }
@@ -268,6 +399,7 @@ std::stringstream compiler::compile()
     }
 
     std::stringstream output = std::move(m_output);
+    m_vars;
     return output;
 }
 

@@ -8,29 +8,32 @@
 
 #define INT_TYPE "integer"
 #define STR_TYPE "string"
+#define BOOL_TYPE "bool"
 #define ANY_TYPE "any"
 
 enum Tokens
 {
-    RETURN,
     INT_LITERAL,
-    OUTPUT,
-    INPUT,
-    SEMICOLON,
-    STRING_LITERAL,
-    QOUTE,
-    LBRACKET,
-    RBRACKET,
-    LPAREN,
-    RPAREN,
-    IDENT,
     INT_LET,
+    STRING_LITERAL,
     STRING_LET,
+    BOOL_LITERAL,
+    BOOL_LET,
+    IDENT,
     EQUALS,
     PLUS,
     MINUS,
     MULT,
     DIV,
+    LPAREN,
+    RPAREN,
+    RETURN,
+    OUTPUT,
+    INPUT,
+    SEMICOLON,
+    QOUTE,
+    LBRACKET,
+    RBRACKET,
 };
 
 extern std::map<std::string, Tokens> TokensMap;
