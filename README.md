@@ -21,15 +21,17 @@ Dependencies: Nasm x86-64, GoLink
 
 ### Building
 Dependencies For Building: C++23
+```bash
 git clone https://github.com/TeMont/X-lang.git
 cd dust-lang
 mkdir build
 cd build
 cmake ..
 cmake --build .
-
+```
 # Code Example
 
+```c
 int x = 2;
 int y;
 int o;
@@ -38,11 +40,14 @@ y = x + 8 * 2;
 o = y / x;
 
 return o;
+```
 
 # Code Compile
 ### Terminal
+```bash
 ./XComp.exe input.xy
 ./result.exe
+```
 
 ### OUTPUT 
 9
