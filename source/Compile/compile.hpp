@@ -46,5 +46,6 @@ private:
 
     static uint64_t m_end_label_count;
     static uint64_t m_false_label_count;
+    static uint64_t m_true_label_count;
 };
 

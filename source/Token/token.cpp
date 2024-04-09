@@ -1,35 +1,47 @@
 #include "token.hpp"
 
 std::map<std::string, Tokens> TokensMap =
-{
-    {"return", RETURN},
-    {"int", INT_LET},
-    {"intLit", INT_LITERAL},
-    {"string", STRING_LET},
-    {"stringLit", STRING_LITERAL},
-    {"bool", BOOL_LET}, 
-    {"boolLit", BOOL_LITERAL}, 
-    {"stdOut", OUTPUT},
-    {"stdInp", INPUT},
-    {";", SEMICOLON},
-    {"\"", QOUTE},
-    {"{", LBRACKET},
-    {"}", RBRACKET},
-    {"(", LPAREN},
-    {")", RPAREN},
-    {"identifier", IDENT},
-    {"=", EQUALS},
-    {"+", PLUS},
-    {"-", MINUS},
-    {"*", MULT},
-    {"/", DIV},
+    {
+        {"return", RETURN},
+        {"int", INT_LET},
+        {"intLit", INT_LITERAL},
+        {"string", STRING_LET},
+        {"stringLit", STRING_LITERAL},
+        {"bool", BOOL_LET},
+        {"boolLit", BOOL_LITERAL},
+        {"stdOut", OUTPUT},
+        {"stdInp", INPUT},
+        {";", SEMICOLON},
+        {"\"", QOUTE},
+        {"{", LBRACKET},
+        {"}", RBRACKET},
+        {"(", LPAREN},
+        {")", RPAREN},
+        {"identifier", IDENT},
+        {"=", EQ},
+        {"+", PLUS},
+        {"-", MINUS},
+        {"*", MULT},
+        {"/", DIV},
+        {"==", EQEQ},
+        {"<", LESS},
+        {">", GREATER},
+        {"<=", LESSEQ},
+        {">=", GREATEQ},
+        {"!", NOT},
+        {"!=", NOTEQ},
+        {"||", OR},
+        {"&&", AND},
+        {"if", IF},
+        {"elif", ELIF},
+        {"else", ELSE},
 };
 
 std::vector<Token> tokenizer::tokenize()
 {
     std::vector<Token> tokens;
     std::string buffer;
-    
+
     while (peek().has_value())
     {
         if (std::isalpha(peek().value()))
@@ -66,7 +78,7 @@ std::vector<Token> tokenizer::tokenize()
             buffer.push_back(consume());
             while (peek().has_value() && std::isdigit(peek().value()))
             {
-                buffer.push_back(consume());  
+                buffer.push_back(consume());
             }
             tokens.push_back({TokensMap["intLit"], buffer});
             buffer.clear();
@@ -91,20 +103,32 @@ std::vector<Token> tokenizer::tokenize()
             buffer.push_back(consume());
             tokens.push_back({TokensMap[buffer]});
             buffer.clear();
-            
+
             continue;
         }
-        else 
+        else
         {
             buffer.push_back(consume());
             auto it = TokensMap.find(buffer);
             if (it != TokensMap.end())
             {
+                if (TokensMap[buffer] == Tokens::EQ || TokensMap[buffer] == Tokens::LESS || TokensMap[buffer] == Tokens::GREATER || TokensMap[buffer] == Tokens::NOT)
+                {
+                    if (peek().has_value())
+                    {
+                        std::string tempBuffer;
+                        tempBuffer.push_back(peek().value());
+                        if (tempBuffer == "=")
+                        {
+                            buffer.push_back(consume());
+                        }
+                    }
+                }
                 tokens.push_back({TokensMap[buffer]});
                 buffer.clear();
                 continue;
             }
-            else 
+            else
             {
                 std::cerr << "ERR001 Syntax Error";
                 exit(EXIT_FAILURE);
@@ -115,15 +139,15 @@ std::vector<Token> tokenizer::tokenize()
     return tokens;
 }
 
-std::optional<char> tokenizer::peek(int offset) const 
+std::optional<char> tokenizer::peek(int offset) const
 {
     if (m_index + offset >= m_src.length())
     {
         return {};
     }
-    else 
+    else
     {
-        return m_src[m_index+offset];
+        return m_src[m_index + offset];
     }
 }
 

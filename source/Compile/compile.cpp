@@ -31,6 +31,7 @@ std::stringstream compiler::m_output;
 std::unordered_map<std::string, compiler::Var> compiler::m_vars;
 uint64_t compiler::m_end_label_count = 0;
 uint64_t compiler::m_false_label_count = 0;
+uint64_t compiler::m_true_label_count = 0;
 
 void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType)
 {
@@ -168,6 +169,120 @@ void compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
             m_output << "\tidiv rdi\n";
             m_output << "\tmov rdx, rax\n";
             push("rdx");
+        }
+        void operator()(const node::EQCondition *bin_eq_cond)
+        {
+            comp_expr(*bin_eq_cond->fvl, ExpectedType);
+            comp_expr(*bin_eq_cond->svl, ExpectedType);
+            pop("rdi");
+            pop("rdx");
+            m_output << "\tcmp rdx, rdi\n";
+            m_output << "\tje true" << m_true_label_count << "\n";
+            m_output << "\tmov rdx, 0\n";
+            m_output << "\tjmp end" << m_end_label_count << "\n";
+            m_output << "\ttrue" << m_true_label_count << ":\n";
+            m_output << "\tmov rdx, 1\n";
+            m_output << "\tend" << m_end_label_count << ":\n";
+            push("rdx");
+
+            ++m_true_label_count;
+            ++m_end_label_count;
+        }
+        void operator()(const node::NotEQCondition *bin_not_eq_cond)
+        {
+            comp_expr(*bin_not_eq_cond->fvl, ExpectedType);
+            comp_expr(*bin_not_eq_cond->svl, ExpectedType);
+            pop("rdi");
+            pop("rdx");
+            m_output << "\tcmp rdx, rdi\n";
+            m_output << "\tjne true" << m_true_label_count << "\n";
+            m_output << "\tmov rdx, 0\n";
+            m_output << "\tjmp end" << m_end_label_count << "\n";
+            m_output << "\ttrue" << m_true_label_count << ":\n";
+            m_output << "\tmov rdx, 1\n";
+            m_output << "\tend" << m_end_label_count << ":\n";
+            push("rdx");
+
+            ++m_true_label_count;
+            ++m_end_label_count;
+        }
+        void operator()(const node::LessCondition *bin_less_cond)
+        {
+            comp_expr(*bin_less_cond->fvl, ExpectedType);
+            comp_expr(*bin_less_cond->svl, ExpectedType);
+            pop("rdi");
+            pop("rdx");
+            m_output << "\tcmp rdx, rdi\n";
+            m_output << "\tjl true" << m_true_label_count << "\n";
+            m_output << "\tmov rdx, 0\n";
+            m_output << "\tjmp end" << m_end_label_count << "\n";
+            m_output << "\ttrue" << m_true_label_count << ":\n";
+            m_output << "\tmov rdx, 1\n";
+            m_output << "\tend" << m_end_label_count << ":\n";
+            push("rdx");
+
+            ++m_true_label_count;
+            ++m_end_label_count;
+        }
+        void operator()(const node::GreaterCondition *bin_greater_cond)
+        {
+            comp_expr(*bin_greater_cond->fvl, ExpectedType);
+            comp_expr(*bin_greater_cond->svl, ExpectedType);
+            pop("rdi");
+            pop("rdx");
+            m_output << "\tcmp rdx, rdi\n";
+            m_output << "\tjg true" << m_true_label_count << "\n";
+            m_output << "\tmov rdx, 0\n";
+            m_output << "\tjmp end" << m_end_label_count << "\n";
+            m_output << "\ttrue" << m_true_label_count << ":\n";
+            m_output << "\tmov rdx, 1\n";
+            m_output << "\tend" << m_end_label_count << ":\n";
+            push("rdx");
+
+            ++m_true_label_count;
+            ++m_end_label_count;
+        }
+        void operator()(const node::EQLessCondition *bin_less_eq_cond)
+        {
+            comp_expr(*bin_less_eq_cond->fvl, ExpectedType);
+            comp_expr(*bin_less_eq_cond->svl, ExpectedType);
+            pop("rdi");
+            pop("rdx");
+            m_output << "\tcmp rdx, rdi\n";
+            m_output << "\tjle true" << m_true_label_count << "\n";
+            m_output << "\tmov rdx, 0\n";
+            m_output << "\tjmp end" << m_end_label_count << "\n";
+            m_output << "\ttrue" << m_true_label_count << ":\n";
+            m_output << "\tmov rdx, 1\n";
+            m_output << "\tend" << m_end_label_count << ":\n";
+            push("rdx");
+
+            ++m_true_label_count;
+            ++m_end_label_count;
+        }
+        void operator()(const node::EQGreaterCondition *bin_great_eq_cond)
+        {
+            comp_expr(*bin_great_eq_cond->fvl, ExpectedType);
+            comp_expr(*bin_great_eq_cond->svl, ExpectedType);
+            pop("rdi");
+            pop("rdx");
+            m_output << "\tcmp rdx, rdi\n";
+            m_output << "\tjge true" << m_true_label_count << "\n";
+            m_output << "\tmov rdx, 0\n";
+            m_output << "\tjmp end" << m_end_label_count << "\n";
+            m_output << "\ttrue" << m_true_label_count << ":\n";
+            m_output << "\tmov rdx, 1\n";
+            m_output << "\tend" << m_end_label_count << ":\n";
+            push("rdx");
+
+            ++m_true_label_count;
+            ++m_end_label_count;
+        }
+        void operator()(const node::AndCondition *bin_eq_cond)
+        {
+        }
+        void operator()(const node::OrCondition *bin_eq_cond)
+        {
         }
     };
 
@@ -383,6 +498,18 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 std::cerr << "ERR004 Identefier '" << stmt_bool_var.ident.value.value() << "' Was Not Declared";
                 exit(EXIT_FAILURE);
             }
+        }
+        void operator()(const node::StmtIf &stmt_if)
+        {
+            
+        }
+        void operator()(const node::StmtElIf &stmt_elif)
+        {
+            
+        }
+        void operator()(const node::StmtElse &stmt_else)
+        {
+            
         }
     };
     StmtVisitor visitor;

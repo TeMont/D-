@@ -32,11 +32,24 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
                 return {};
             }
         }
-        else if (peek().value().type == Tokens::STRING_LITERAL)
+        else if (peek().value().type == Tokens::STRING_LITERAL || peek().value().type == Tokens::QOUTE)
         {
+            if (peek().value().type == Tokens::QOUTE)
+            {
+                consume(); // QUOTE CONSUME
+            }
             if (ExpectedType == STR_TYPE || ExpectedType == ANY_TYPE)
             {
                 valExpr = {node::ExprStrLit{consume()}};
+                if (peek().value().type == Tokens::QOUTE)
+                {
+                    consume(); // QUOTE CONSUME
+                }
+                else
+                {
+                    std::cerr << "ERR001 Invalid Syntax Expected '\"'";
+                    exit(EXIT_FAILURE);
+                }
             }
             else
             {
@@ -133,6 +146,70 @@ std::optional<node::Expr> parser::parseExpr(std::string ExpectedType, uint8_t mi
                         div.svl = new node::Expr(expr_svl.value());
                         expr.var = new node::BinExprDiv(div);
                     }
+                    else if (opr.type == Tokens::EQEQ)
+                    {
+                        node::EQCondition eq;
+                        expr_fvl2 = expr_fvl;
+                        eq.fvl = new node::Expr(expr_fvl2);
+                        eq.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::EQCondition(eq);
+                    }
+                    else if (opr.type == Tokens::NOTEQ)
+                    {
+                        node::NotEQCondition NotEq;
+                        expr_fvl2 = expr_fvl;
+                        NotEq.fvl = new node::Expr(expr_fvl2);
+                        NotEq.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::NotEQCondition(NotEq);
+                    }
+                    else if (opr.type == Tokens::LESS)
+                    {
+                        node::LessCondition less;
+                        expr_fvl2 = expr_fvl;
+                        less.fvl = new node::Expr(expr_fvl2);
+                        less.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::LessCondition(less);
+                    }
+                    else if (opr.type == Tokens::LESSEQ)
+                    {
+                        node::EQLessCondition lessEq;
+                        expr_fvl2 = expr_fvl;
+                        lessEq.fvl = new node::Expr(expr_fvl2);
+                        lessEq.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::EQLessCondition(lessEq);
+                    }
+                    else if (opr.type == Tokens::GREATER)
+                    {
+                        node::GreaterCondition greater;
+                        expr_fvl2 = expr_fvl;
+                        greater.fvl = new node::Expr(expr_fvl2);
+                        greater.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::GreaterCondition(greater);
+                    }
+                    else if (opr.type == Tokens::GREATEQ)
+                    {
+                        node::EQGreaterCondition greatEq;
+                        expr_fvl2 = expr_fvl;
+                        greatEq.fvl = new node::Expr(expr_fvl2);
+                        greatEq.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::EQGreaterCondition(greatEq);
+                    }
+                    else if (opr.type == Tokens::AND)
+                    {
+                        node::AndCondition And;
+                        expr_fvl2 = expr_fvl;
+                        And.fvl = new node::Expr(expr_fvl2);
+                        And.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::AndCondition(And);
+                    }
+                    else if (opr.type == Tokens::OR)
+                    {
+                        node::OrCondition Or;
+                        expr_fvl2 = expr_fvl;
+                        Or.fvl = new node::Expr(expr_fvl2);
+                        Or.svl = new node::Expr(expr_svl.value());
+                        expr.var = new node::OrCondition(Or);
+                    }
                     expr_fvl.var = new node::BinExpr(expr);
                 }
                 else
@@ -168,17 +245,14 @@ std::optional<node::Stmt> parser::parseStmt()
                 if (auto node_expr = parseExpr(STR_TYPE))
                 {
                     stmt_node = {{node::StmtReturn{new node::Expr(node_expr.value())}}};
-                    if (peek().value().type == Tokens::QOUTE)
+                    if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                     {
-                        if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-                        {
-                            consume();
-                        }
-                        else
-                        {
-                            std::cerr << "ERR001 Invalid Syntax Expected ';'\n";
-                            exit(EXIT_FAILURE);
-                        }
+                        consume();
+                    }
+                    else
+                    {
+                        std::cerr << "ERR001 Invalid Syntax Expected ';'\n";
+                        exit(EXIT_FAILURE);
                     }
                 }
                 else
@@ -208,7 +282,7 @@ std::optional<node::Stmt> parser::parseStmt()
             if (peek().has_value() && peek().value().type == Tokens::IDENT)
             {
                 auto var_ident = consume();
-                if (peek().has_value() && peek().value().type == Tokens::EQUALS)
+                if (peek().has_value() && peek().value().type == Tokens::EQ)
                 {
                     consume();
                     if (auto node_expr = parseExpr(INT_TYPE))
@@ -256,31 +330,21 @@ std::optional<node::Stmt> parser::parseStmt()
             if (peek().has_value() && peek().value().type == Tokens::IDENT)
             {
                 auto var_ident = consume();
-                if (peek().has_value() && peek().value().type == Tokens::EQUALS)
+                if (peek().has_value() && peek().value().type == Tokens::EQ)
                 {
                     consume();
                     if (peek().has_value() && peek().value().type == Tokens::QOUTE)
                     {
-                        consume();
                         if (auto node_expr = parseExpr(STR_TYPE))
                         {
                             stmt_node = {{node::StmtStrLet{var_ident, new node::Expr(node_expr.value())}}};
-                            if (peek().has_value() && peek().value().type == Tokens::QOUTE)
+                            if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                             {
                                 consume();
-                                if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-                                {
-                                    consume();
-                                }
-                                else
-                                {
-                                    std::cerr << "ERR001 Invalid Syntax Expected ';'";
-                                    exit(EXIT_FAILURE);
-                                }
                             }
                             else
                             {
-                                std::cerr << "ERR001 Invalid Syntax Expected '\"'";
+                                std::cerr << "ERR001 Invalid Syntax Expected ';'";
                                 exit(EXIT_FAILURE);
                             }
                         }
@@ -343,7 +407,7 @@ std::optional<node::Stmt> parser::parseStmt()
             if (peek().has_value() && peek().value().type == Tokens::IDENT)
             {
                 auto var_ident = consume();
-                if (peek().has_value() && peek().value().type == Tokens::EQUALS)
+                if (peek().has_value() && peek().value().type == Tokens::EQ)
                 {
                     consume();
                     if (auto node_expr = parseExpr(ANY_TYPE))
@@ -383,31 +447,22 @@ std::optional<node::Stmt> parser::parseStmt()
         else if (peek().value().type == Tokens::IDENT)
         {
             auto var_ident = consume();
-            if (peek().value().type == Tokens::EQUALS)
+            if (peek().value().type == Tokens::EQ)
             {
                 consume();
                 if (peek().has_value() && peek().value().type == Tokens::QOUTE)
                 {
-                    consume();
                     if (auto node_expr = parseExpr(STR_TYPE))
                     {
                         stmt_node = {{node::StmtStrVar{var_ident, new node::Expr(node_expr.value())}}};
-                        if (peek().has_value() && peek().value().type == Tokens::QOUTE)
+
+                        if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                         {
                             consume();
-                            if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-                            {
-                                consume();
-                            }
-                            else
-                            {
-                                std::cerr << "ERR001 Invalid Syntax Expected ';'";
-                                exit(EXIT_FAILURE);
-                            }
                         }
                         else
                         {
-                            std::cerr << "ERR001 Invalid Syntax Expected '\"'";
+                            std::cerr << "ERR001 Invalid Syntax Expected ';'";
                             exit(EXIT_FAILURE);
                         }
                     }
@@ -443,7 +498,7 @@ std::optional<node::Stmt> parser::parseStmt()
                         exit(EXIT_FAILURE);
                     }
                 }
-                else 
+                else
                 {
                     std::cerr << "ERR006 Value Doesn't Matches Type";
                     exit(EXIT_FAILURE);

@@ -6,6 +6,7 @@
 namespace node 
 {
     struct Expr;
+    struct Stmt;
     struct ExprIntLit
     {
         Token int_lit;
@@ -47,15 +48,73 @@ namespace node
         Expr* fvl;
         Expr* svl;
     };
+    struct EQCondition
+    {
+        Expr* fvl;
+        Expr* svl;
+    };
+    struct NotEQCondition
+    {
+        Expr* fvl;
+        Expr* svl;
+    };
+    struct LessCondition
+    {
+        Expr* fvl;
+        Expr* svl;
+    };
+    struct GreaterCondition
+    {
+        Expr* fvl;
+        Expr* svl;
+    };
+    struct EQLessCondition
+    {
+        Expr* fvl;
+        Expr* svl;
+    };
+    struct EQGreaterCondition
+    {
+        Expr* fvl;
+        Expr* svl;
+    };
+    struct AndCondition
+    {
+        Expr* fvl;
+        Expr* svl;
+    };
+    struct OrCondition
+    {
+        Expr* fvl;
+        Expr* svl;
+    };    
     struct BinExpr
     {
-        std::variant<BinExprAdd*, BinExprSub*, BinExprMul*, BinExprDiv*> var;
+        std::variant<BinExprAdd*, BinExprSub*, BinExprMul*, BinExprDiv*, EQCondition*, NotEQCondition*, LessCondition*, GreaterCondition*, EQLessCondition*, EQGreaterCondition*, AndCondition*, OrCondition*> var;
     };
+
     struct Expr
     {
         std::variant<ValExpr*, BinExpr*> var;
     };
-    
+
+    struct StmtIf
+    {
+        Expr* Cond;
+        std::vector<Stmt> statements;
+    };
+
+    struct StmtElIf
+    {
+        Expr* Cond;
+        std::vector<Stmt> statements;
+    };
+
+    struct StmtElse
+    {
+        std::vector<Stmt> statements;
+    };    
+
     struct StmtReturn
     {
         Expr* Expr;
@@ -99,7 +158,7 @@ namespace node
 
     struct Stmt
     {
-        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtStrVar, StmtIntVar, StmtBoolVar> var; 
+        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtStrVar, StmtIntVar, StmtBoolVar, StmtIf, StmtElIf, StmtElse> var; 
     };
     
     struct Prog
@@ -135,14 +194,29 @@ private:
     {
         switch (op)
         {
-        case Tokens::PLUS:
-        case Tokens::MINUS:
+        case Tokens::OR:
             return 1;
             break;
-
+        case Tokens::AND:
+            return 2;
+            break;
+        case Tokens::EQEQ:
+        case Tokens::NOTEQ:
+            return 3;
+            break;
+        case Tokens::LESS:
+        case Tokens::LESSEQ:
+        case Tokens::GREATER:
+        case Tokens::GREATEQ:
+            return 4;
+            break;
+        case Tokens::PLUS:
+        case Tokens::MINUS:
+            return 5;
+            break;
         case Tokens::MULT:
         case Tokens::DIV:
-            return 2;
+            return 6;
             break;
         
         default:
