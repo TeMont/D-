@@ -23,7 +23,7 @@ Dependencies: Nasm x86-64, GoLink
 Dependencies For Building: C++23
 ```bash
 git clone https://github.com/TeMont/X-lang.git
-cd dust-lang
+cd X-lang
 mkdir build
 cd build
 cmake ..
