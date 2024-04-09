@@ -10,9 +10,9 @@ The compiler is made using NASM & GoLink.
 - [X] Integer Variables
 - [X] Bool Variables
 - [X] Math operations with precedence
+- [X] Logical Operators
 - [ ] Float Variables
 - [ ] Const Variables
-- [ ] Logical Operators
 - [ ] If Statement
 - [ ] Loops
 
