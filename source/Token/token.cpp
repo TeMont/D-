@@ -109,6 +109,10 @@ std::vector<Token> tokenizer::tokenize()
         else
         {
             buffer.push_back(consume());
+            if ((buffer == "&" && peek().has_value() && peek().value() == '&') || (buffer == "|" && peek().has_value() && peek().value() == '|'))
+            {
+                buffer.push_back(consume());
+            }
             auto it = TokensMap.find(buffer);
             if (it != TokensMap.end())
             {

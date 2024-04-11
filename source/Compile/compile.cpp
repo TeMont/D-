@@ -278,11 +278,45 @@ void compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
             ++m_true_label_count;
             ++m_end_label_count;
         }
-        void operator()(const node::AndCondition *bin_eq_cond)
+        void operator()(const node::AndCondition *bin_and_cond)
         {
+            comp_expr(*bin_and_cond->fvl, ExpectedType);
+            comp_expr(*bin_and_cond->svl, ExpectedType);
+            pop("rdi");
+            pop("rdx");
+            m_output << "\tcmp rdx, 0\n";
+            m_output << "\tjle false" << m_false_label_count << "\n";
+            m_output << "\tcmp rdi, 0\n";
+            m_output << "\tjle false" << m_false_label_count << "\n";           
+            m_output << "\tmov rdx, 1\n";
+            m_output << "\tjmp end" << m_end_label_count << "\n";
+            m_output << "\tfalse" << m_false_label_count << ":\n";
+            m_output << "\tmov rdx, 0\n";
+            m_output << "\tend" << m_end_label_count << ":\n";
+            push("rdx");
+
+            ++m_false_label_count;
+            ++m_end_label_count;
         }
-        void operator()(const node::OrCondition *bin_eq_cond)
+        void operator()(const node::OrCondition *bin_or_cond)
         {
+            comp_expr(*bin_or_cond->fvl, ExpectedType);
+            comp_expr(*bin_or_cond->svl, ExpectedType);
+            pop("rdi");
+            pop("rdx");
+            m_output << "\tcmp rdx, 0\n";
+            m_output << "\tje true" << m_true_label_count << "\n";
+            m_output << "\tcmp rdi, 0\n";
+            m_output << "\tje true" << m_true_label_count << "\n";
+            m_output << "\tmov rdx, 0\n";
+            m_output << "\tjmp end" << m_end_label_count << "\n";
+            m_output << "\ttrue" << m_true_label_count << ":\n";
+            m_output << "\tmov rdx, 1\n";
+            m_output << "\tend" << m_end_label_count << ":\n";
+            push("rdx");
+
+            ++m_true_label_count;
+            ++m_end_label_count;
         }
     };
 
