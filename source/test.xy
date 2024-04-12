@@ -1,7 +1,11 @@
 bool x;
-int y = 2;
+int y = 3;
+x = 1 > 0;
 
-x = y && 1 || 0 || 0;
+if (x)
+{
+    y = 1 + 1;
+}
 
 
-return x;
+return y;

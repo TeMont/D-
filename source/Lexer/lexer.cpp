@@ -276,6 +276,55 @@ std::optional<node::Stmt> parser::parseStmt()
                 }
             }
         }
+        else if (peek().value().type == Tokens::IF)
+        {
+            consume();
+            if (peek().has_value() && peek().value().type == Tokens::LPAREN)
+            {
+                consume();
+                if (auto cond = parseExpr(ANY_TYPE))
+                {
+                    if (peek().has_value() && peek().value().type == Tokens::RPAREN)
+                    {
+                        consume();
+                        if (peek().has_value() && peek().value().type == Tokens::LBRACKET)
+                        {
+                            consume();
+                            std::vector<node::Stmt> stmts;
+                            while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
+                            {
+                                if (auto stmt = parseStmt())
+                                {
+                                    stmts.push_back(stmt.value());
+                                }
+                            }
+                            consume();
+                            stmt_node = {{node::StmtIf{new node::Expr(cond.value()), stmts}}};
+                        }
+                        else
+                        {
+                            std::cerr << "ERR001 Invalid Syntax Expected '{'\n";
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                    else
+                    {
+                        std::cerr << "ERR001 Invalid Syntax Expected ')'\n";
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                else
+                {
+                    std::cerr << "ERR007 Expected Condition\n";
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else
+            {
+                std::cerr << "ERR001 Invalid Syntax Expected '('\n";
+                exit(EXIT_FAILURE);
+            }
+        }
         else if (peek().value().type == Tokens::INT_LET)
         {
             consume();

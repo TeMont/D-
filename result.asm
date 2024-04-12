@@ -12,60 +12,46 @@ _start:
 	mov rdx, 0
 	end0:
 	push rdx
-	mov rdx, 2
+	mov rdx, 3
 	push rdx
-	push QWORD [rsp + 0]
 	mov rdx, 1
+	push rdx
+	mov rdx, 0
 	push rdx
 	pop rdi
 	pop rdx
-	cmp rdx, 0
-	jle false1
-	cmp rdi, 0
-	jle false1
-	mov rdx, 1
+	cmp rdx, rdi
+	jg true0
+	mov rdx, 0
 	jmp end1
-	false1:
-	mov rdx, 0
-	end1:
-	push rdx
-	mov rdx, 0
-	push rdx
-	pop rdi
-	pop rdx
-	cmp rdx, 0
-	je true0
-	cmp rdi, 0
-	je true0
-	mov rdx, 0
-	jmp end2
 	true0:
 	mov rdx, 1
-	end2:
+	end1:
 	push rdx
-	mov rdx, 0
-	push rdx
-	pop rdi
 	pop rdx
 	cmp rdx, 0
-	je true1
-	cmp rdi, 0
-	je true1
-	mov rdx, 0
-	jmp end3
-	true1:
+	jle false1
 	mov rdx, 1
-	end3:
-	push rdx
+	jmp end2
+	false1:
+	mov rdx, 0
+	end2:
+	mov [rsp + 8], rdx
+	push QWORD [rsp + 8]
 	pop rdx
 	cmp rdx, 0
 	jle false2
 	mov rdx, 1
-	jmp end4
+	push rdx
+	mov rdx, 1
+	push rdx
+	pop rdi
+	pop rdx
+	add rdx, rdi
+	push rdx
+	pop rdx
+	mov [rsp + 0], rdx
 	false2:
-	mov rdx, 0
-	end4:
-	mov [rsp + 8], rdx
-	push QWORD [rsp + 8]
+	push QWORD [rsp + 0]
 	pop rcx
 	call ExitProcess

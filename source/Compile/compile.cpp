@@ -351,13 +351,34 @@ void compiler::comp_stmt(const node::Stmt &stmt)
 {
     struct StmtVisitor
     {
-        compiler *comp;
         void operator()(const node::StmtReturn &stmt_ret)
         {
-            comp->comp_expr(*stmt_ret.Expr, ANY_TYPE);
+            comp_expr(*stmt_ret.Expr, ANY_TYPE);
             pop("rcx");
-            m_output << "\tcall ExitProcess"
-                     << "\n";
+            m_output << "\tcall ExitProcess" << "\n";
+        }
+        void operator()(const node::StmtIf &stmt_if)
+        {
+            comp_expr(*stmt_if.Cond, ANY_TYPE);
+            pop("rdx");
+            m_output << "\tcmp rdx, 0\n";
+            m_output << "\tjle false" << m_false_label_count << "\n";
+            for (int i = 0; i < stmt_if.statements.size(); ++i)
+            {
+                comp_stmt(stmt_if.statements[i]);
+            }
+            m_output << "\tfalse" << m_false_label_count << ":\n";
+
+            ++m_false_label_count;
+            ++m_end_label_count;
+        }
+        void operator()(const node::StmtElIf &stmt_elif)
+        {
+            
+        }
+        void operator()(const node::StmtElse &stmt_else)
+        {
+            
         }
         void operator()(const node::StmtIntLet &stmt_int_let)
         {
@@ -371,7 +392,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 m_vars.insert({stmt_int_let.ident.value.value(), Var{m_stack_size, INT_TYPE}});
                 if (&stmt_int_let.Expr->var != nullptr)
                 {
-                    comp->comp_expr(*stmt_int_let.Expr, INT_TYPE);
+                    comp_expr(*stmt_int_let.Expr, INT_TYPE);
                 }
                 else
                 {
@@ -392,7 +413,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
 
                 if (&stmt_str_let.Expr->var != nullptr)
                 {
-                    comp->comp_expr(*stmt_str_let.Expr, STR_TYPE);
+                    comp_expr(*stmt_str_let.Expr, STR_TYPE);
                 }
                 else
                 {
@@ -412,7 +433,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 m_vars.insert({stmt_bool_let.ident.value.value(), Var{m_stack_size, BOOL_TYPE}});
                 if (&stmt_bool_let.Expr->var != nullptr)
                 {
-                    comp->comp_expr(*stmt_bool_let.Expr, ANY_TYPE);
+                    comp_expr(*stmt_bool_let.Expr, ANY_TYPE);
                 }
                 else
                 {
@@ -439,13 +460,13 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 const auto &var = m_vars[stmt_int_var.ident.value.value()];
                 if (var.Type == INT_TYPE)
                 {
-                    comp->comp_expr(*stmt_int_var.Expr, INT_TYPE);
+                    comp_expr(*stmt_int_var.Expr, INT_TYPE);
                     pop("rdx");
                     m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
                 }
                 else if (var.Type == BOOL_TYPE)
                 {
-                    comp->comp_expr(*stmt_int_var.Expr, ANY_TYPE);
+                    comp_expr(*stmt_int_var.Expr, ANY_TYPE);
                     pop("rdx");
                     m_output << "\tcmp rdx, 0\n";
                     m_output << "\tjle false" << m_false_label_count << "\n";
@@ -478,13 +499,13 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 const auto &var = m_vars[stmt_str_var.ident.value.value()];
                 if (var.Type == STR_TYPE)
                 {
-                    comp->comp_expr(*stmt_str_var.Expr, STR_TYPE);
+                    comp_expr(*stmt_str_var.Expr, STR_TYPE);
                     pop("rdx");
                     m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
                 }
                 else if (var.Type == BOOL_TYPE)
                 {
-                    comp->comp_expr(*stmt_str_var.Expr, ANY_TYPE);
+                    comp_expr(*stmt_str_var.Expr, ANY_TYPE);
                     pop("rdx");
                     m_output << "\tcmp rdx, 0\n";
                     m_output << "\tjle false" << m_false_label_count << "\n";
@@ -514,7 +535,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             if (m_vars.count(stmt_bool_var.ident.value.value()))
             {
                 const auto &var = m_vars[stmt_bool_var.ident.value.value()];
-                comp->comp_expr(*stmt_bool_var.Expr, ANY_TYPE);
+                comp_expr(*stmt_bool_var.Expr, ANY_TYPE);
                 pop("rdx");
                 m_output << "\tcmp rdx, 0\n";
                 m_output << "\tjle false" << m_false_label_count << "\n";
@@ -532,18 +553,6 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 std::cerr << "ERR004 Identefier '" << stmt_bool_var.ident.value.value() << "' Was Not Declared";
                 exit(EXIT_FAILURE);
             }
-        }
-        void operator()(const node::StmtIf &stmt_if)
-        {
-            
-        }
-        void operator()(const node::StmtElIf &stmt_elif)
-        {
-            
-        }
-        void operator()(const node::StmtElse &stmt_else)
-        {
-            
         }
     };
     StmtVisitor visitor;
