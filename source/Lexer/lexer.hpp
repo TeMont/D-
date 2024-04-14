@@ -98,22 +98,31 @@ namespace node
         std::variant<ValExpr*, BinExpr*> var;
     };
 
+    struct IfPred;
+
     struct StmtIf
     {
         Expr* Cond;
         std::vector<Stmt> statements;
+        std::optional<IfPred*> pred;
     };
 
     struct StmtElIf
     {
         Expr* Cond;
         std::vector<Stmt> statements;
+        std::optional<IfPred*> pred;
     };
 
     struct StmtElse
     {
         std::vector<Stmt> statements;
     };    
+
+    struct IfPred
+    {
+        std::variant<StmtElIf*, StmtElse*> var;
+    };
 
     struct StmtReturn
     {
@@ -158,7 +167,7 @@ namespace node
 
     struct Stmt
     {
-        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtStrVar, StmtIntVar, StmtBoolVar, StmtIf, StmtElIf, StmtElse> var; 
+        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtStrVar, StmtIntVar, StmtBoolVar, StmtIf> var; 
     };
     
     struct Prog
@@ -178,6 +187,8 @@ public:
     std::optional<node::BinExpr> parseBinExpr(std::string ExpectedType);
 
     std::optional<node::ValExpr> parseValExpr(std::string ExpectedType);
+
+    std::optional<node::IfPred> parse_if_pred();
 
     std::optional<node::Stmt> parseStmt();
 
@@ -226,5 +237,6 @@ private:
 
     const std::vector<Token> m_tokens;
     size_t m_index = 0;
+    node::Prog prog;
 };
 

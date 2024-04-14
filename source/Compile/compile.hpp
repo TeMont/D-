@@ -29,8 +29,18 @@ private:
 
     static void comp_val_expr(const node::ValExpr& expr, std::string ExpectedType);
 
+    static void comp_if_pred(const node::IfPred &pred, std::string end_label);
+
     static void comp_stmt(const node::Stmt& stmt);
-    
+
+
+    static std::string create_label()
+    {
+        std::stringstream ss;
+        ss << "label" << label_count;
+        label_count++;
+        return ss.str();
+    }    
     
     struct Var
     {
@@ -44,8 +54,6 @@ private:
     static size_t m_stack_size;
     static std::unordered_map<std::string, Var> m_vars;
 
-    static uint64_t m_end_label_count;
-    static uint64_t m_false_label_count;
-    static uint64_t m_true_label_count;
+    static uint64_t label_count;
 };
 

@@ -2,56 +2,61 @@ section .text
 global _start
 extern ExitProcess
 _start:
+;;	if
+	mov rdx, 0
 	push rdx
 	pop rdx
 	cmp rdx, 0
-	jle false0
-	mov rdx, 1
-	jmp end0
-	false0:
-	mov rdx, 0
-	end0:
-	push rdx
-	mov rdx, 3
-	push rdx
+	jle label0
+;;	return
 	mov rdx, 1
 	push rdx
-	mov rdx, 0
-	push rdx
-	pop rdi
-	pop rdx
-	cmp rdx, rdi
-	jg true0
-	mov rdx, 0
-	jmp end1
-	true0:
-	mov rdx, 1
-	end1:
-	push rdx
-	pop rdx
-	cmp rdx, 0
-	jle false1
-	mov rdx, 1
-	jmp end2
-	false1:
-	mov rdx, 0
-	end2:
-	mov [rsp + 8], rdx
-	push QWORD [rsp + 8]
-	pop rdx
-	cmp rdx, 0
-	jle false2
-	mov rdx, 1
-	push rdx
-	mov rdx, 1
-	push rdx
-	pop rdi
-	pop rdx
-	add rdx, rdi
-	push rdx
-	pop rdx
-	mov [rsp + 0], rdx
-	false2:
-	push QWORD [rsp + 0]
 	pop rcx
 	call ExitProcess
+;;	/return
+;;	/if
+	jmp label1
+	label0:
+;;	elif
+	mov rdx, 0
+	push rdx
+	pop rdx
+	cmp rdx, 0
+	jle label2
+;;	return
+	mov rdx, 2
+	push rdx
+	pop rcx
+	call ExitProcess
+;;	/return
+;;	/elif
+label2:
+;;	elif
+	mov rdx, 1
+	push rdx
+	pop rdx
+	cmp rdx, 0
+	jle label3
+;;	return
+	mov rdx, 4
+	push rdx
+	pop rcx
+	call ExitProcess
+;;	/return
+;;	/elif
+label3:
+;;	else
+;;	return
+	mov rdx, 5
+	push rdx
+	pop rcx
+	call ExitProcess
+;;	/return
+;;	/else
+	label1:
+;;	return
+	mov rdx, 10
+	push rdx
+	pop rcx
+	call ExitProcess
+;;	/return

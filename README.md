@@ -12,8 +12,8 @@ The compiler is made using NASM & GoLink.
 - [X] Math operations with precedence
 - [X] Logical Operators
 - [X] If Statement
-- [ ] Elif Statement
-- [ ] Else Statement
+- [X] Elif Statement
+- [X] Else Statement
 - [ ] Float Variables
 - [ ] Const Variables
 - [ ] Loops

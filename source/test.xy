@@ -1,11 +1,18 @@
-bool x;
-int y = 3;
-x = 1 > 0;
-
-if (x)
+if (0)
 {
-    y = 1 + 1;
+    return 1;
+}
+elif (0)
+{
+    return 2;
+}
+elif (1)
+{
+    return 4;
+}
+else
+{
+    return 5;
 }
 
-
-return y;
+return 10;
