@@ -1,18 +1,12 @@
-if (0)
-{
-    return 1;
-}
-elif (0)
-{
-    return 2;
-}
-elif (1)
-{
-    return 4;
-}
-else
-{
-    return 5;
-}
+int x;
 
-return 10;
+x = 1;
+// x = 100;
+/* x = 200; 
+return 2;
+return 25;
+return 23;
+*/
+
+
+return x;

@@ -109,6 +109,36 @@ std::vector<Token> tokenizer::tokenize()
         else
         {
             buffer.push_back(consume());
+            if (buffer == "/" && peek().has_value() && peek().value() == '/')
+            {
+                consume();
+                while (peek().has_value() && peek().value() != '\n')
+                {
+                    consume();
+                }
+                buffer.clear();
+                continue;
+            }
+            if (buffer == "/" && peek().has_value() && peek().value() == '*')
+            {
+                consume(); // consume '*'
+                while (peek().has_value() && peek().value() != '*' && peek(1).value() != '/')
+                {
+                    consume();
+                }
+
+                if (peek().has_value())
+                {
+                    consume(); // consume '*'
+                }
+                if (peek().has_value())
+                {
+                    consume(); // consume '/'
+                }
+
+                buffer.clear();
+                continue;
+            }
             if ((buffer == "&" && peek().has_value() && peek().value() == '&') || (buffer == "|" && peek().has_value() && peek().value() == '|'))
             {
                 buffer.push_back(consume());

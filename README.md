@@ -14,9 +14,13 @@ The compiler is made using NASM & GoLink.
 - [X] If Statement
 - [X] Elif Statement
 - [X] Else Statement
+- [X] One-Line Comments
+- [X] Multi-Line Comments
 - [ ] Float Variables
 - [ ] Const Variables
 - [ ] Loops
+- [ ] Output
+- [ ] Input
 
 # GUIDE
 Dependencies: Nasm x86-64, GoLink
