@@ -42,6 +42,7 @@ std::vector<Token> tokenizer::tokenize()
     std::vector<Token> tokens;
     std::string buffer;
 
+
     while (peek().has_value())
     {
         if (std::isalpha(peek().value()))
@@ -94,69 +95,77 @@ std::vector<Token> tokenizer::tokenize()
             buffer.push_back(consume());
             tokens.push_back({TokensMap[buffer]});
             buffer.clear();
+
             while (peek().has_value() && peek().value() != '"')
             {
                 buffer.push_back(consume());
             }
-            tokens.push_back({TokensMap["stringLit"], buffer});
-            buffer.clear();
-            buffer.push_back(consume());
-            tokens.push_back({TokensMap[buffer]});
-            buffer.clear();
 
+            if (peek().has_value() && peek().value() == '\n')
+            {
+                tokens.push_back({TokensMap["stringLit"], buffer});
+                buffer.clear();
+
+                buffer.push_back(consume()); // consume '"'
+                tokens.push_back({TokensMap[buffer]});
+                buffer.clear();
+            }
+            else
+            {
+                std::cerr << "ERR001 Syntax Error Expected '\"'";
+                exit(EXIT_FAILURE);
+            }
+
+            continue;
+        }
+        else if (peek().value() == '/' && peek(1).has_value() && peek(1).value() == '/') // ONE-LINE COMMENT
+        {
+            consume(); // consume '/'
+            consume(); // consume '/'
+            while (peek().has_value() && peek().value() != '\n')
+            {
+                consume();
+            }
+            continue;
+        }
+        else if (peek().value() == '/' && peek(1).has_value() && peek(1).value() == '*') // MULTI-LINE COMMENT
+        {
+            consume(); // consume '/'
+            consume(); // consume '*'
+            while (peek().has_value() && peek().value() != '*' && peek(1).value() != '/')
+            {
+                consume();
+            }
+
+            if (peek().has_value() && peek(1).has_value())
+            {
+                consume(); // consume '*'
+                consume(); // consume '/'
+            }
+            else
+            {
+                std::cerr << "Expected end of multi-line comment";
+                exit(EXIT_FAILURE);
+            }
             continue;
         }
         else
         {
             buffer.push_back(consume());
-            if (buffer == "/" && peek().has_value() && peek().value() == '/')
-            {
-                consume();
-                while (peek().has_value() && peek().value() != '\n')
-                {
-                    consume();
-                }
-                buffer.clear();
-                continue;
-            }
-            if (buffer == "/" && peek().has_value() && peek().value() == '*')
-            {
-                consume(); // consume '*'
-                while (peek().has_value() && peek().value() != '*' && peek(1).value() != '/')
-                {
-                    consume();
-                }
-
-                if (peek().has_value())
-                {
-                    consume(); // consume '*'
-                }
-                if (peek().has_value())
-                {
-                    consume(); // consume '/'
-                }
-
-                buffer.clear();
-                continue;
-            }
-            if ((buffer == "&" && peek().has_value() && peek().value() == '&') || (buffer == "|" && peek().has_value() && peek().value() == '|'))
-            {
-                buffer.push_back(consume());
-            }
             auto it = TokensMap.find(buffer);
             if (it != TokensMap.end())
             {
-                if (TokensMap[buffer] == Tokens::EQ || TokensMap[buffer] == Tokens::LESS || TokensMap[buffer] == Tokens::GREATER || TokensMap[buffer] == Tokens::NOT)
+                if (peek().has_value())
                 {
-                    if (peek().has_value())
+                    if (peek().value() == '=')
                     {
-                        std::string tempBuffer;
-                        tempBuffer.push_back(peek().value());
-                        if (tempBuffer == "=")
-                        {
-                            buffer.push_back(consume());
-                        }
+                        buffer.push_back(consume());
                     }
+                }
+                auto it2 = TokensMap.find(buffer);
+                if (it2 == TokensMap.end())
+                {
+                    buffer.pop_back();
                 }
                 tokens.push_back({TokensMap[buffer]});
                 buffer.clear();
@@ -164,7 +173,7 @@ std::vector<Token> tokenizer::tokenize()
             }
             else
             {
-                std::cerr << "ERR001 Syntax Error";
+                std::cerr << "ERR001 Syntax Error Unexpected '" << buffer << "'";
                 exit(EXIT_FAILURE);
             }
         }

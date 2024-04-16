@@ -59,7 +59,7 @@ struct Token
 class tokenizer
 {
 public:
-    inline tokenizer(std::string source) : m_src(std::move(source)){}
+    inline tokenizer(const std::string source) : m_src(std::move(source)){}
 
     std::vector<Token> tokenize();
 
