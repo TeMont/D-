@@ -15,6 +15,39 @@ Token parser::consume()
 {
     return m_tokens[m_index++];
 }
+std::optional<uint8_t> parser::op_to_prior(Tokens op)
+{
+    switch (op)
+    {
+    case Tokens::OR:
+        return 1;
+        break;
+    case Tokens::AND:
+        return 2;
+        break;
+    case Tokens::EQEQ:
+    case Tokens::NOTEQ:
+        return 3;
+        break;
+    case Tokens::LESS:
+    case Tokens::LESSEQ:
+    case Tokens::GREATER:
+    case Tokens::GREATEQ:
+        return 4;
+        break;
+    case Tokens::PLUS:
+    case Tokens::MINUS:
+        return 5;
+        break;
+    case Tokens::MULT:
+    case Tokens::DIV:
+        return 6;
+        break;
+
+    default:
+        return {};
+    }
+}
 
 std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
 {
@@ -214,7 +247,7 @@ std::optional<node::Expr> parser::parseExpr(std::string ExpectedType, uint8_t mi
                 }
                 else
                 {
-                    std::cerr << "Expected Value After Operator";
+                    std::cerr << "Expected Expression After Operator";
                     exit(EXIT_FAILURE);
                 }
             }
@@ -232,6 +265,72 @@ std::optional<node::Expr> parser::parseExpr(std::string ExpectedType, uint8_t mi
     }
 }
 
+std::optional<node::StmtIf> parser::parse_if_stmt()
+{
+    consume();
+    if (peek().has_value() && peek().value().type == Tokens::LPAREN)
+    {
+        consume();
+        if (auto cond = parseExpr(ANY_TYPE))
+        {
+            if (peek().has_value() && peek().value().type == Tokens::RPAREN)
+            {
+                consume();
+                if (peek().has_value() && peek().value().type == Tokens::LBRACKET)
+                {
+                    consume();
+                    std::vector<node::Stmt> stmts;
+                    while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
+                    {
+                        if (auto stmt = parseStmt())
+                        {
+                            stmts.push_back(stmt.value());
+                        }
+                    }
+                    if (peek().has_value() && peek().value().type == Tokens::RBRACKET)
+                    {
+                        consume(); // consume '}'
+                        auto pred = parse_if_pred();
+                        if (pred.has_value())
+                        {
+                            return {node::StmtIf({new node::Expr(cond.value()), stmts, {new node::IfPred(pred.value())}})};
+                        }
+                        else
+                        {
+                            return {node::StmtIf({new node::Expr(cond.value()), stmts})};
+                        }
+                    }
+                    else
+                    {
+                        std::cerr << "ERR001 Invalid Syntax Expected '}'";
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                else
+                {
+                    std::cerr << "ERR001 Invalid Syntax Expected '{'";
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else
+            {
+                std::cerr << "ERR001 Invalid Syntax Expected ')'";
+                exit(EXIT_FAILURE);
+            }
+        }
+        else
+        {
+            std::cerr << "ERR007 Expected Condition";
+            exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        std::cerr << "ERR001 Invalid Syntax Expected '('";
+        exit(EXIT_FAILURE);
+    }
+}
+
 std::optional<node::IfPred> parser::parse_if_pred()
 {
     if (peek().has_value())
@@ -239,59 +338,15 @@ std::optional<node::IfPred> parser::parse_if_pred()
         std::optional<node::IfPred> stmt_pred;
         if (peek().value().type == Tokens::ELIF)
         {
-            consume();
-            if (peek().has_value() && peek().value().type == Tokens::LPAREN)
+            auto temp_if_stmt = parse_if_stmt().value();
+            
+            if (temp_if_stmt.pred.has_value())
             {
-                consume();
-                if (auto cond = parseExpr(ANY_TYPE))
-                {
-                    if (peek().has_value() && peek().value().type == Tokens::RPAREN)
-                    {
-                        consume();
-                        if (peek().has_value() && peek().value().type == Tokens::LBRACKET)
-                        {
-                            consume();
-                            std::vector<node::Stmt> stmts;
-                            while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
-                            {
-                                if (auto stmt = parseStmt())
-                                {
-                                    stmts.push_back(stmt.value());
-                                }
-                            }
-                            consume();
-                            auto pred = parse_if_pred();
-                            if (pred.has_value())
-                            {
-                                stmt_pred = {new node::StmtElIf({new node::Expr(cond.value()), stmts, {new node::IfPred(pred.value())}})};
-                            }
-                            else
-                            {
-                                stmt_pred = {new node::StmtElIf({new node::Expr(cond.value()), stmts})};
-                            }
-                        }
-                        else
-                        {
-                            std::cerr << "ERR001 Invalid Syntax Expected '{'\n";
-                            exit(EXIT_FAILURE);
-                        }
-                    }
-                    else
-                    {
-                        std::cerr << "ERR001 Invalid Syntax Expected ')'\n";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else
-                {
-                    std::cerr << "ERR007 Expected Condition\n";
-                    exit(EXIT_FAILURE);
-                }
+                stmt_pred = {new node::StmtElIf({temp_if_stmt.Cond, temp_if_stmt.statements, temp_if_stmt.pred})};
             }
-            else
+            else 
             {
-                std::cerr << "ERR001 Invalid Syntax Expected '('\n";
-                exit(EXIT_FAILURE);
+                stmt_pred = {new node::StmtElIf({temp_if_stmt.Cond, temp_if_stmt.statements})};
             }
         }
         else if (peek().value().type == Tokens::ELSE)
@@ -313,7 +368,7 @@ std::optional<node::IfPred> parser::parse_if_pred()
             }
             else
             {
-                std::cerr << "ERR001 Invalid Syntax Expected '{'\n";
+                std::cerr << "ERR001 Invalid Syntax Expected '{'";
                 exit(EXIT_FAILURE);
             }
         }
@@ -348,7 +403,7 @@ std::optional<node::Stmt> parser::parseStmt()
                     }
                     else
                     {
-                        std::cerr << "ERR001 Invalid Syntax Expected ';'\n";
+                        std::cerr << "ERR001 Invalid Syntax Expected ';'";
                         exit(EXIT_FAILURE);
                     }
                 }
@@ -358,7 +413,7 @@ std::optional<node::Stmt> parser::parseStmt()
                     exit(EXIT_FAILURE);
                 }
             }
-            if (auto node_expr = parseExpr(ANY_TYPE))
+            else if (auto node_expr = parseExpr(ANY_TYPE))
             {
                 stmt_node = {{node::StmtReturn{new node::Expr(node_expr.value())}}};
 
@@ -368,66 +423,22 @@ std::optional<node::Stmt> parser::parseStmt()
                 }
                 else
                 {
-                    std::cerr << "ERR001 Invalid Syntax Expected ';'\n";
+                    std::cerr << "ERR001 Invalid Syntax Expected ';'";
                     exit(EXIT_FAILURE);
                 }
             }
         }
         else if (peek().value().type == Tokens::IF)
         {
-            consume();
-            if (peek().has_value() && peek().value().type == Tokens::LPAREN)
+            auto temp_if_stmt = parse_if_stmt().value();
+            
+            if (temp_if_stmt.pred.has_value())
             {
-                consume();
-                if (auto cond = parseExpr(ANY_TYPE))
-                {
-                    if (peek().has_value() && peek().value().type == Tokens::RPAREN)
-                    {
-                        consume();
-                        if (peek().has_value() && peek().value().type == Tokens::LBRACKET)
-                        {
-                            consume();
-                            std::vector<node::Stmt> stmts;
-                            while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
-                            {
-                                if (auto stmt = parseStmt())
-                                {
-                                    stmts.push_back(stmt.value());
-                                }
-                            }
-                            consume();
-                            auto pred = parse_if_pred();
-                            if (pred.has_value())
-                            {
-                                stmt_node = {{node::StmtIf{new node::Expr(cond.value()), stmts, {new node::IfPred(pred.value())}}}};
-                            }
-                            else 
-                            {
-                                stmt_node = {{node::StmtIf{new node::Expr(cond.value()), stmts}}};
-                            }
-                        }
-                        else
-                        {
-                            std::cerr << "ERR001 Invalid Syntax Expected '{'\n";
-                            exit(EXIT_FAILURE);
-                        }
-                    }
-                    else
-                    {
-                        std::cerr << "ERR001 Invalid Syntax Expected ')'\n";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else
-                {
-                    std::cerr << "ERR007 Expected Condition\n";
-                    exit(EXIT_FAILURE);
-                }
+                stmt_node = {node::StmtIf({temp_if_stmt.Cond, temp_if_stmt.statements, temp_if_stmt.pred})};
             }
-            else
+            else 
             {
-                std::cerr << "ERR001 Invalid Syntax Expected '('\n";
-                exit(EXIT_FAILURE);
+                stmt_node = {node::StmtIf({temp_if_stmt.Cond, temp_if_stmt.statements})};
             }
         }
         else if (peek().value().type == Tokens::ELIF)

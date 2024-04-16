@@ -128,37 +128,31 @@ namespace node
     {
         Expr* Expr;
     };
-
     struct StmtIntLet
     {
         Token ident;
         Expr* Expr;
     };
-    
     struct StmtStrLet
     {
         Token ident;
         Expr* Expr;
     };
-
     struct StmtBoolLet
     {
         Token ident;
         Expr* Expr;
     };
-
     struct StmtIntVar
     {
         Token ident;
         Expr* Expr;
     };
-    
     struct StmtStrVar
     {
         Token ident;
         Expr* Expr;
     };
-
     struct StmtBoolVar
     {
         Token ident;
@@ -179,61 +173,22 @@ namespace node
 class parser
 {
 public:
-    explicit parser(std::vector<Token> tokens) 
+    inline parser(std::vector<Token> tokens) 
     : m_tokens(std::move(tokens)) {}
 
     std::optional<node::Expr> parseExpr(std::string ExpectedType = ANY_TYPE, uint8_t min_priority = 1);
-
-    std::optional<node::BinExpr> parseBinExpr(std::string ExpectedType);
-
-    std::optional<node::ValExpr> parseValExpr(std::string ExpectedType);
-
+    std::optional<node::BinExpr> parseBinExpr(std::string ExpectedType = ANY_TYPE);
+    std::optional<node::ValExpr> parseValExpr(std::string ExpectedType = ANY_TYPE);
+    std::optional<node::StmtIf> parse_if_stmt();
     std::optional<node::IfPred> parse_if_pred();
-
     std::optional<node::Stmt> parseStmt();
-
     std::optional<node::Prog> parseProg();
-
 
 private:
 
     std::optional<Token> peek(int offset = 0) const;
-
     Token consume();
-
-    std::optional<uint8_t> op_to_prior(Tokens op)
-    {
-        switch (op)
-        {
-        case Tokens::OR:
-            return 1;
-            break;
-        case Tokens::AND:
-            return 2;
-            break;
-        case Tokens::EQEQ:
-        case Tokens::NOTEQ:
-            return 3;
-            break;
-        case Tokens::LESS:
-        case Tokens::LESSEQ:
-        case Tokens::GREATER:
-        case Tokens::GREATEQ:
-            return 4;
-            break;
-        case Tokens::PLUS:
-        case Tokens::MINUS:
-            return 5;
-            break;
-        case Tokens::MULT:
-        case Tokens::DIV:
-            return 6;
-            break;
-        
-        default:
-            return {};
-        }
-    }
+    std::optional<uint8_t> op_to_prior(Tokens op);
 
     const std::vector<Token> m_tokens;
     size_t m_index = 0;
