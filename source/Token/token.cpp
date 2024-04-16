@@ -171,10 +171,14 @@ std::vector<Token> tokenizer::tokenize()
                 buffer.clear();
                 continue;
             }
-            else
+            else if (!peek().has_value())
             {
                 std::cerr << "ERR001 Syntax Error Unexpected '" << buffer << "'";
                 exit(EXIT_FAILURE);
+            }
+            else 
+            {
+                continue;
             }
         }
     }
