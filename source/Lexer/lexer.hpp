@@ -30,63 +30,63 @@ namespace node
 
     struct BinExprAdd
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct BinExprSub
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct BinExprMul
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct BinExprDiv
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct EQCondition
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct NotEQCondition
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct LessCondition
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct GreaterCondition
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct EQLessCondition
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct EQGreaterCondition
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct AndCondition
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };
     struct OrCondition
     {
-        Expr* fvl;
-        Expr* svl;
+        Expr* fvl = nullptr;
+        Expr* svl = nullptr;
     };    
     struct BinExpr
     {
@@ -102,14 +102,14 @@ namespace node
 
     struct StmtIf
     {
-        Expr* Cond;
+        Expr* Cond = nullptr;
         std::vector<Stmt> statements;
         std::optional<IfPred*> pred;
     };
 
     struct StmtElIf
     {
-        Expr* Cond;
+        Expr* Cond = nullptr;
         std::vector<Stmt> statements;
         std::optional<IfPred*> pred;
     };
@@ -126,37 +126,37 @@ namespace node
 
     struct StmtReturn
     {
-        Expr* Expr;
+        Expr* Expr = nullptr;
     };
     struct StmtIntLet
     {
         Token ident;
-        Expr* Expr;
+        Expr* Expr = nullptr;
     };
     struct StmtStrLet
     {
         Token ident;
-        Expr* Expr;
+        Expr* Expr = nullptr;
     };
     struct StmtBoolLet
     {
         Token ident;
-        Expr* Expr;
+        Expr* Expr = nullptr;
     };
     struct StmtIntVar
     {
         Token ident;
-        Expr* Expr;
+        Expr* Expr = nullptr;
     };
     struct StmtStrVar
     {
         Token ident;
-        Expr* Expr;
+        Expr* Expr = nullptr;
     };
     struct StmtBoolVar
     {
         Token ident;
-        Expr* Expr;
+        Expr* Expr = nullptr;
     };
 
     struct Stmt
@@ -179,8 +179,9 @@ public:
     std::optional<node::Expr> parseExpr(std::string ExpectedType = ANY_TYPE, uint8_t min_priority = 1);
     std::optional<node::BinExpr> parseBinExpr(std::string ExpectedType = ANY_TYPE);
     std::optional<node::ValExpr> parseValExpr(std::string ExpectedType = ANY_TYPE);
-    std::optional<node::StmtIf> parse_if_stmt();
-    std::optional<node::IfPred> parse_if_pred();
+    std::optional<node::StmtIf> parseIfStmt();
+    std::optional<node::IfPred> parseIfPred();
+    std::optional<node::StmtIntLet> parseLet(std::string ExpectedType = ANY_TYPE);
     std::optional<node::Stmt> parseStmt();
     std::optional<node::Prog> parseProg();
 
