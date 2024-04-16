@@ -101,7 +101,7 @@ std::vector<Token> tokenizer::tokenize()
                 buffer.push_back(consume());
             }
 
-            if (peek().has_value() && peek().value() == '\n')
+            if (peek().has_value() && peek().value() == '"')
             {
                 tokens.push_back({TokensMap["stringLit"], buffer});
                 buffer.clear();
