@@ -112,7 +112,7 @@ std::vector<Token> tokenizer::tokenize()
             }
             else
             {
-                std::cerr << "ERR001 Syntax Error Expected '\"'";
+                std::cerr << "[Tokenize Error] ERR001 Syntax Error Expected '\"'";
                 exit(EXIT_FAILURE);
             }
 
@@ -144,7 +144,7 @@ std::vector<Token> tokenizer::tokenize()
             }
             else
             {
-                std::cerr << "Expected end of multi-line comment";
+                std::cerr << "[Tokenize Error] Expected end of multi-line comment";
                 exit(EXIT_FAILURE);
             }
             continue;

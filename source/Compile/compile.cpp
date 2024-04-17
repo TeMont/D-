@@ -50,13 +50,13 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 }
                 else
                 {
-                    std::cerr << "ERR006 Value Doesn't Matches Type";
+                    std::cerr << "[Compile Error] ERR006 Value Doesn't Matches Type";
                     exit(EXIT_FAILURE);
                 }
             }
             else
             {
-                std::cerr << "ERR005 Undeclared Indentifier '" << expr_ident.ident.value.value() << "'";
+                std::cerr << "[Compile Error] ERR005 Undeclared Indentifier '" << expr_ident.ident.value.value() << "'";
                 exit(EXIT_FAILURE);
             }
         }
@@ -72,7 +72,7 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
             }
             else
             {
-                std::cerr << "ERR006 Value Doesn't Matches Type";
+                std::cerr << "[Compile Error] ERR006 Value Doesn't Matches Type";
                 exit(EXIT_FAILURE);
             }
         }
@@ -88,7 +88,7 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
             }
             else
             {
-                std::cerr << "ERR006 Value Doesn't Matches Type";
+                std::cerr << "[Compile Error] ERR006 Value Doesn't Matches Type";
                 exit(EXIT_FAILURE);
             }
         }
@@ -111,7 +111,7 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
             }
             else
             {
-                std::cerr << "ERR006 Value Doesn't Matches Type";
+                std::cerr << "[Compile Error] ERR006 Value Doesn't Matches Type";
                 exit(EXIT_FAILURE);
             }
         }
@@ -298,9 +298,9 @@ void compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
             pop("rdi");
             pop("rdx");
             m_output << "\tcmp rdx, 0\n";
-            m_output << "\tje " << true_label << "\n";
+            m_output << "\tjg " << true_label << "\n";
             m_output << "\tcmp rdi, 0\n";
-            m_output << "\tje " << true_label << "\n";
+            m_output << "\tjg " << true_label << "\n";
             m_output << "\tmov rdx, 0\n";
             m_output << "\tjmp " << end_label << "\n";
             m_output << "\t" << true_label << ":\n";
@@ -426,7 +426,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             m_output << ";;\tint let\n";
             if (m_vars.count(stmt_int_let.ident.value.value()))
             {
-                std::cerr << "ERR004 Identefier '" << stmt_int_let.ident.value.value() << "' Is Already Declared";
+                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_int_let.ident.value.value() << "' Is Already Declared";
                 exit(EXIT_FAILURE);
             }
             else
@@ -448,7 +448,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             m_output << ";;\tstr let\n";
             if (m_vars.count(stmt_str_let.ident.value.value()))
             {
-                std::cerr << "ERR004 Identefier '" << stmt_str_let.ident.value.value() << "' Is Already Declared";
+                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_str_let.ident.value.value() << "' Is Already Declared";
                 exit(EXIT_FAILURE);
             }
             else
@@ -471,7 +471,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             m_output << ";;\tbool let\n";
             if (m_vars.count(stmt_bool_let.ident.value.value()))
             {
-                std::cerr << "ERR004 Identefier '" << stmt_bool_let.ident.value.value() << "' Is Already Declared";
+                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_bool_let.ident.value.value() << "' Is Already Declared";
                 exit(EXIT_FAILURE);
             }
             else
@@ -528,14 +528,14 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 }
                 else
                 {
-                    std::cerr << "Value Doesnt Mathces Type";
+                    std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
                     exit(EXIT_FAILURE);
                 }
             }
 
             else
             {
-                std::cerr << "ERR004 Identefier '" << stmt_int_var.ident.value.value() << "' Was Not Declared";
+                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_int_var.ident.value.value() << "' Was Not Declared";
                 exit(EXIT_FAILURE);
             }
         }
@@ -567,13 +567,13 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 }
                 else
                 {
-                    std::cerr << "Value Doesnt Mathces Type";
+                    std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
                     exit(EXIT_FAILURE);
                 }
             }
             else
             {
-                std::cerr << "ERR004 Identefier '" << stmt_str_var.ident.value.value() << "' Was Not Declared";
+                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_str_var.ident.value.value() << "' Was Not Declared";
                 exit(EXIT_FAILURE);
             }
         }
@@ -597,7 +597,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             }
             else
             {
-                std::cerr << "ERR004 Identefier '" << stmt_bool_var.ident.value.value() << "' Was Not Declared";
+                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_bool_var.ident.value.value() << "' Was Not Declared";
                 exit(EXIT_FAILURE);
             }
         }

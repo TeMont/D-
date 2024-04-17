@@ -65,22 +65,27 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
                 return {};
             }
         }
-        else if (peek().value().type == Tokens::STRING_LITERAL || peek().value().type == Tokens::QOUTE)
+        else if (peek().value().type == Tokens::QOUTE)
         {
-            if (peek().value().type == Tokens::QOUTE)
-            {
-                consume(); // QUOTE CONSUME
-            }
+            consume(); // consume '"'
             if (ExpectedType == STR_TYPE || ExpectedType == ANY_TYPE)
             {
-                valExpr = {node::ExprStrLit{consume()}};
-                if (peek().value().type == Tokens::QOUTE)
+                if (peek().has_value() && peek().value().type == Tokens::STRING_LITERAL)
                 {
-                    consume(); // QUOTE CONSUME
+                    valExpr = {node::ExprStrLit{consume()}};
+                    if (peek().value().type == Tokens::QOUTE)
+                    {
+                        consume(); // consume '"'
+                    }
+                    else
+                    {
+                        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '\"'";
+                        exit(EXIT_FAILURE);
+                    }
                 }
                 else
                 {
-                    std::cerr << "ERR001 Invalid Syntax Expected '\"'";
+                    std::cerr << "[Parse Error] ERR001 Syntax Error Expected String Literal";
                     exit(EXIT_FAILURE);
                 }
             }
@@ -106,7 +111,7 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
         }
         else
         {
-            std::cerr << "ERR001 Invalid Syntax Expected Expression";
+            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected Expression";
             exit(EXIT_FAILURE);
         }
         return valExpr;
@@ -247,13 +252,13 @@ std::optional<node::Expr> parser::parseExpr(std::string ExpectedType, uint8_t mi
                 }
                 else
                 {
-                    std::cerr << "Expected Expression After Operator";
+                    std::cerr << "[Parse Error] Expected Expression After Operator";
                     exit(EXIT_FAILURE);
                 }
             }
             else
             {
-                std::cerr << "ERR006 Value Doesn't Matches Type";
+                std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
                 exit(EXIT_FAILURE);
             }
         }
@@ -302,13 +307,13 @@ std::optional<node::StmtIf> parser::parseIfStmt()
                     }
                     else
                     {
-                        std::cerr << "ERR001 Invalid Syntax Expected '}'";
+                        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '}'";
                         exit(EXIT_FAILURE);
                     }
                 }
                 else
                 {
-                    std::cerr << "ERR001 Invalid Syntax Expected '{'";
+                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '{'";
                     exit(EXIT_FAILURE);
                 }
             }
@@ -320,13 +325,13 @@ std::optional<node::StmtIf> parser::parseIfStmt()
         }
         else
         {
-            std::cerr << "ERR007 Expected Condition";
+            std::cerr << "[Parse Error] ERR007 Expected Condition";
             exit(EXIT_FAILURE);
         }
     }
     else
     {
-        std::cerr << "ERR001 Invalid Syntax Expected '('";
+        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
         exit(EXIT_FAILURE);
     }
 }
@@ -368,7 +373,7 @@ std::optional<node::IfPred> parser::parseIfPred()
             }
             else
             {
-                std::cerr << "ERR001 Invalid Syntax Expected '{'";
+                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '{'";
                 exit(EXIT_FAILURE);
             }
         }
@@ -402,13 +407,13 @@ std::optional<node::StmtIntLet> parser::parseLet(std::string ExpectedType)
                 }
                 else
                 {
-                    std::cerr << "ERR001 Invalid Syntax Expected ';'";
+                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
                     exit(EXIT_FAILURE);
                 }
             }
             else
             {
-                std::cerr << "ERR006 Value Doesn't Matches Type";
+                std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
                 exit(EXIT_FAILURE);
             }
         }
@@ -421,14 +426,14 @@ std::optional<node::StmtIntLet> parser::parseLet(std::string ExpectedType)
             }
             else
             {
-                std::cerr << "ERR001 Invalid Syntax Expected ';'";
+                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
                 exit(EXIT_FAILURE);
             }
         }
     }
     else
     {
-        std::cerr << "ERR002 Expected An Identifier";
+        std::cerr << "[Parse Error] ERR002 Expected An Identifier";
         exit(EXIT_FAILURE);
     }
 }
@@ -451,7 +456,7 @@ std::optional<node::Stmt> parser::parseStmt()
                 }
                 else
                 {
-                    std::cerr << "ERR001 Invalid Syntax Expected ';'";
+                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
                     exit(EXIT_FAILURE);
                 }
             }
@@ -471,11 +476,11 @@ std::optional<node::Stmt> parser::parseStmt()
         }
         else if (peek().value().type == Tokens::ELIF)
         {
-            std::cerr << "ERR008 Illegal 'elif' without matching if";
+            std::cerr << "[Parse Error] ERR008 Illegal 'elif' without matching if";
         }
         else if (peek().value().type == Tokens::ELSE)
         {
-            std::cerr << "ERR008 Illegal 'else' without matching if";
+            std::cerr << "[Parse Error] ERR008 Illegal 'else' without matching if";
         }
         else if (peek().value().type == Tokens::INT_LET)
         {
@@ -484,7 +489,7 @@ std::optional<node::Stmt> parser::parseStmt()
             {
                 stmt_node = {node::StmtIntLet{temp_let_stmt.ident, temp_let_stmt.Expr}};
             }
-            else 
+            else
             {
                 stmt_node = {node::StmtIntLet{temp_let_stmt.ident}};
             }
@@ -496,7 +501,7 @@ std::optional<node::Stmt> parser::parseStmt()
             {
                 stmt_node = {node::StmtStrLet{temp_let_stmt.ident, temp_let_stmt.Expr}};
             }
-            else 
+            else
             {
                 stmt_node = {node::StmtStrLet{temp_let_stmt.ident}};
             }
@@ -508,7 +513,7 @@ std::optional<node::Stmt> parser::parseStmt()
             {
                 stmt_node = {node::StmtBoolLet{temp_let_stmt.ident, temp_let_stmt.Expr}};
             }
-            else 
+            else
             {
                 stmt_node = {node::StmtBoolLet{temp_let_stmt.ident}};
             }
@@ -519,69 +524,44 @@ std::optional<node::Stmt> parser::parseStmt()
             if (peek().value().type == Tokens::EQ)
             {
                 consume();
-                if (peek().has_value() && peek().value().type == Tokens::QOUTE)
+                if (auto node_expr = parseExpr(STR_TYPE))
                 {
-                    if (auto node_expr = parseExpr(STR_TYPE))
-                    {
-                        stmt_node = {{node::StmtStrVar{var_ident, new node::Expr(node_expr.value())}}};
-
-                        if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-                        {
-                            consume();
-                        }
-                        else
-                        {
-                            std::cerr << "ERR001 Invalid Syntax Expected ';'";
-                            exit(EXIT_FAILURE);
-                        }
-                    }
-                    else
-                    {
-                        std::cerr << "ERR006 Value Doesn't Matches Type";
-                        exit(EXIT_FAILURE);
-                    }
+                    stmt_node = {{node::StmtStrVar{var_ident, new node::Expr(node_expr.value())}}};
                 }
                 else if (auto node_expr = parseExpr(INT_TYPE))
                 {
                     stmt_node = {{node::StmtIntVar{var_ident, new node::Expr(node_expr.value())}}};
-                    if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-                    {
-                        consume();
-                    }
-                    else
-                    {
-                        std::cerr << "ERR001 Invalid Syntax Expected ';'";
-                        exit(EXIT_FAILURE);
-                    }
                 }
                 else if (auto node_expr = parseExpr(BOOL_TYPE))
                 {
                     stmt_node = {{node::StmtBoolVar{var_ident, new node::Expr(node_expr.value())}}};
-                    if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-                    {
-                        consume();
-                    }
-                    else
-                    {
-                        std::cerr << "ERR001 Invalid Syntax Expected ';'";
-                        exit(EXIT_FAILURE);
-                    }
                 }
                 else
                 {
-                    std::cerr << "ERR006 Value Doesn't Matches Type";
+                    std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
+                    exit(EXIT_FAILURE);
+                }
+                
+
+                if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
+                {
+                    consume();
+                }
+                else
+                {
+                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
                     exit(EXIT_FAILURE);
                 }
             }
             else
             {
-                std::cerr << "ERR001 Invalid Syntax Expected '='";
+                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '='";
                 exit(EXIT_FAILURE);
             }
         }
         else
         {
-            std::cerr << "ERR001 Syntax Error";
+            std::cerr << "[Parse Error] ERR001 Syntax Error";
             exit(EXIT_FAILURE);
         }
     }
@@ -602,7 +582,7 @@ std::optional<node::Prog> parser::parseProg()
         }
         else
         {
-            std::cerr << "ERR003 Invalid Statement";
+            std::cerr << "[Parse Error] ERR003 Invalid Statement";
             exit(EXIT_FAILURE);
         }
     }
