@@ -23,7 +23,7 @@ The compiler is made using NASM & GoLink.
 - [ ] Input
 
 # GUIDE
-Dependencies: Nasm x86-64, GoLink
+Dependencies: Nasm x86-64, gcc Linker
 
 ### Building
 Dependencies For Building: C++23

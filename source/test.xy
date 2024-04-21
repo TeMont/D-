@@ -1,12 +1,4 @@
-int x;
+string x = "a";
+string y = x;
 
-x = 1;
-// x = 100;
-/* x = 200; 
-return 2;
-return 25;
-return 23;
-*/
-
-
-return x;
+return y;
