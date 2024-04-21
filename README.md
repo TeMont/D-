@@ -16,10 +16,10 @@ The compiler is made using NASM & GoLink.
 - [X] Else Statement
 - [X] One-Line Comments
 - [X] Multi-Line Comments
+- [X] Output
 - [ ] Float Variables
 - [ ] Const Variables
 - [ ] Loops
-- [ ] Output
 - [ ] Input
 
 # GUIDE

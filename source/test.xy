@@ -1,4 +1,9 @@
-string x = "a";
-string y = x;
+int str = 1;
+bool x = str > 1;
+stdOut(str);
+stdOut("str");
+stdOut(true);
+stdOut(x);
+stdOut(666);
 
-return y;
+return 1;

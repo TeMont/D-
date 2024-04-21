@@ -21,9 +21,9 @@ private:
 
     static void push(const std::string& reg);
     static void pop(const std::string& reg);
-    static void comp_expr(const node::Expr& expr, std::string ExpectedType);
-    static void comp_bin_expr(const node::BinExpr& expr, std::string ExpectedType);
-    static void comp_val_expr(const node::ValExpr& expr, std::string ExpectedType);
+    static bool comp_expr(const node::Expr& expr, std::string ExpectedType);
+    static bool comp_bin_expr(const node::BinExpr& expr, std::string ExpectedType);
+    static bool comp_val_expr(const node::ValExpr& expr, std::string ExpectedType);
     static void comp_if_pred(const node::IfPred &pred, std::string end_label);
     static void comp_stmt(const node::Stmt& stmt);
     static std::string create_label();

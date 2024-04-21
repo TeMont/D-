@@ -158,10 +158,14 @@ namespace node
         Token ident;
         Expr* Expr = nullptr;
     };
-
+    struct StmtOutput
+    {
+        Expr* Expr = nullptr;
+    };
+    
     struct Stmt
     {
-        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtStrVar, StmtIntVar, StmtBoolVar, StmtIf> var; 
+        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtStrVar, StmtIntVar, StmtBoolVar, StmtIf, StmtOutput> var; 
     };
     
     struct Prog

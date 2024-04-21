@@ -49,7 +49,7 @@ uint64_t compiler::SC_count = 0;
 std::stringstream compiler::m_output;
 std::stringstream compiler::m_SC;
 
-void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType)
+bool compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType)
 {
     struct ExprVisitor
     {
@@ -57,7 +57,7 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
 
         ExprVisitor(std::string expectedType) : ExpectedType(std::move(expectedType)) {}
 
-        void operator()(const node::ExprIdent &expr_ident)
+        bool operator()(const node::ExprIdent &expr_ident)
         {
             if (m_vars.count(expr_ident.ident.value.value()))
             {
@@ -65,11 +65,11 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 if (ExpectedType == ANY_TYPE || ExpectedType == var.Type)
                 {
                     push("QWORD [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "]");
+                    return 1;
                 }
                 else
                 {
-                    std::cerr << "[Compile Error] ERR006 Value Doesn't Matches Type";
-                    exit(EXIT_FAILURE);
+                    return 0;
                 }
             }
             else
@@ -78,7 +78,7 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 exit(EXIT_FAILURE);
             }
         }
-        void operator()(const node::ExprIntLit &expr_int)
+        bool operator()(const node::ExprIntLit &expr_int)
         {
             if (ExpectedType == ANY_TYPE || ExpectedType == INT_TYPE)
             {
@@ -88,14 +88,14 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 }
                 push("rdx");
                 m_output << "\txor rdx, rdx\n";
+                return 1;
             }
             else
             {
-                std::cerr << "[Compile Error] ERR006 Value Doesn't Matches Type";
-                exit(EXIT_FAILURE);
+                return 0;
             }
         }
-        void operator()(const node::ExprStrLit &expr_str)
+        bool operator()(const node::ExprStrLit &expr_str)
         {
             // TODO IN PROCESS
             if (ExpectedType == ANY_TYPE || ExpectedType == STR_TYPE)
@@ -108,14 +108,14 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 }
                 push("rdx");
                 m_output << "\txor rdx, rdx\n";
+                return 1;
             }
             else
             {
-                std::cerr << "[Compile Error] ERR006 Value Doesn't Matches Type";
-                exit(EXIT_FAILURE);
+                return 0;
             }
         }
-        void operator()(const node::ExprBoolLit &expr_bool)
+        bool operator()(const node::ExprBoolLit &expr_bool)
         {
             if (ExpectedType == ANY_TYPE || ExpectedType == BOOL_TYPE)
             {
@@ -132,20 +132,20 @@ void compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 }
                 push("rdx");
                 m_output << "\txor rdx, rdx\n";
+                return 1;
             }
             else
             {
-                std::cerr << "[Compile Error] ERR006 Value Doesn't Matches Type";
-                exit(EXIT_FAILURE);
+                return 0;
             }
         }
     };
 
     ExprVisitor visitor(ExpectedType);
-    std::visit(visitor, expr.var);
+    return std::visit(visitor, expr.var);
 }
 
-void compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType)
+bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType)
 {
     struct ExprVisitor
     {
@@ -153,216 +153,288 @@ void compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
 
         ExprVisitor(std::string expectedType) : ExpectedType(std::move(expectedType)) {}
 
-        void operator()(const node::BinExprAdd *bin_expr_add)
+        bool operator()(const node::BinExprAdd *bin_expr_add)
         {
-            comp_expr(*bin_expr_add->fvl, ExpectedType);
-            comp_expr(*bin_expr_add->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tadd rdx, rdi\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
+            if (comp_expr(*bin_expr_add->fvl, ExpectedType) && comp_expr(*bin_expr_add->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tadd rdx, rdi\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
         }
-        void operator()(const node::BinExprSub *bin_expr_sub)
+        bool operator()(const node::BinExprSub *bin_expr_sub)
         {
-            comp_expr(*bin_expr_sub->fvl, ExpectedType);
-            comp_expr(*bin_expr_sub->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tsub rdx, rdi\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
+            if (comp_expr(*bin_expr_sub->fvl, ExpectedType) && comp_expr(*bin_expr_sub->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tsub rdx, rdi\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
         }
-        void operator()(const node::BinExprMul *bin_expr_mul)
+        bool operator()(const node::BinExprMul *bin_expr_mul)
         {
-            comp_expr(*bin_expr_mul->fvl, ExpectedType);
-            comp_expr(*bin_expr_mul->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\timul rdx, rdi\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
+            if (comp_expr(*bin_expr_mul->fvl, ExpectedType) && comp_expr(*bin_expr_mul->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\timul rdx, rdi\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
         }
-        void operator()(const node::BinExprDiv *bin_expr_div)
+        bool operator()(const node::BinExprDiv *bin_expr_div)
         {
-            comp_expr(*bin_expr_div->fvl, ExpectedType);
-            comp_expr(*bin_expr_div->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tmov rax, rdx\n";
-            m_output << "\tmov rdx, 0\n";
-            m_output << "\tidiv rdi\n";
-            m_output << "\tmov rdx, rax\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
+            if (comp_expr(*bin_expr_div->fvl, ExpectedType) && comp_expr(*bin_expr_div->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tmov rax, rdx\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\tidiv rdi\n";
+                m_output << "\tmov rdx, rax\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
         }
-        void operator()(const node::EQCondition *bin_eq_cond)
-        {
-            std::string true_label = create_label();
-            std::string end_label = create_label();
-            comp_expr(*bin_eq_cond->fvl, ExpectedType);
-            comp_expr(*bin_eq_cond->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tcmp rdx, rdi\n";
-            m_output << "\tje " << true_label << "\n";
-            m_output << "\tmov rdx, 0\n";
-            m_output << "\tjmp " << end_label << "\n";
-            m_output << "\t" << true_label << ":\n";
-            m_output << "\tmov rdx, 1\n";
-            m_output << "\t" << end_label << ":\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
-        }
-        void operator()(const node::NotEQCondition *bin_not_eq_cond)
-        {
-            std::string true_label = create_label();
-            std::string end_label = create_label();
-            comp_expr(*bin_not_eq_cond->fvl, ExpectedType);
-            comp_expr(*bin_not_eq_cond->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tcmp rdx, rdi\n";
-            m_output << "\tjne " << true_label << "\n";
-            m_output << "\tmov rdx, 0\n";
-            m_output << "\tjmp " << end_label << "\n";
-            m_output << "\t" << true_label << ":\n";
-            m_output << "\tmov rdx, 1\n";
-            m_output << "\t" << end_label << ":\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
-        }
-        void operator()(const node::LessCondition *bin_less_cond)
+        bool operator()(const node::EQCondition *bin_eq_cond)
         {
             std::string true_label = create_label();
             std::string end_label = create_label();
-            comp_expr(*bin_less_cond->fvl, ExpectedType);
-            comp_expr(*bin_less_cond->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tcmp rdx, rdi\n";
-            m_output << "\tjl " << true_label << "\n";
-            m_output << "\tmov rdx, 0\n";
-            m_output << "\tjmp " << end_label << "\n";
-            m_output << "\t" << true_label << ":\n";
-            m_output << "\tmov rdx, 1\n";
-            m_output << "\t" << end_label << ":\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
+            if (comp_expr(*bin_eq_cond->fvl, ExpectedType) && comp_expr(*bin_eq_cond->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tcmp rdx, rdi\n";
+                m_output << "\tje " << true_label << "\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\tjmp " << end_label << "\n";
+                m_output << "\t" << true_label << ":\n";
+                m_output << "\tmov rdx, 1\n";
+                m_output << "\t" << end_label << ":\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
         }
-        void operator()(const node::GreaterCondition *bin_greater_cond)
+        bool operator()(const node::NotEQCondition *bin_not_eq_cond)
         {
             std::string true_label = create_label();
             std::string end_label = create_label();
-            comp_expr(*bin_greater_cond->fvl, ExpectedType);
-            comp_expr(*bin_greater_cond->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tcmp rdx, rdi\n";
-            m_output << "\tjg " << true_label << "\n";
-            m_output << "\tmov rdx, 0\n";
-            m_output << "\tjmp " << end_label << "\n";
-            m_output << "\t" << true_label << ":\n";
-            m_output << "\tmov rdx, 1\n";
-            m_output << "\t" << end_label << ":\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
+            if (comp_expr(*bin_not_eq_cond->fvl, ExpectedType) && comp_expr(*bin_not_eq_cond->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tcmp rdx, rdi\n";
+                m_output << "\tjne " << true_label << "\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\tjmp " << end_label << "\n";
+                m_output << "\t" << true_label << ":\n";
+                m_output << "\tmov rdx, 1\n";
+                m_output << "\t" << end_label << ":\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
         }
-        void operator()(const node::EQLessCondition *bin_less_eq_cond)
+        bool operator()(const node::LessCondition *bin_less_cond)
         {
             std::string true_label = create_label();
             std::string end_label = create_label();
-            comp_expr(*bin_less_eq_cond->fvl, ExpectedType);
-            comp_expr(*bin_less_eq_cond->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tcmp rdx, rdi\n";
-            m_output << "\tjle " << true_label << "\n";
-            m_output << "\tmov rdx, 0\n";
-            m_output << "\tjmp " << end_label << "\n";
-            m_output << "\t" << true_label << ":\n";
-            m_output << "\tmov rdx, 1\n";
-            m_output << "\t" << end_label << ":\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
+            if (comp_expr(*bin_less_cond->fvl, ExpectedType) && comp_expr(*bin_less_cond->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tcmp rdx, rdi\n";
+                m_output << "\tjl " << true_label << "\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\tjmp " << end_label << "\n";
+                m_output << "\t" << true_label << ":\n";
+                m_output << "\tmov rdx, 1\n";
+                m_output << "\t" << end_label << ":\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
         }
-        void operator()(const node::EQGreaterCondition *bin_great_eq_cond)
+        bool operator()(const node::GreaterCondition *bin_greater_cond)
         {
             std::string true_label = create_label();
             std::string end_label = create_label();
-            comp_expr(*bin_great_eq_cond->fvl, ExpectedType);
-            comp_expr(*bin_great_eq_cond->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tcmp rdx, rdi\n";
-            m_output << "\tjge " << true_label << "\n";
-            m_output << "\tmov rdx, 0\n";
-            m_output << "\tjmp " << end_label << "\n";
-            m_output << "\t" << true_label << ":\n";
-            m_output << "\tmov rdx, 1\n";
-            m_output << "\t" << end_label << ":\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
+            if (comp_expr(*bin_greater_cond->fvl, ExpectedType) && comp_expr(*bin_greater_cond->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tcmp rdx, rdi\n";
+                m_output << "\tjg " << true_label << "\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\tjmp " << end_label << "\n";
+                m_output << "\t" << true_label << ":\n";
+                m_output << "\tmov rdx, 1\n";
+                m_output << "\t" << end_label << ":\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
         }
-        void operator()(const node::AndCondition *bin_and_cond)
+        bool operator()(const node::EQLessCondition *bin_less_eq_cond)
+        {
+            std::string true_label = create_label();
+            std::string end_label = create_label();
+            if (comp_expr(*bin_less_eq_cond->fvl, ExpectedType) && comp_expr(*bin_less_eq_cond->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tcmp rdx, rdi\n";
+                m_output << "\tjle " << true_label << "\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\tjmp " << end_label << "\n";
+                m_output << "\t" << true_label << ":\n";
+                m_output << "\tmov rdx, 1\n";
+                m_output << "\t" << end_label << ":\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        bool operator()(const node::EQGreaterCondition *bin_great_eq_cond)
+        {
+            std::string true_label = create_label();
+            std::string end_label = create_label();
+            if (comp_expr(*bin_great_eq_cond->fvl, ExpectedType) && comp_expr(*bin_great_eq_cond->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tcmp rdx, rdi\n";
+                m_output << "\tjge " << true_label << "\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\tjmp " << end_label << "\n";
+                m_output << "\t" << true_label << ":\n";
+                m_output << "\tmov rdx, 1\n";
+                m_output << "\t" << end_label << ":\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
+        bool operator()(const node::AndCondition *bin_and_cond)
         {
             std::string false_label = create_label();
             std::string end_label = create_label();
-            comp_expr(*bin_and_cond->fvl, ExpectedType);
-            comp_expr(*bin_and_cond->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tcmp rdx, 0\n";
-            m_output << "\tjle " << false_label << "\n";
-            m_output << "\tcmp rdi, 0\n";
-            m_output << "\tjle " << false_label << "\n";
-            m_output << "\tmov rdx, 1\n";
-            m_output << "\tjmp " << end_label << "\n";
-            m_output << "\t" << false_label << ":\n";
-            m_output << "\tmov rdx, 0\n";
-            m_output << "\t" << end_label << ":\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
+            if (comp_expr(*bin_and_cond->fvl, ExpectedType) && comp_expr(*bin_and_cond->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tcmp rdx, 0\n";
+                m_output << "\tjle " << false_label << "\n";
+                m_output << "\tcmp rdi, 0\n";
+                m_output << "\tjle " << false_label << "\n";
+                m_output << "\tmov rdx, 1\n";
+                m_output << "\tjmp " << end_label << "\n";
+                m_output << "\t" << false_label << ":\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\t" << end_label << ":\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
         }
-        void operator()(const node::OrCondition *bin_or_cond)
+        bool operator()(const node::OrCondition *bin_or_cond)
         {
             std::string true_label = create_label();
             std::string end_label = create_label();
-            comp_expr(*bin_or_cond->fvl, ExpectedType);
-            comp_expr(*bin_or_cond->svl, ExpectedType);
-            pop("rdi");
-            pop("rdx");
-            m_output << "\tcmp rdx, 0\n";
-            m_output << "\tjg " << true_label << "\n";
-            m_output << "\tcmp rdi, 0\n";
-            m_output << "\tjg " << true_label << "\n";
-            m_output << "\tmov rdx, 0\n";
-            m_output << "\tjmp " << end_label << "\n";
-            m_output << "\t" << true_label << ":\n";
-            m_output << "\tmov rdx, 1\n";
-            m_output << "\t" << end_label << ":\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
-            m_output << "\txor rdi, rdi\n";
+            if (comp_expr(*bin_or_cond->fvl, ExpectedType) && comp_expr(*bin_or_cond->svl, ExpectedType))
+            {
+                pop("rdi");
+                pop("rdx");
+                m_output << "\tcmp rdx, 0\n";
+                m_output << "\tjg " << true_label << "\n";
+                m_output << "\tcmp rdi, 0\n";
+                m_output << "\tjg " << true_label << "\n";
+                m_output << "\tmov rdx, 0\n";
+                m_output << "\tjmp " << end_label << "\n";
+                m_output << "\t" << true_label << ":\n";
+                m_output << "\tmov rdx, 1\n";
+                m_output << "\t" << end_label << ":\n";
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                m_output << "\txor rdi, rdi\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
         }
     };
 
     ExprVisitor visitor(ExpectedType);
-    std::visit(visitor, expr.var);
+    return std::visit(visitor, expr.var);
 }
 
-void compiler::comp_expr(const node::Expr &expr, std::string ExpectedType)
+bool compiler::comp_expr(const node::Expr &expr, std::string ExpectedType)
 {
     struct ExprVisitor
     {
@@ -370,18 +442,18 @@ void compiler::comp_expr(const node::Expr &expr, std::string ExpectedType)
 
         ExprVisitor(std::string expectedType) : ExpectedType(std::move(expectedType)) {}
 
-        void operator()(const node::BinExpr *BinExpr)
+        bool operator()(const node::BinExpr *BinExpr)
         {
-            comp_bin_expr(*BinExpr, ExpectedType);
+            return comp_bin_expr(*BinExpr, ExpectedType);
         }
-        void operator()(const node::ValExpr *ValExpr)
+        bool operator()(const node::ValExpr *ValExpr)
         {
-            comp_val_expr(*ValExpr, ExpectedType);
+            return comp_val_expr(*ValExpr, ExpectedType);
         }
     };
 
     ExprVisitor visitor(ExpectedType);
-    std::visit(visitor, expr.var);
+    return std::visit(visitor, expr.var);
 }
 
 void compiler::comp_if_pred(const node::IfPred &pred, std::string end_label)
@@ -438,10 +510,17 @@ void compiler::comp_stmt(const node::Stmt &stmt)
         void operator()(const node::StmtReturn &stmt_ret)
         {
             m_output << ";;\treturn\n";
-            comp_expr(*stmt_ret.Expr, ANY_TYPE);
-            pop("rcx");
-            m_output << "\tcall ExitProcess" << "\n";
-            m_output << ";;\t/return\n";
+            if (comp_expr(*stmt_ret.Expr, INT_TYPE) || comp_expr(*stmt_ret.Expr, BOOL_TYPE))
+            {
+                pop("rcx");
+                m_output << "\tcall ExitProcess" << "\n";
+                m_output << ";;\t/return\n";
+            }
+            else
+            {
+                std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
+                exit(EXIT_FAILURE);
+            }
         }
         void operator()(const node::StmtIf &stmt_if)
         {
@@ -470,6 +549,26 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             }
             m_output << "\txor rdx, rdx\n";
         }
+        void operator()(const node::StmtOutput &stmt_output)
+        {
+            m_output << ";;\tOutput\n";
+            if (comp_expr(*stmt_output.Expr, STR_TYPE))
+            {
+                pop("rdx");
+                m_output << "\tcall _printf\n";
+            }
+            else if (comp_expr(*stmt_output.Expr, ANY_TYPE))
+            {
+                pop("rdx");
+                m_output << "\tmov rax, rdx\n";
+                m_output << "\tmov rsi, buffer\n";
+                m_output << "\tcall _itoa\n";
+                m_output << "\tmov rdx, rsi\n";
+                m_output << "\tcall _printf\n";
+
+            }
+            m_output << ";;\t/Output\n";
+        }
         void operator()(const node::StmtIntLet &stmt_int_let)
         {
             m_output << ";;\tint let\n";
@@ -483,7 +582,14 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 m_vars.insert({stmt_int_let.ident.value.value(), Var{m_stack_size, INT_TYPE}});
                 if (&stmt_int_let.Expr->var != nullptr)
                 {
-                    comp_expr(*stmt_int_let.Expr, INT_TYPE);
+                    if (comp_expr(*stmt_int_let.Expr, INT_TYPE))
+                    {
+                    }
+                    else
+                    {
+                        std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
+                        exit(EXIT_FAILURE);
+                    }
                 }
                 else
                 {
@@ -506,7 +612,14 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 m_vars.insert({stmt_str_let.ident.value.value(), Var{m_stack_size, STR_TYPE}});
                 if (&stmt_str_let.Expr->var != nullptr)
                 {
-                    comp_expr(*stmt_str_let.Expr, STR_TYPE);
+                    if (comp_expr(*stmt_str_let.Expr, STR_TYPE))
+                    {
+                    }
+                    else
+                    {
+                        std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
+                        exit(EXIT_FAILURE);
+                    }
                 }
                 else
                 {
@@ -556,10 +669,17 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 const auto &var = m_vars[stmt_int_var.ident.value.value()];
                 if (var.Type == INT_TYPE)
                 {
-                    comp_expr(*stmt_int_var.Expr, INT_TYPE);
-                    pop("rdx");
-                    m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
-                    m_output << "\txor rdx, rdx\n";
+                    if (comp_expr(*stmt_int_var.Expr, INT_TYPE))
+                    {
+                        pop("rdx");
+                        m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
+                        m_output << "\txor rdx, rdx\n";
+                    }
+                    else
+                    {
+                        std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
+                        exit(EXIT_FAILURE);
+                    }
                 }
                 else if (var.Type == BOOL_TYPE)
                 {
@@ -597,10 +717,17 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 const auto &var = m_vars[stmt_str_var.ident.value.value()];
                 if (var.Type == STR_TYPE)
                 {
-                    comp_expr(*stmt_str_var.Expr, STR_TYPE);
-                    pop("rdx");
-                    m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
-                    m_output << "\txor rdx, rdx\n";
+                    if (comp_expr(*stmt_str_var.Expr, STR_TYPE))
+                    {
+                        pop("rdx");
+                        m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
+                        m_output << "\txor rdx, rdx\n";
+                    }
+                    else
+                    {
+                        std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
+                        exit(EXIT_FAILURE);
+                    }
                 }
                 else if (var.Type == BOOL_TYPE)
                 {
@@ -662,13 +789,15 @@ void compiler::comp_stmt(const node::Stmt &stmt)
 
 std::stringstream compiler::compile()
 {
-    m_output << "extern GetStdHandle, WriteConsoleA, ExitProcess\n\n" << 
-                "stdout_query equ -11\n" << 
-                "section .data\n" << 
-                "\tstdout dw 0\n" << 
-                "\tbytesWritten dw 0\n\n" << 
-                "section .text\n" << 
-                "global main\n" << 
+    m_output << "extern GetStdHandle, WriteConsoleA, ExitProcess\n\n"
+                "stdout_query equ -11\n"
+                "section .data\n"
+                "\tstdout dw 0\n"
+                "\tbytesWritten dw 0\n\n"
+                "section .bss\n"
+                "\tbuffer resb 20\n\n"
+                "section .text\n"
+                "global main\n"
                 "main:\n";
 
     for (const node::Stmt &stmt : m_prog.statements)
@@ -676,31 +805,76 @@ std::stringstream compiler::compile()
         comp_stmt(stmt);
     }
 
-    m_output << "\n" << 
-                "_printf:\n" <<
-                "\tcall _count_str_len\n" <<
-                "\tmov r8, rcx\n" <<
-                "\tmov rcx, stdout_query\n" << 
-                "\tcall GetStdHandle\n" << 
-                "\tmov [rel stdout], rax\n" << 
-                "\tmov rcx, [rel stdout]\n" << 
-                "\tmov r9, bytesWritten\n" << 
-                "\txor r10, r10\n" << 
-                "\tcall WriteConsoleA\n" << 
-                "\tret\n" << 
-                "\n" << 
-                "_count_str_len:\n" << 
-                "\txor rcx, rcx\n" << 
-                "\tcontinue_count:\n" << 
-                "\tmov al, byte [rdx + rcx]\n" << 
-                "\tcmp al, 0\n" << 
-                "\tje end_len_count\n" << 
-                "\tinc rcx\n" << 
-                "\tjmp continue_count\n" << 
-                "\tend_len_count:\n"
-                "\tret\n" << 
+    m_output << "\n"
+                "_printf:\n"
+                "\t; INPUT:\n"
+                "\t; RDX - string\n"
+                "\tcall _count_str_len\n"
+                "\tmov r8, rcx\n"
+                "\tmov rcx, stdout_query\n"
+                "\tcall GetStdHandle\n"
+                "\tmov [rel stdout], rax\n"
+                "\tmov rcx, [rel stdout]\n"
+                "\tmov r9, bytesWritten\n"
+                "\txor r10, r10\n"
+                "\tcall WriteConsoleA\n"
+                "\tret\n"
                 "\n"
-                ;
+                "_count_str_len:\n"
+                "\t; INPUT:\n"
+                "\t; RDX - string\n"
+                "\t; OUTPUT:\n"
+                "\t; RCX - string length\n"
+                "\txor rcx, rcx\n"
+                "\tcontinue_count:\n"
+                "\tmov al, byte [rdx + rcx]\n"
+                "\tcmp al, 0\n"
+                "\tje end_len_count\n"
+                "\tinc rcx\n"
+                "\tjmp continue_count\n"
+                "\tend_len_count:\n"
+                "\tret\n"
+                "\n"
+                "_itoa:\n"
+                "\t; INPUT:\n"
+                "\t; RSI - output string\n"
+                "\t; RAX - integer\n"
+                "\t; OUTPUT:\n"
+                "\t; RSI - string\n"
+                "\tpush rsi\n"
+                "\tpush rax\n"
+                "\tmov rdi, 1\n"
+                "\tmov rcx, 1\n"
+                "\tmov rbx, 10\n"
+                "\t.get_divisor:\n"
+                "\txor rdx, rdx\n"
+                "\tdiv rbx\n"
+                "\tcmp rax, 0\n"
+                "\tje ._after\n"
+                "\timul rcx, 10\n"
+                "\tinc rdi\n"
+                "\tjmp .get_divisor\n"
+                "\t._after:\n"
+                "\tpop rax\n"
+                "\tpush rdi\n"
+                "\t.to_string:\n"
+                "\txor rdx, rdx\n"
+                "\tdiv rcx\n"
+                "\tadd al, '0'\n"
+                "\tmov [rsi], al\n"
+                "\tinc rsi\n"
+                "\tpush rdx\n"
+                "\txor rdx, rdx\n"
+                "\tmov rax, rcx\n"
+                "\tmov rbx, 10\n"
+                "\tdiv rbx\n"
+                "\tmov rcx, rax\n"
+                "\tpop rax\n"
+                "\tcmp rcx, 0\n"
+                "\tjg .to_string\n"
+                "\tpop rdx\n"
+                "\tpop rsi\n"
+                "\tret\n";
 
     std::stringstream output;
     output << m_SC.str();
