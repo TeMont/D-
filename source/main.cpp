@@ -13,12 +13,12 @@
 
 int main(int argc, char *argv[])
 {
-    if (argc < 2)
+    if (argc != 2)
     {
         std::cerr << "Incorrect Usage, Use XComp --help" << std::endl;
         return (EXIT_FAILURE);
     }
-    else if (argc == 2)
+    else
     {
         if (std::strcmp(argv[1], "--help") == 0)
         {
@@ -87,10 +87,6 @@ int main(int argc, char *argv[])
             }
         }
     }
-    else
-    {
-    }
-    // std::cout << system("result.exe");
 
     return EXIT_SUCCESS;
 }

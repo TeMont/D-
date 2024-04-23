@@ -95,9 +95,25 @@ bool compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 return 0;
             }
         }
+        bool operator()(const node::ExprCharLit &expr_char)
+        {
+            if (ExpectedType == ANY_TYPE || ExpectedType == CHAR_TYPE)
+            {
+                if ((expr_char.char_lit.value.has_value()))
+                {
+                    m_output << "\tmov rdx, '" << expr_char.char_lit.value.value() << "'\n";
+                }
+                push("rdx");
+                m_output << "\txor rdx, rdx\n";
+                return 1;
+            }
+            else
+            {
+                return 0;
+            }
+        }
         bool operator()(const node::ExprStrLit &expr_str)
         {
-            // TODO IN PROCESS
             if (ExpectedType == ANY_TYPE || ExpectedType == STR_TYPE)
             {
                 if ((expr_str.str_lit.value.has_value()))
@@ -155,6 +171,16 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
 
         bool operator()(const node::BinExprAdd *bin_expr_add)
         {
+            if (comp_expr(*bin_expr_add->fvl, STR_TYPE) || comp_expr(*bin_expr_add->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
+            else if (comp_expr(*bin_expr_add->fvl, CHAR_TYPE) || comp_expr(*bin_expr_add->svl, CHAR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Arithmetic Operations Cannot Be Used With Char Constants";
+                exit(EXIT_FAILURE);
+            }
             if (comp_expr(*bin_expr_add->fvl, ExpectedType) && comp_expr(*bin_expr_add->svl, ExpectedType))
             {
                 pop("rdi");
@@ -172,6 +198,16 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::BinExprSub *bin_expr_sub)
         {
+            if (comp_expr(*bin_expr_sub->fvl, STR_TYPE) || comp_expr(*bin_expr_sub->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
+            else if (comp_expr(*bin_expr_sub->fvl, CHAR_TYPE) || comp_expr(*bin_expr_sub->svl, CHAR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Arithmetic Operations Cannot Be Used With Char Constants";
+                exit(EXIT_FAILURE);
+            }
             if (comp_expr(*bin_expr_sub->fvl, ExpectedType) && comp_expr(*bin_expr_sub->svl, ExpectedType))
             {
                 pop("rdi");
@@ -189,6 +225,16 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::BinExprMul *bin_expr_mul)
         {
+            if (comp_expr(*bin_expr_mul->fvl, STR_TYPE) || comp_expr(*bin_expr_mul->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
+            else if (comp_expr(*bin_expr_mul->fvl, CHAR_TYPE) || comp_expr(*bin_expr_mul->svl, CHAR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Arithmetic Operations Cannot Be Used With Char Constants";
+                exit(EXIT_FAILURE);
+            }
             if (comp_expr(*bin_expr_mul->fvl, ExpectedType) && comp_expr(*bin_expr_mul->svl, ExpectedType))
             {
                 pop("rdi");
@@ -206,6 +252,16 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::BinExprDiv *bin_expr_div)
         {
+            if (comp_expr(*bin_expr_div->fvl, STR_TYPE) || comp_expr(*bin_expr_div->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
+            else if (comp_expr(*bin_expr_div->fvl, CHAR_TYPE) || comp_expr(*bin_expr_div->svl, CHAR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Arithmetic Operations Cannot Be Used With Char Constants";
+                exit(EXIT_FAILURE);
+            }
             if (comp_expr(*bin_expr_div->fvl, ExpectedType) && comp_expr(*bin_expr_div->svl, ExpectedType))
             {
                 pop("rdi");
@@ -226,6 +282,11 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::EQCondition *bin_eq_cond)
         {
+            if (comp_expr(*bin_eq_cond->fvl, STR_TYPE) || comp_expr(*bin_eq_cond->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
             std::string true_label = create_label();
             std::string end_label = create_label();
             if (comp_expr(*bin_eq_cond->fvl, ExpectedType) && comp_expr(*bin_eq_cond->svl, ExpectedType))
@@ -251,6 +312,11 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::NotEQCondition *bin_not_eq_cond)
         {
+            if (comp_expr(*bin_not_eq_cond->fvl, STR_TYPE) || comp_expr(*bin_not_eq_cond->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
             std::string true_label = create_label();
             std::string end_label = create_label();
             if (comp_expr(*bin_not_eq_cond->fvl, ExpectedType) && comp_expr(*bin_not_eq_cond->svl, ExpectedType))
@@ -276,6 +342,11 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::LessCondition *bin_less_cond)
         {
+            if (comp_expr(*bin_less_cond->fvl, STR_TYPE) || comp_expr(*bin_less_cond->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
             std::string true_label = create_label();
             std::string end_label = create_label();
             if (comp_expr(*bin_less_cond->fvl, ExpectedType) && comp_expr(*bin_less_cond->svl, ExpectedType))
@@ -301,6 +372,11 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::GreaterCondition *bin_greater_cond)
         {
+            if (comp_expr(*bin_greater_cond->fvl, STR_TYPE) || comp_expr(*bin_greater_cond->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
             std::string true_label = create_label();
             std::string end_label = create_label();
             if (comp_expr(*bin_greater_cond->fvl, ExpectedType) && comp_expr(*bin_greater_cond->svl, ExpectedType))
@@ -326,6 +402,11 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::EQLessCondition *bin_less_eq_cond)
         {
+            if (comp_expr(*bin_less_eq_cond->fvl, STR_TYPE) || comp_expr(*bin_less_eq_cond->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
             std::string true_label = create_label();
             std::string end_label = create_label();
             if (comp_expr(*bin_less_eq_cond->fvl, ExpectedType) && comp_expr(*bin_less_eq_cond->svl, ExpectedType))
@@ -351,6 +432,11 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::EQGreaterCondition *bin_great_eq_cond)
         {
+            if (comp_expr(*bin_great_eq_cond->fvl, STR_TYPE) || comp_expr(*bin_great_eq_cond->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
             std::string true_label = create_label();
             std::string end_label = create_label();
             if (comp_expr(*bin_great_eq_cond->fvl, ExpectedType) && comp_expr(*bin_great_eq_cond->svl, ExpectedType))
@@ -376,6 +462,11 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::AndCondition *bin_and_cond)
         {
+            if (comp_expr(*bin_and_cond->fvl, STR_TYPE) || comp_expr(*bin_and_cond->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
             std::string false_label = create_label();
             std::string end_label = create_label();
             if (comp_expr(*bin_and_cond->fvl, ExpectedType) && comp_expr(*bin_and_cond->svl, ExpectedType))
@@ -403,6 +494,11 @@ bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType
         }
         bool operator()(const node::OrCondition *bin_or_cond)
         {
+            if (comp_expr(*bin_or_cond->fvl, STR_TYPE) || comp_expr(*bin_or_cond->svl, STR_TYPE))
+            {
+                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+                exit(EXIT_FAILURE);
+            }
             std::string true_label = create_label();
             std::string end_label = create_label();
             if (comp_expr(*bin_or_cond->fvl, ExpectedType) && comp_expr(*bin_or_cond->svl, ExpectedType))
@@ -503,6 +599,109 @@ void compiler::comp_if_pred(const node::IfPred &pred, std::string end_label)
     std::visit(visitor, pred.var);
 }
 
+void compiler::comp_var(Token ident, node::Expr *Expr, std::string ExpectedType)
+{
+    if (m_vars.count(ident.value.value()))
+    {
+        const auto &var = m_vars[ident.value.value()];
+        if (var.Type == BOOL_TYPE)
+        {
+            std::string false_label = create_label();
+            std::string end_label = create_label();
+            comp_expr(*Expr, ANY_TYPE);
+            pop("rdx");
+            m_output << "\tcmp rdx, 0\n";
+            m_output << "\tjle " << false_label << "\n";
+            m_output << "\tmov rdx, 1\n";
+            m_output << "\tjmp " << end_label << "\n";
+            m_output << "\t" << false_label << ":\n";
+            m_output << "\tmov rdx, 0\n";
+            m_output << "\t" << end_label << ":\n";
+            m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
+            m_output << "\txor rdx, rdx\n";
+        }
+        else if (var.Type == ExpectedType)
+        {
+            if (comp_expr(*Expr, ExpectedType))
+            {
+                pop("rdx");
+                m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
+                m_output << "\txor rdx, rdx\n";
+            }
+            else
+            {
+                std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
+                exit(EXIT_FAILURE);
+            }
+        }
+        else
+        {
+            std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
+            exit(EXIT_FAILURE);
+        }
+    }
+    else
+    {
+        std::cerr << "[Compile Error] ERR004 Identefier '" << ident.value.value() << "' Was Not Declared";
+        exit(EXIT_FAILURE);
+    }
+}
+
+void compiler::comp_let(Token ident, node::Expr *Expr, std::string ExpectedType)
+{
+    if (m_vars.count(ident.value.value()))
+    {
+        std::cerr << "[Compile Error] ERR004 Identefier '" << ident.value.value() << "' Is Already Declared";
+        exit(EXIT_FAILURE);
+    }
+    else
+    {
+        m_vars.insert({ident.value.value(), Var{m_stack_size, ExpectedType}});
+        if (ExpectedType == BOOL_TYPE)
+        {
+            if (&Expr->var != nullptr)
+            {
+
+                if (comp_expr(*Expr, ExpectedType))
+                {
+                }
+                else
+                {
+                    std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else
+            {
+                push("rdx");
+            }
+        }
+        else
+        {
+            if (&Expr->var != nullptr)
+            {
+                comp_expr(*Expr, ANY_TYPE);
+            }
+            else
+            {
+                push("rdx");
+            }
+            std::string false_label = create_label();
+            std::string end_label = create_label();
+            pop("rdx");
+            m_output << "\tcmp rdx, 0\n";
+            m_output << "\tjle " << false_label << "\n";
+            m_output << "\tmov rdx, 1\n";
+            m_output << "\tjmp " << end_label << "\n";
+            m_output << "\t" << false_label << ":\n";
+            m_output << "\tmov rdx, 0\n";
+            m_output << "\t" << end_label << ":\n";
+            push("rdx");
+            m_output << "\txor rdx, rdx\n";
+        }
+    }
+}
+
 void compiler::comp_stmt(const node::Stmt &stmt)
 {
     struct StmtVisitor
@@ -513,7 +712,8 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             if (comp_expr(*stmt_ret.Expr, INT_TYPE) || comp_expr(*stmt_ret.Expr, BOOL_TYPE))
             {
                 pop("rcx");
-                m_output << "\tcall ExitProcess" << "\n";
+                m_output << "\tcall ExitProcess"
+                         << "\n";
                 m_output << ";;\t/return\n";
             }
             else
@@ -557,230 +757,67 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 pop("rdx");
                 m_output << "\tcall _printf\n";
             }
+            else if (comp_expr(*stmt_output.Expr, CHAR_TYPE))
+            {
+                pop("rdx");
+                m_output << "\tmov rsi, OutputBuffer\n";
+                m_output << "\tmov [rsi], dx\n";
+                m_output << "\tmov rdx, rsi\n";
+                m_output << "\tcall _printf\n";
+                m_output << "\tmov rsi, OutputBuffer\n";
+                m_output << "\tcall _clearBuffer\n";
+            }
             else if (comp_expr(*stmt_output.Expr, ANY_TYPE))
             {
                 pop("rdx");
                 m_output << "\tmov rax, rdx\n";
-                m_output << "\tmov rsi, buffer\n";
+                m_output << "\tmov rsi, OutputBuffer\n";
                 m_output << "\tcall _itoa\n";
                 m_output << "\tmov rdx, rsi\n";
                 m_output << "\tcall _printf\n";
-
+                m_output << "\tcall _clearBuffer\n";
             }
             m_output << ";;\t/Output\n";
         }
         void operator()(const node::StmtIntLet &stmt_int_let)
         {
             m_output << ";;\tint let\n";
-            if (m_vars.count(stmt_int_let.ident.value.value()))
-            {
-                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_int_let.ident.value.value() << "' Is Already Declared";
-                exit(EXIT_FAILURE);
-            }
-            else
-            {
-                m_vars.insert({stmt_int_let.ident.value.value(), Var{m_stack_size, INT_TYPE}});
-                if (&stmt_int_let.Expr->var != nullptr)
-                {
-                    if (comp_expr(*stmt_int_let.Expr, INT_TYPE))
-                    {
-                    }
-                    else
-                    {
-                        std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else
-                {
-                    push("rdx");
-                }
-            }
+            comp_let(stmt_int_let.ident, stmt_int_let.Expr, INT_TYPE);
             m_output << ";;\t/int let\n";
         }
         void operator()(const node::StmtStrLet &stmt_str_let)
         {
             m_output << ";;\tstr let\n";
-            // TODO IN PROCESS
-            if (m_vars.count(stmt_str_let.ident.value.value()))
-            {
-                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_str_let.ident.value.value() << "' Is Already Declared";
-                exit(EXIT_FAILURE);
-            }
-            else
-            {
-                m_vars.insert({stmt_str_let.ident.value.value(), Var{m_stack_size, STR_TYPE}});
-                if (&stmt_str_let.Expr->var != nullptr)
-                {
-                    if (comp_expr(*stmt_str_let.Expr, STR_TYPE))
-                    {
-                    }
-                    else
-                    {
-                        std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else
-                {
-                    push("rdx");
-                }
-            }
+            comp_let(stmt_str_let.ident, stmt_str_let.Expr, STR_TYPE);
             m_output << ";;\t/str let\n";
         }
         void operator()(const node::StmtBoolLet &stmt_bool_let)
         {
             m_output << ";;\tbool let\n";
-            if (m_vars.count(stmt_bool_let.ident.value.value()))
-            {
-                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_bool_let.ident.value.value() << "' Is Already Declared";
-                exit(EXIT_FAILURE);
-            }
-            else
-            {
-                m_vars.insert({stmt_bool_let.ident.value.value(), Var{m_stack_size, BOOL_TYPE}});
-                if (&stmt_bool_let.Expr->var != nullptr)
-                {
-                    comp_expr(*stmt_bool_let.Expr, ANY_TYPE);
-                }
-                else
-                {
-                    push("rdx");
-                }
-                std::string false_label = create_label();
-                std::string end_label = create_label();
-                pop("rdx");
-                m_output << "\tcmp rdx, 0\n";
-                m_output << "\tjle " << false_label << "\n";
-                m_output << "\tmov rdx, 1\n";
-                m_output << "\tjmp " << end_label << "\n";
-                m_output << "\t" << false_label << ":\n";
-                m_output << "\tmov rdx, 0\n";
-                m_output << "\t" << end_label << ":\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-            }
+            comp_let(stmt_bool_let.ident, stmt_bool_let.Expr, BOOL_TYPE);
             m_output << ";;\t/bool let\n";
+        }
+        void operator()(const node::StmtCharLet &stmt_char_let)
+        {
+            m_output << ";;\tchar let\n";
+            comp_let(stmt_char_let.ident, stmt_char_let.Expr, CHAR_TYPE);
+            m_output << ";;\t/char let\n";
         }
         void operator()(const node::StmtIntVar &stmt_int_var)
         {
-            if (m_vars.count(stmt_int_var.ident.value.value()))
-            {
-                const auto &var = m_vars[stmt_int_var.ident.value.value()];
-                if (var.Type == INT_TYPE)
-                {
-                    if (comp_expr(*stmt_int_var.Expr, INT_TYPE))
-                    {
-                        pop("rdx");
-                        m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
-                        m_output << "\txor rdx, rdx\n";
-                    }
-                    else
-                    {
-                        std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else if (var.Type == BOOL_TYPE)
-                {
-                    std::string false_label = create_label();
-                    std::string end_label = create_label();
-                    comp_expr(*stmt_int_var.Expr, ANY_TYPE);
-                    pop("rdx");
-                    m_output << "\tcmp rdx, 0\n";
-                    m_output << "\tjle " << false_label << "\n";
-                    m_output << "\tmov rdx, 1\n";
-                    m_output << "\tjmp " << end_label << "\n";
-                    m_output << "\t" << false_label << ":\n";
-                    m_output << "\tmov rdx, 0\n";
-                    m_output << "\t" << end_label << ":\n";
-                    m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
-                    m_output << "\txor rdx, rdx\n";
-                }
-                else
-                {
-                    std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_int_var.ident.value.value() << "' Was Not Declared";
-                exit(EXIT_FAILURE);
-            }
+            comp_var(stmt_int_var.ident, stmt_int_var.Expr, INT_TYPE);
         }
         void operator()(const node::StmtStrVar &stmt_str_var)
         {
-            // TODO IN PROCESS
-            if (m_vars.count(stmt_str_var.ident.value.value()))
-            {
-                const auto &var = m_vars[stmt_str_var.ident.value.value()];
-                if (var.Type == STR_TYPE)
-                {
-                    if (comp_expr(*stmt_str_var.Expr, STR_TYPE))
-                    {
-                        pop("rdx");
-                        m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
-                        m_output << "\txor rdx, rdx\n";
-                    }
-                    else
-                    {
-                        std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else if (var.Type == BOOL_TYPE)
-                {
-                    std::string false_label = create_label();
-                    std::string end_label = create_label();
-                    comp_expr(*stmt_str_var.Expr, ANY_TYPE);
-                    pop("rdx");
-                    m_output << "\tcmp rdx, 0\n";
-                    m_output << "\tjle " << false_label << "\n";
-                    m_output << "\tmov rdx, 1\n";
-                    m_output << "\tjmp " << end_label << "\n";
-                    m_output << "\t" << false_label << ":\n";
-                    m_output << "\tmov rdx, 0\n";
-                    m_output << "\t" << end_label << ":\n";
-                    m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
-                    m_output << "\txor rdx, rdx\n";
-                }
-                else
-                {
-                    std::cerr << "[Compile Error] ERR006 Value Doesnt Mathces Type";
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_str_var.ident.value.value() << "' Was Not Declared";
-                exit(EXIT_FAILURE);
-            }
+            comp_var(stmt_str_var.ident, stmt_str_var.Expr, STR_TYPE);
         }
         void operator()(const node::StmtBoolVar &stmt_bool_var)
         {
-            if (m_vars.count(stmt_bool_var.ident.value.value()))
-            {
-                std::string false_label = create_label();
-                std::string end_label = create_label();
-                const auto &var = m_vars[stmt_bool_var.ident.value.value()];
-                comp_expr(*stmt_bool_var.Expr, ANY_TYPE);
-                pop("rdx");
-                m_output << "\tcmp rdx, 0\n";
-                m_output << "\tjle " << false_label << "\n";
-                m_output << "\tmov rdx, 1\n";
-                m_output << "\tjmp " << end_label << "\n";
-                m_output << "\t" << false_label << ":\n";
-                m_output << "\tmov rdx, 0\n";
-                m_output << "\t" << end_label << ":\n";
-                m_output << "\tmov [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "], rdx\n";
-                m_output << "\txor rdx, rdx\n";
-            }
-            else
-            {
-                std::cerr << "[Compile Error] ERR004 Identefier '" << stmt_bool_var.ident.value.value() << "' Was Not Declared";
-                exit(EXIT_FAILURE);
-            }
+            comp_var(stmt_bool_var.ident, stmt_bool_var.Expr, BOOL_TYPE);
+        }
+        void operator()(const node::StmtCharVar &stmt_char_var)
+        {
+            comp_var(stmt_char_var.ident, stmt_char_var.Expr, CHAR_TYPE);
         }
     };
     StmtVisitor visitor;
@@ -795,7 +832,7 @@ std::stringstream compiler::compile()
                 "\tstdout dw 0\n"
                 "\tbytesWritten dw 0\n\n"
                 "section .bss\n"
-                "\tbuffer resb 20\n\n"
+                "\tOutputBuffer resb 20\n\n"
                 "section .text\n"
                 "global main\n"
                 "main:\n";
@@ -809,7 +846,7 @@ std::stringstream compiler::compile()
                 "_printf:\n"
                 "\t; INPUT:\n"
                 "\t; RDX - string\n"
-                "\tcall _count_str_len\n"
+                "\tcall _countStrLen\n"
                 "\tmov r8, rcx\n"
                 "\tmov rcx, stdout_query\n"
                 "\tcall GetStdHandle\n"
@@ -820,7 +857,7 @@ std::stringstream compiler::compile()
                 "\tcall WriteConsoleA\n"
                 "\tret\n"
                 "\n"
-                "_count_str_len:\n"
+                "_countStrLen:\n"
                 "\t; INPUT:\n"
                 "\t; RDX - string\n"
                 "\t; OUTPUT:\n"
@@ -874,6 +911,19 @@ std::stringstream compiler::compile()
                 "\tjg .to_string\n"
                 "\tpop rdx\n"
                 "\tpop rsi\n"
+                "\tret\n"
+                "\n"
+                "_clearBuffer:\n"
+                "\t; INPUT:\n"
+                "\t; RSI - buffer to clear\n"
+                "\tclear:\n"
+                "\tcmp BYTE [rsi], 00H\n"
+                "\tje end\n"
+                "\tmov al, 00H\n"
+                "\tmov [rsi], al\n"
+                "\tinc rsi\n"
+                "\tjmp clear\n"
+                "\tend:\n"
                 "\tret\n";
 
     std::stringstream output;

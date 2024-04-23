@@ -25,6 +25,8 @@ private:
     static bool comp_bin_expr(const node::BinExpr& expr, std::string ExpectedType);
     static bool comp_val_expr(const node::ValExpr& expr, std::string ExpectedType);
     static void comp_if_pred(const node::IfPred &pred, std::string end_label);
+    static void comp_var(Token ident, node::Expr* Expr, std::string ExpectedType);
+    static void comp_let(Token ident, node::Expr* Expr, std::string ExpectedType);
     static void comp_stmt(const node::Stmt& stmt);
     static std::string create_label();
     static std::string create_SC_label();

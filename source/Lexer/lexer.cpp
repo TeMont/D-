@@ -94,6 +94,36 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
                 return {};
             }
         }
+        else if (peek().value().type == Tokens::APOST)
+        {
+            consume(); // consume '
+            if (ExpectedType == CHAR_TYPE || ExpectedType == ANY_TYPE)
+            {
+                auto x =peek().value().type;
+                if (peek().has_value() && peek().value().type == Tokens::CHAR_LITERAL)
+                {
+                    valExpr = {node::ExprCharLit{consume()}};
+                    if (peek().value().type == Tokens::APOST)
+                    {
+                        consume(); // consume '
+                    }
+                    else
+                    {
+                        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '\"'";
+                        exit(EXIT_FAILURE);
+                    }
+                }
+                else
+                {
+                    std::cerr << "[Parse Error] ERR001 Syntax Error Expected Char Literal";
+                    exit(EXIT_FAILURE);
+                }
+            }
+            else
+            {
+                return {};
+            }
+        }
         else if (peek().value().type == Tokens::BOOL_LITERAL)
         {
             if (ExpectedType == BOOL_TYPE || ExpectedType == ANY_TYPE)
@@ -563,6 +593,18 @@ std::optional<node::Stmt> parser::parseStmt()
             else
             {
                 stmt_node = {node::StmtBoolLet{temp_let_stmt.ident}};
+            }
+        }
+        else if (peek().value().type == Tokens::CHAR_LET)
+        {
+            auto temp_let_stmt = parseLet(CHAR_TYPE).value();
+            if (temp_let_stmt.Expr != nullptr)
+            {
+                stmt_node = {node::StmtCharLet{temp_let_stmt.ident, temp_let_stmt.Expr}};
+            }
+            else
+            {
+                stmt_node = {node::StmtCharLet{temp_let_stmt.ident}};
             }
         }
         else if (peek().value().type == Tokens::IDENT)

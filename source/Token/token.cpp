@@ -9,10 +9,13 @@ std::map<std::string, Tokens> TokensMap =
         {"stringLit", STRING_LITERAL},
         {"bool", BOOL_LET},
         {"boolLit", BOOL_LITERAL},
+        {"char", CHAR_LET},
+        {"charLit", CHAR_LITERAL},
         {"stdOut", OUTPUT},
         {"stdInp", INPUT},
         {";", SEMICOLON},
         {"\"", QOUTE},
+        {"\'", APOST},
         {"{", LBRACKET},
         {"}", RBRACKET},
         {"(", LPAREN},
@@ -117,6 +120,37 @@ std::vector<Token> tokenizer::tokenize()
             }
 
             continue;
+        }
+        else if (peek().value() == '\'')
+        {   
+            buffer.push_back(consume());
+            tokens.push_back({TokensMap[buffer]});
+            buffer.clear();
+
+            while (peek().has_value() && peek().value() != '\'')
+            {
+                buffer.push_back(consume());
+            }
+
+            if (peek().has_value() && peek().value() == '\'')
+            {
+                if (buffer.size() > 1)
+                {
+                    std::cerr << "[Tokenize Error] ERR010 Char Literal Cannot Be More Than One Symbol";
+                    exit(EXIT_FAILURE);
+                }
+                tokens.push_back({TokensMap["charLit"], buffer});
+                buffer.clear();
+
+                buffer.push_back(consume()); // consume '''
+                tokens.push_back({TokensMap[buffer]});
+                buffer.clear();
+            }
+            else
+            {
+                std::cerr << "[Tokenize Error] ERR001 Syntax Error Expected '\''";
+                exit(EXIT_FAILURE);
+            }
         }
         else if (peek().value() == '/' && peek(1).has_value() && peek(1).value() == '/') // ONE-LINE COMMENT
         {

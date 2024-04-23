@@ -9,8 +9,9 @@
 #define INT_TYPE "integer"
 #define STR_TYPE "string"
 #define BOOL_TYPE "bool"
+#define CHAR_TYPE "char"
 #define ANY_TYPE "any"
-/*dasdsadasddas*/
+
 enum Tokens
 {
     INT_LITERAL,
@@ -19,6 +20,8 @@ enum Tokens
     STRING_LET,
     BOOL_LITERAL,
     BOOL_LET,
+    CHAR_LITERAL,
+    CHAR_LET,
     IDENT,
     EQ,
     PLUS,
@@ -29,6 +32,7 @@ enum Tokens
     RPAREN,
     SEMICOLON,
     QOUTE,
+    APOST,
     LBRACKET,
     RBRACKET,
     RETURN,

@@ -9,6 +9,7 @@ The compiler is made using NASM & GoLink.
 - [X] String Variables
 - [X] Integer Variables
 - [X] Bool Variables
+- [X] Char Variables
 - [X] Math operations with precedence
 - [X] Logical Operators
 - [X] If Statement
