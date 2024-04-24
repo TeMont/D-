@@ -119,7 +119,7 @@ bool compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 if ((expr_str.str_lit.value.has_value()))
                 {
                     std::string SC = create_SC_label();
-                    m_SC << SC << ": db '" << expr_str.str_lit.value.value() << "', 00H\n";
+                    m_SC << SC << ": db '" << expr_str.str_lit.value.value() << "',00H\n";
                     m_output << "\tmov rdx, " << SC << '\n';
                 }
                 push("rdx");
@@ -760,11 +760,11 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             else if (comp_expr(*stmt_output.Expr, CHAR_TYPE))
             {
                 pop("rdx");
-                m_output << "\tmov rsi, OutputBuffer\n";
-                m_output << "\tmov [rsi], dx\n";
+                m_output << "\tmov rsi, OutputBuffer\n"; 
                 m_output << "\tmov rdx, rsi\n";
                 m_output << "\tcall _printf\n";
                 m_output << "\tmov rsi, OutputBuffer\n";
+                m_output << "\tmov rdx, 20\n";
                 m_output << "\tcall _clearBuffer\n";
             }
             else if (comp_expr(*stmt_output.Expr, ANY_TYPE))
@@ -775,6 +775,7 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 m_output << "\tcall _itoa\n";
                 m_output << "\tmov rdx, rsi\n";
                 m_output << "\tcall _printf\n";
+                m_output << "\tmov rdx, 20\n";
                 m_output << "\tcall _clearBuffer\n";
             }
             m_output << ";;\t/Output\n";
@@ -916,7 +917,7 @@ std::stringstream compiler::compile()
                 "_clearBuffer:\n"
                 "\t; INPUT:\n"
                 "\t; RSI - buffer to clear\n"
-                "\tmov rdx, 20\n"
+                "\t; RDX - buffer size\n"
                 "\tclear:\n"
                 "\tcmp rdx, 0\n"
                 "\tje end\n"

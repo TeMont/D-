@@ -1,3 +1,5 @@
+SC0: db 'Hello World',27,'',00H
+SC1: db 'Hello World',10,'',00H
 extern GetStdHandle, WriteConsoleA, ExitProcess
 
 stdout_query equ -11
@@ -11,6 +13,20 @@ section .bss
 section .text
 global main
 main:
+;;	Output
+	mov rdx, SC0
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	call _printf
+;;	/Output
+;;	Output
+	mov rdx, SC1
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	call _printf
+;;	/Output
 ;;	return
 	mov rdx, 1
 	push rdx
@@ -92,12 +108,16 @@ _itoa:
 _clearBuffer:
 	; INPUT:
 	; RSI - buffer to clear
+	; RDX - buffer size
 	clear:
+	cmp rdx, 0
+	je end
 	cmp BYTE [rsi], 00H
 	je end
 	mov al, 00H
 	mov [rsi], al
 	inc rsi
+	dec rdx
 	jmp clear
 	end:
 	ret

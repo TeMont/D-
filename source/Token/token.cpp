@@ -45,7 +45,6 @@ std::vector<Token> tokenizer::tokenize()
     std::vector<Token> tokens;
     std::string buffer;
 
-
     while (peek().has_value())
     {
         if (std::isalpha(peek().value()))
@@ -101,6 +100,65 @@ std::vector<Token> tokenizer::tokenize()
 
             while (peek().has_value() && peek().value() != '"')
             {
+                if (peek().value() == '\\')
+                {
+                    consume();
+                    auto symbol = consume();
+                    buffer.push_back('\'');
+                    buffer.push_back(',');
+                    switch (symbol)
+                    {
+                    case 'n':
+                        buffer.push_back('1');
+                        buffer.push_back('0');
+                        break;
+                    case 't':
+                        buffer.push_back('9');
+                        break;
+                    case 'r':
+                        buffer.push_back('1');
+                        buffer.push_back('3');
+                        break;
+                    case 'b':
+                        buffer.push_back('8');
+                        break;
+                    case 'f':
+                        buffer.push_back('1');
+                        buffer.push_back('2');
+                        break;
+                    case '\'':
+                        buffer.push_back('3');
+                        buffer.push_back('9');
+                        break;
+                    case '\"':
+                        buffer.push_back('3');
+                        buffer.push_back('4');
+                        break;
+                    case '\\':
+                        buffer.push_back('9');
+                        buffer.push_back('2');
+                        break;
+                    case '0':
+                        buffer.push_back('0');
+                        break;
+                    case 'v':
+                        buffer.push_back('1');
+                        buffer.push_back('1');
+                        break;
+                    case 'a':
+                        buffer.push_back('7');
+                        break;
+                    case 'e':
+                        buffer.push_back('2');
+                        buffer.push_back('7');
+                        break;
+                    default:
+                        break;
+                    }
+                    buffer.push_back(',');
+                    buffer.push_back('\'');
+                    continue;
+                }
                 buffer.push_back(consume());
             }
 
@@ -122,7 +180,7 @@ std::vector<Token> tokenizer::tokenize()
             continue;
         }
         else if (peek().value() == '\'')
-        {   
+        {
             buffer.push_back(consume());
             tokens.push_back({TokensMap[buffer]});
             buffer.clear();
@@ -210,7 +268,7 @@ std::vector<Token> tokenizer::tokenize()
                 std::cerr << "ERR001 Syntax Error Unexpected '" << buffer << "'";
                 exit(EXIT_FAILURE);
             }
-            else 
+            else
             {
                 continue;
             }

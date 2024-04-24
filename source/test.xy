@@ -1,2 +1,7 @@
+stdOut("Hello World\t");
+stdOut("Hello World\n");
+
+
+
 
 return 1;
