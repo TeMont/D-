@@ -48,6 +48,7 @@ uint64_t compiler::SC_count = 0;
 
 std::stringstream compiler::m_output;
 std::stringstream compiler::m_SC;
+std::stringstream compiler::m_bss_SC;
 
 bool compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType)
 {
@@ -65,6 +66,11 @@ bool compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 if (ExpectedType == ANY_TYPE || ExpectedType == var.Type)
                 {
                     push("QWORD [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "]");
+                    return 1;
+                }
+                else if (ExpectedType == BOOL_TYPE && var.Type != STR_TYPE)
+                {
+                    comp_bool_expr({"QWORD [rsp + " + std::to_string((m_stack_size - var.stack_loc - 1) * 8) + "]"});
                     return 1;
                 }
                 else
@@ -90,6 +96,11 @@ bool compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 m_output << "\txor rdx, rdx\n";
                 return 1;
             }
+            else if (ExpectedType == BOOL_TYPE)
+            {
+                comp_bool_expr(expr_int.int_lit.value);
+                return 1;
+            }
             else
             {
                 return 0;
@@ -105,6 +116,11 @@ bool compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
                 }
                 push("rdx");
                 m_output << "\txor rdx, rdx\n";
+                return 1;
+            }
+            else if (ExpectedType == BOOL_TYPE)
+            {
+                comp_bool_expr(expr_char.char_lit.value);
                 return 1;
             }
             else
@@ -159,6 +175,25 @@ bool compiler::comp_val_expr(const node::ValExpr &expr, std::string ExpectedType
 
     ExprVisitor visitor(ExpectedType);
     return std::visit(visitor, expr.var);
+}
+
+void compiler::comp_bool_expr(const std::optional<std::string> &literal)
+{
+    std::string endLabel = create_label();
+    std::string falseLabel = create_label();
+    if ((literal.has_value()))
+    {
+        m_output << "\tmov rdx, " << literal.value() << '\n';
+    }
+    m_output << "\tcmp rdx, 0\n";
+    m_output << "\tjle " << falseLabel << "\n";
+    m_output << "\tmov rdx, 1\n";
+    m_output << "\tjmp " << endLabel << "\n";
+    m_output << "\t" << falseLabel << ":\n";
+    m_output << "\tmov rdx, 0\n";
+    m_output << "\t" << endLabel << ":\n";
+    push("rdx");
+    m_output << "\txor rdx, rdx\n";
 }
 
 bool compiler::comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType)
@@ -546,10 +581,100 @@ bool compiler::comp_expr(const node::Expr &expr, std::string ExpectedType)
         {
             return comp_val_expr(*ValExpr, ExpectedType);
         }
+        bool operator()(const node::StmtInput *InputExpr)
+        {
+            m_output << ";;\tInput\n";
+            comp_input(*InputExpr);
+            if (ExpectedType == STR_TYPE || ExpectedType == ANY_TYPE)
+            {
+                std::string false_label1 = create_label();
+                std::string true_label1 = create_label();
+                std::string end_label1 = create_label();
+                std::string false_label2 = create_label();
+                std::string true_label2 = create_label();
+                std::string end_label2 = create_label();
+                std::string SC = create_SC_label();
+                m_bss_SC << "\t" << SC << " resb 256\n";
+                m_output << "\tmov rdi, " << SC << "\n";
+                m_output << "\tmov rcx, 256\n";
+                m_output << "\trep movsb\n";
+                m_output << "\tmov rdx, " << SC << "\n";
+                m_output << "\tcall _countStrLen\n";
+                m_output << "\tcmp byte [rdx+rcx-1], 10\n";
+                m_output << "\tje " << true_label1 << "\n";
+                m_output << "\tjmp " << end_label1 << "\n";
+                m_output << "\t" << true_label1 << ":\n";
+                m_output << "\tmov byte [rdx+rcx-1], 00H\n";
+                m_output << "\t" << end_label1 << ":\n";
+                m_output << "\tcmp byte [rdx+rcx-2], 13\n";
+                m_output << "\tje " << true_label2 << "\n";
+                m_output << "\tjmp " << end_label2 << "\n";
+                m_output << "\t" << true_label2 << ":\n";
+                m_output << "\tmov byte [rdx+rcx-2], 00H\n";
+                m_output << "\t" << end_label2 << ":\n";
+                push("rdx");
+            }
+            else if (ExpectedType == CHAR_TYPE)
+            {
+                m_output << "\tmovzx rdx, byte [rsi]\n";
+                push("rdx");
+            }
+            else if (ExpectedType == INT_TYPE)
+            {
+                m_output << "\tcall _stoi\n";
+                push("rdi");
+            }
+            else if (ExpectedType == BOOL_TYPE)
+            {
+                m_output << "\tmovzx rdx, byte [rsi]\n";
+                comp_bool_expr("rdx");
+            }
+
+            m_output << "\tmov rsi, OutputBuffer\n";
+            m_output << "\tmov rdx, 20\n";
+            m_output << "\tcall _clearBuffer\n";
+            m_output << "\tmov rsi, InputBuffer\n";
+            m_output << "\tmov rdx, 256\n";
+            m_output << "\tcall _clearBuffer\n";
+            m_output << ";;\t/Input\n";
+            return 1;
+        }
     };
 
     ExprVisitor visitor(ExpectedType);
     return std::visit(visitor, expr.var);
+}
+
+void compiler::comp_input(const node::StmtInput stmt_input)
+{
+    if (comp_expr(*stmt_input.msg, STR_TYPE))
+    {
+        pop("rdx");
+        m_output << "\tmov rsi, InputBuffer\n";
+        m_output << "\tmov rax, 256\n";
+        m_output << "\tcall _scanf\n";
+    }
+    else if (comp_expr(*stmt_input.msg, CHAR_TYPE))
+    {
+        pop("rdx");
+        m_output << "\tmov rsi, OutputBuffer\n";
+        m_output << "\tmov [rsi], dx\n";
+        m_output << "\tmov rdx, rsi\n";
+        m_output << "\tmov rsi, InputBuffer\n";
+        m_output << "\tmov rax, 256\n";
+        m_output << "\tcall _scanf\n";
+    }
+    else if (comp_expr(*stmt_input.msg, ANY_TYPE))
+    {
+        pop("rdx");
+        m_output << "\tmov rax, rdx\n";
+        m_output << "\tmov rsi, OutputBuffer\n";
+        m_output << "\tcall _itoa\n";
+        m_output << "\tmov rdx, rsi\n";
+        m_output << "\tmov rsi, InputBuffer\n";
+        m_output << "\tmov rax, 256\n";
+        m_output << "\tcall _scanf\n";
+    }
 }
 
 void compiler::comp_if_pred(const node::IfPred &pred, std::string end_label)
@@ -647,7 +772,7 @@ void compiler::comp_var(Token ident, node::Expr *Expr, std::string ExpectedType)
     }
 }
 
-void compiler::comp_let(Token ident, node::Expr *Expr, std::string ExpectedType)
+void compiler:: comp_let(Token ident, node::Expr *Expr, std::string ExpectedType)
 {
     if (m_vars.count(ident.value.value()))
     {
@@ -657,11 +782,10 @@ void compiler::comp_let(Token ident, node::Expr *Expr, std::string ExpectedType)
     else
     {
         m_vars.insert({ident.value.value(), Var{m_stack_size, ExpectedType}});
-        if (ExpectedType == BOOL_TYPE)
+        if (ExpectedType != BOOL_TYPE)
         {
             if (&Expr->var != nullptr)
             {
-
                 if (comp_expr(*Expr, ExpectedType))
                 {
                 }
@@ -686,18 +810,8 @@ void compiler::comp_let(Token ident, node::Expr *Expr, std::string ExpectedType)
             {
                 push("rdx");
             }
-            std::string false_label = create_label();
-            std::string end_label = create_label();
             pop("rdx");
-            m_output << "\tcmp rdx, 0\n";
-            m_output << "\tjle " << false_label << "\n";
-            m_output << "\tmov rdx, 1\n";
-            m_output << "\tjmp " << end_label << "\n";
-            m_output << "\t" << false_label << ":\n";
-            m_output << "\tmov rdx, 0\n";
-            m_output << "\t" << end_label << ":\n";
-            push("rdx");
-            m_output << "\txor rdx, rdx\n";
+            comp_bool_expr("rdx");
         }
     }
 }
@@ -760,7 +874,8 @@ void compiler::comp_stmt(const node::Stmt &stmt)
             else if (comp_expr(*stmt_output.Expr, CHAR_TYPE))
             {
                 pop("rdx");
-                m_output << "\tmov rsi, OutputBuffer\n"; 
+                m_output << "\tmov rsi, OutputBuffer\n";
+                m_output << "\tmov [rsi], dx\n";
                 m_output << "\tmov rdx, rsi\n";
                 m_output << "\tcall _printf\n";
                 m_output << "\tmov rsi, OutputBuffer\n";
@@ -775,10 +890,23 @@ void compiler::comp_stmt(const node::Stmt &stmt)
                 m_output << "\tcall _itoa\n";
                 m_output << "\tmov rdx, rsi\n";
                 m_output << "\tcall _printf\n";
+                m_output << "\tmov rsi, OutputBuffer\n";
                 m_output << "\tmov rdx, 20\n";
                 m_output << "\tcall _clearBuffer\n";
             }
             m_output << ";;\t/Output\n";
+        }
+        void operator()(const node::StmtInput &stmt_input)
+        {
+            m_output << ";;\tInput\n";
+            comp_input(stmt_input);
+            m_output << "\tmov rsi, OutputBuffer\n";
+            m_output << "\tmov rdx, 20\n";
+            m_output << "\tcall _clearBuffer\n";
+            m_output << "\tmov rsi, InputBuffer\n";
+            m_output << "\tmov rdx, 256\n";
+            m_output << "\tcall _clearBuffer\n";
+            m_output << ";;\t/Input\n";
         }
         void operator()(const node::StmtIntLet &stmt_int_let)
         {
@@ -827,13 +955,17 @@ void compiler::comp_stmt(const node::Stmt &stmt)
 
 std::stringstream compiler::compile()
 {
-    m_output << "extern GetStdHandle, WriteConsoleA, ExitProcess\n\n"
+    m_output << "extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess\n\n"
                 "stdout_query equ -11\n"
+                "stdin_query equ -10\n"
                 "section .data\n"
                 "\tstdout dw 0\n"
-                "\tbytesWritten dw 0\n\n"
+                "\tstdin dw 0\n"
+                "\tbytesWritten dw 0\n"
+                "\tbytesRead dw 0\n\n"
                 "section .bss\n"
-                "\tOutputBuffer resb 20\n\n"
+                "\tOutputBuffer resb 20\n"
+                "\tInputBuffer resb 256\n\n"
                 "section .text\n"
                 "global main\n"
                 "main:\n";
@@ -856,6 +988,30 @@ std::stringstream compiler::compile()
                 "\tmov r9, bytesWritten\n"
                 "\txor r10, r10\n"
                 "\tcall WriteConsoleA\n"
+                "\tret\n"
+                "\n"
+                "_scanf:\n"
+                "\t; INPUT:\n"
+                "\t; RDX - message\n"
+                "\t; RSI - buffer for input\n"
+                "\t; RAX - buffer size\n"
+                "\t; OUTPUT:\n"
+                "\t; RSI - buffer with user input\n"
+                "\tpush rax\n"
+                "\tpush rsi\n"
+                "\tpush rdx\n"
+                "\tmov rdx, rax\n"
+                "\tcall _clearBuffer\n"
+                "\tpop rdx\n"
+                "\tcall _printf\n"
+                "\tmov rcx, stdin_query\n"
+                "\tcall GetStdHandle\n"
+                "\tmov [rel stdin], rax\n"
+                "\tmov rcx, [rel stdin]\n"
+                "\tpop rdx\n"
+                "\tpop r8\n"
+                "\tmov r9, bytesRead\n"
+                "\tcall ReadConsoleA\n"
                 "\tret\n"
                 "\n"
                 "_countStrLen:\n"
@@ -914,6 +1070,37 @@ std::stringstream compiler::compile()
                 "\tpop rsi\n"
                 "\tret\n"
                 "\n"
+                "_stoi:\n"
+                "\t; INPUT:\n"
+                "\t; RSI - buffer to convert\n"
+                "\t; OUTPUT:\n"
+                "\t; RDI - integer\n"
+                "\txor rdi, rdi\n"
+                "\tmov rbx, 10\n"
+                "\txor rax, rax\n"
+                "\tnext_digit:\n"
+                "\tmovzx rdx, byte[rsi]\n"
+                "\ttest rdx, rdx\n"
+                "\tjz done\n"
+                "\tcmp rdx, 13\n"
+                "\tje done\n"
+                "\tcmp rdx, '0'\n"
+                "\tjl error\n"
+                "\tcmp rdx, '9'\n"
+                "\tjg error\n"
+                "\timul rdi, rbx\n"
+                "\tsub rdx, '0'\n"
+                "\tadd rdi, rdx\n"
+                "\tinc rsi\n"
+                "\tjmp next_digit\n"
+                "\terror:\n"
+                "\tmov rdx, ERR1\n"
+                "\tcall _printf\n"
+                "\tcall ExitProcess\n"
+                "\tdone:\n"
+                "\tmov rsi, rdx\n"
+                "\tret\n"
+                "\n"
                 "_clearBuffer:\n"
                 "\t; INPUT:\n"
                 "\t; RSI - buffer to clear\n"
@@ -929,10 +1116,14 @@ std::stringstream compiler::compile()
                 "\tdec rdx\n"
                 "\tjmp clear\n"
                 "\tend:\n"
-                "\tret\n";
+                "\tret\n"
+                "\n"
+                "ERR1: db 'Runtime Error. Cannot Convert String To Integer',7,00H\n";
 
     std::stringstream output;
     output << m_SC.str();
+    output << "section .bss\n";
+    output << m_bss_SC.str();
     output << m_output.str();
 
     return output;

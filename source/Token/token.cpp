@@ -12,7 +12,7 @@ std::map<std::string, Tokens> TokensMap =
         {"char", CHAR_LET},
         {"charLit", CHAR_LITERAL},
         {"stdOut", OUTPUT},
-        {"stdInp", INPUT},
+        {"stdInput", INPUT},
         {";", SEMICOLON},
         {"\"", QOUTE},
         {"\'", APOST},
@@ -153,8 +153,11 @@ std::vector<Token> tokenizer::tokenize()
                         buffer.push_back('7');
                         break;
                     default:
+                        buffer.push_back('\'');
+                        buffer.push_back('\'');
                         break;
                     }
+
                     buffer.push_back(',');
                     buffer.push_back('\'');
                     continue;

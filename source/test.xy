@@ -1,6 +1,11 @@
-stdOut("Hello World\t");
-stdOut("Hello World\n");
+string Name = stdInput("Enter Your Name: ");
+stdOut("Your Name Is ");
+stdOut(Name);
+stdOut("\n");
 
+int Age = stdInput("Enter Your Age: ");
+stdOut("Your Age Is ");
+stdOut(Age);
 
 
 

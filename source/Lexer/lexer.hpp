@@ -7,6 +7,7 @@ namespace node
 {
     struct Expr;
     struct Stmt;
+    struct StmtInput;
     struct ExprIntLit
     {
         Token int_lit;
@@ -99,7 +100,7 @@ namespace node
 
     struct Expr
     {
-        std::variant<ValExpr*, BinExpr*> var;
+        std::variant<ValExpr*, BinExpr*, StmtInput*> var;
     };
 
     struct IfPred;
@@ -176,10 +177,14 @@ namespace node
     {
         Expr* Expr = nullptr;
     };
-    
+    struct StmtInput
+    {
+        Expr* msg = nullptr;
+    };
+
     struct Stmt
     {
-        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtCharLet, StmtStrVar, StmtIntVar, StmtBoolVar, StmtCharVar, StmtIf, StmtOutput> var; 
+        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtCharLet, StmtStrVar, StmtIntVar, StmtBoolVar, StmtCharVar, StmtIf, StmtOutput, StmtInput> var; 
     };
     
     struct Prog
@@ -200,6 +205,7 @@ public:
     std::optional<node::StmtIf> parseIfStmt();
     std::optional<node::IfPred> parseIfPred();
     std::optional<node::StmtIntLet> parseLet(std::string ExpectedType = ANY_TYPE);
+    std::optional<node::StmtInput> parseInputStmt();
     std::optional<node::Stmt> parseStmt();
     std::optional<node::Prog> parseProg();
 

@@ -1,31 +1,118 @@
-SC0: db 'Hello World',27,'',00H
-SC1: db 'Hello World',10,'',00H
-extern GetStdHandle, WriteConsoleA, ExitProcess
+SC0: db 'Enter Your Name: ',00H
+SC2: db 'Your Name Is ',00H
+SC3: db '',10,'',00H
+SC4: db 'Enter Your Age: ',00H
+SC5: db 'Your Age Is ',00H
+section .bss
+	SC1 resb 256
+extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess
 
 stdout_query equ -11
+stdin_query equ -10
 section .data
 	stdout dw 0
+	stdin dw 0
 	bytesWritten dw 0
+	bytesRead dw 0
 
 section .bss
 	OutputBuffer resb 20
+	InputBuffer resb 256
 
 section .text
 global main
 main:
-;;	Output
+;;	str let
+;;	Input
 	mov rdx, SC0
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	mov rsi, InputBuffer
+	mov rax, 256
+	call _scanf
+	mov rdi, SC1
+	mov rcx, 256
+	rep movsb
+	mov rdx, SC1
+	call _countStrLen
+	cmp byte [rdx+rcx-1], 10
+	je label1
+	jmp label2
+	label1:
+	mov byte [rdx+rcx-1], 00H
+	label2:
+	cmp byte [rdx+rcx-2], 13
+	je label4
+	jmp label5
+	label4:
+	mov byte [rdx+rcx-2], 00H
+	label5:
+	push rdx
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+	mov rsi, InputBuffer
+	mov rdx, 256
+	call _clearBuffer
+;;	/Input
+;;	/str let
+;;	Output
+	mov rdx, SC2
 	push rdx
 	xor rdx, rdx
 	pop rdx
 	call _printf
 ;;	/Output
 ;;	Output
-	mov rdx, SC1
+	push QWORD [rsp + 0]
+	pop rdx
+	call _printf
+;;	/Output
+;;	Output
+	mov rdx, SC3
 	push rdx
 	xor rdx, rdx
 	pop rdx
 	call _printf
+;;	/Output
+;;	int let
+;;	Input
+	mov rdx, SC4
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	mov rsi, InputBuffer
+	mov rax, 256
+	call _scanf
+	call _stoi
+	push rdi
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+	mov rsi, InputBuffer
+	mov rdx, 256
+	call _clearBuffer
+;;	/Input
+;;	/int let
+;;	Output
+	mov rdx, SC5
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	call _printf
+;;	/Output
+;;	Output
+	push QWORD [rsp + 0]
+	pop rdx
+	mov rax, rdx
+	mov rsi, OutputBuffer
+	call _itoa
+	mov rdx, rsi
+	call _printf
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
 ;;	/Output
 ;;	return
 	mov rdx, 1
@@ -47,6 +134,30 @@ _printf:
 	mov r9, bytesWritten
 	xor r10, r10
 	call WriteConsoleA
+	ret
+
+_scanf:
+	; INPUT:
+	; RDX - message
+	; RSI - buffer for input
+	; RAX - buffer size
+	; OUTPUT:
+	; RSI - buffer with user input
+	push rax
+	push rsi
+	push rdx
+	mov rdx, rax
+	call _clearBuffer
+	pop rdx
+	call _printf
+	mov rcx, stdin_query
+	call GetStdHandle
+	mov [rel stdin], rax
+	mov rcx, [rel stdin]
+	pop rdx
+	pop r8
+	mov r9, bytesRead
+	call ReadConsoleA
 	ret
 
 _countStrLen:
@@ -105,6 +216,37 @@ _itoa:
 	pop rsi
 	ret
 
+_stoi:
+	; INPUT:
+	; RSI - buffer to convert
+	; OUTPUT:
+	; RDI - integer
+	xor rdi, rdi
+	mov rbx, 10
+	xor rax, rax
+	next_digit:
+	movzx rdx, byte[rsi]
+	test rdx, rdx
+	jz done
+	cmp rdx, 13
+	je done
+	cmp rdx, '0'
+	jl error
+	cmp rdx, '9'
+	jg error
+	imul rdi, rbx
+	sub rdx, '0'
+	add rdi, rdx
+	inc rsi
+	jmp next_digit
+	error:
+	mov rdx, ERR1
+	call _printf
+	call ExitProcess
+	done:
+	mov rsi, rdx
+	ret
+
 _clearBuffer:
 	; INPUT:
 	; RSI - buffer to clear
@@ -121,3 +263,5 @@ _clearBuffer:
 	jmp clear
 	end:
 	ret
+
+ERR1: db 'Runtime Error. Cannot Convert String To Integer',7,00H
