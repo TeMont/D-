@@ -1,6 +1,6 @@
 #include "token.hpp"
 
-std::map<std::string, Tokens> TokensMap =
+std::map<std::string, Tokens> tokensMap =
     {
         {"return", RETURN},
         {"int", INT_LET},
@@ -55,10 +55,10 @@ std::vector<Token> tokenizer::tokenize()
                 buffer.push_back(consume());
             }
 
-            auto it = TokensMap.find(buffer);
-            if (it != TokensMap.end())
+            auto it = tokensMap.find(buffer);
+            if (it != tokensMap.end())
             {
-                tokens.push_back({TokensMap[buffer]});
+                tokens.push_back({tokensMap[buffer]});
                 buffer.clear();
                 continue;
             }
@@ -66,11 +66,11 @@ std::vector<Token> tokenizer::tokenize()
             {
                 if (buffer == "true" || buffer == "false")
                 {
-                    tokens.push_back({TokensMap["boolLit"], buffer});
+                    tokens.push_back({tokensMap["boolLit"], buffer});
                 }
                 else
                 {
-                    tokens.push_back({TokensMap["identifier"], buffer});
+                    tokens.push_back({tokensMap["identifier"], buffer});
                 }
                 buffer.clear();
                 continue;
@@ -83,7 +83,7 @@ std::vector<Token> tokenizer::tokenize()
             {
                 buffer.push_back(consume());
             }
-            tokens.push_back({TokensMap["intLit"], buffer});
+            tokens.push_back({tokensMap["intLit"], buffer});
             buffer.clear();
             continue;
         }
@@ -95,7 +95,7 @@ std::vector<Token> tokenizer::tokenize()
         else if (peek().value() == '"')
         {
             buffer.push_back(consume());
-            tokens.push_back({TokensMap[buffer]});
+            tokens.push_back({tokensMap[buffer]});
             buffer.clear();
 
             while (peek().has_value() && peek().value() != '"')
@@ -167,11 +167,11 @@ std::vector<Token> tokenizer::tokenize()
 
             if (peek().has_value() && peek().value() == '"')
             {
-                tokens.push_back({TokensMap["stringLit"], buffer});
+                tokens.push_back({tokensMap["stringLit"], buffer});
                 buffer.clear();
 
                 buffer.push_back(consume()); // consume '"'
-                tokens.push_back({TokensMap[buffer]});
+                tokens.push_back({tokensMap[buffer]});
                 buffer.clear();
             }
             else
@@ -185,7 +185,7 @@ std::vector<Token> tokenizer::tokenize()
         else if (peek().value() == '\'')
         {
             buffer.push_back(consume());
-            tokens.push_back({TokensMap[buffer]});
+            tokens.push_back({tokensMap[buffer]});
             buffer.clear();
 
             while (peek().has_value() && peek().value() != '\'')
@@ -200,11 +200,11 @@ std::vector<Token> tokenizer::tokenize()
                     std::cerr << "[Tokenize Error] ERR010 Char Literal Cannot Be More Than One Symbol";
                     exit(EXIT_FAILURE);
                 }
-                tokens.push_back({TokensMap["charLit"], buffer});
+                tokens.push_back({tokensMap["charLit"], buffer});
                 buffer.clear();
 
                 buffer.push_back(consume()); // consume '''
-                tokens.push_back({TokensMap[buffer]});
+                tokens.push_back({tokensMap[buffer]});
                 buffer.clear();
             }
             else
@@ -227,7 +227,7 @@ std::vector<Token> tokenizer::tokenize()
         {
             consume(); // consume '/'
             consume(); // consume '*'
-            while (peek().has_value() && peek().value() != '*' && peek(1).value() != '/')
+            while (!(peek().has_value() && peek().value() == '*' && peek(1).has_value() && peek(1).value() == '/'))
             {
                 consume();
             }
@@ -247,8 +247,8 @@ std::vector<Token> tokenizer::tokenize()
         else
         {
             buffer.push_back(consume());
-            auto it = TokensMap.find(buffer);
-            if (it != TokensMap.end())
+            auto it = tokensMap.find(buffer);
+            if (it != tokensMap.end())
             {
                 if (peek().has_value())
                 {
@@ -257,12 +257,12 @@ std::vector<Token> tokenizer::tokenize()
                         buffer.push_back(consume());
                     }
                 }
-                auto it2 = TokensMap.find(buffer);
-                if (it2 == TokensMap.end())
+                auto it2 = tokensMap.find(buffer);
+                if (it2 == tokensMap.end())
                 {
                     buffer.pop_back();
                 }
-                tokens.push_back({TokensMap[buffer]});
+                tokens.push_back({tokensMap[buffer]});
                 buffer.clear();
                 continue;
             }
@@ -281,7 +281,7 @@ std::vector<Token> tokenizer::tokenize()
     return tokens;
 }
 
-std::optional<char> tokenizer::peek(int offset) const
+[[nodiscard]] std::optional<char> tokenizer::peek(int offset) const
 {
     if (m_index + offset >= m_src.length())
     {

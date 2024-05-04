@@ -1,12 +1,31 @@
-string Name = stdInput("Enter Your Name: ");
-stdOut("Your Name Is ");
-stdOut(Name);
+int firstNum = stdInput("Enter First Number: ");
+char Symbol = stdInput("Enter Action (+ - * /): ");
+int SecondNum = stdInput("Enter Second Number: ");
+int Result;
+
+if (Symbol == '+')
+{
+    Result = firstNum + SecondNum;
+}
+elif (Symbol == '-')
+{
+    Result = firstNum - SecondNum;
+}
+elif (Symbol == '*')
+{
+    Result = firstNum * SecondNum;
+}
+elif (Symbol == '/')
+{
+    Result = firstNum / SecondNum;
+}
+else 
+{
+    stdOut("Incorrect Action Symbol\n");
+    return 10;
+}
+stdOut("Result: ");
+stdOut(Result);
 stdOut("\n");
 
-int Age = stdInput("Enter Your Age: ");
-stdOut("Your Age Is ");
-stdOut(Age);
-
-
-
-return 1;
+return 0;

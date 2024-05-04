@@ -5,9 +5,9 @@
 #include <iostream>
 #include <unordered_map>
 
-bool CreateObjectFile(std::string Path);
+bool createObjectFile(const std::string& path);
 
-bool LinkObjectFiles(std::string Path);
+bool linkObjectFiles(const std::string& path);
 
 class compiler
 {
@@ -17,34 +17,34 @@ public:
     std::stringstream compile();
 
 private:
-    static bool comp_expr(const node::Expr &expr, std::string ExpectedType);
-    static bool comp_bin_expr(const node::BinExpr &expr, std::string ExpectedType);
-    static void comp_bool_expr(const std::optional<std::string> &literal);
-    static bool comp_val_expr(const node::ValExpr &expr, std::string ExpectedType);
-    static void comp_if_pred(const node::IfPred &pred, std::string end_label);
-    static void comp_var(Token ident, node::Expr *Expr, std::string ExpectedType);
-    static void comp_let(Token ident, node::Expr *Expr, std::string ExpectedType);
-    static void comp_input(const node::StmtInput inputStmt);
-    static void comp_stmt(const node::Stmt &stmt);
-    static std::string create_label();
-    static std::string create_SC_label();
+    static bool compExpr(const node::Expr &expr, const std::string& expectedType);
+    static bool compBinExpr(const node::BinExpr &expr, const std::string& expectedType);
+    static void compBoolExpr(const std::optional<std::string> &literal);
+    static bool compValExpr(const node::ValExpr &expr, const std::string& expectedType);
+    static void compIfPred(const node::IfPred &pred, const std::string& endLabel);
+    static void compVar(Token ident, node::Expr *expr, const std::string& expectedType);
+    static void compLet(Token ident, node::Expr *expr, const std::string& expectedType);
+    static void compInput(const node::StmtInput &stmtInput);
+    static void compStmt(const node::Stmt &stmt);
+    static std::string createLabel();
+    static std::string createSCLabel();
     static void push(const std::string &reg); 
     static void pop(const std::string &reg);
 
     struct Var
     {
-        size_t stack_loc;
+        size_t stackLoc;
         std::string Type;
     };
 
     const node::Prog m_prog;
-    static size_t m_stack_size;
+    static size_t m_stackSize;
     static std::unordered_map<std::string, Var> m_vars;
 
     static std::stringstream m_output;
     static std::stringstream m_SC;
-    static std::stringstream m_bss_SC;
+    static std::stringstream m_bssSC;
 
-    static uint64_t label_count;
-    static uint64_t SC_count;
+    static uint64_t m_labelCount;
+    static uint64_t m_SCCount;
 };

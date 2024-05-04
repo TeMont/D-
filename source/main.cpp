@@ -2,9 +2,7 @@
 #include <optional>
 #include <vector>
 #include <string>
-#include <map>
 #include <thread>
-#include <chrono>
 #include <filesystem>
 #include "../headers/filesys.hpp"
 #include "Token/token.hpp"
@@ -30,10 +28,10 @@ int main(int argc, char *argv[])
             {
 
                 std::string source = ReadSource(argv[1]);
-                tokenizer Tokenize(std::move(source));
-                std::vector<Token> TokenVec = Tokenize.tokenize();
+                tokenizer tokenize(std::move(source));
+                std::vector<Token> tokenVec = tokenize.tokenize();
 
-                parser parse(std::move(TokenVec));
+                parser parse(std::move(tokenVec));
                 std::optional<node::Prog> prog = parse.parseProg();
 
                 if (!prog.has_value())
@@ -41,10 +39,10 @@ int main(int argc, char *argv[])
                     std::cerr << "Invalid Program";
                 }
 
-                std::stringstream AsmCode;
+                std::stringstream asmCode;
 
                 compiler compile(prog.value());
-                AsmCode = compile.compile();
+                asmCode = compile.compile();
 
 
                 std::string projName = argv[1];
@@ -55,17 +53,17 @@ int main(int argc, char *argv[])
                 }
 
 
-                std::ofstream asembly;
-                asembly.open(projName + ".asm");
-                asembly << AsmCode.str();
-                asembly.close();
+                std::ofstream assembly;
+                assembly.open(projName + ".asm");
+                assembly << asmCode.str();
+                assembly.close();
 
-                if (CreateObjectFile(projName))
+                if (createObjectFile(projName))
                 {
-                    if (LinkObjectFiles(projName))
+                    if (linkObjectFiles(projName))
                     {
                         system(("del " + projName + ".obj").c_str());
-                        std::cout << argv[1] << " Was succesfully compiled!\n";
+                        std::cout << argv[1] << " Was successfully compiled!\n";
                         std::cout << "Code ended with: " << system((projName + ".exe").c_str());
                     }
                     else

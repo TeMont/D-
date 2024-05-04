@@ -1,10 +1,10 @@
-SC0: db 'Enter Your Name: ',00H
-SC2: db 'Your Name Is ',00H
-SC3: db '',10,'',00H
-SC4: db 'Enter Your Age: ',00H
-SC5: db 'Your Age Is ',00H
+SC0: db 'Enter First Number: ',00H
+SC1: db 'Enter Action (+ - * /): ',00H
+SC2: db 'Enter Second Number: ',00H
+SC3: db 'Incorrect Action Symbol',00H
+SC4: db 'Result: ',00H
+SC5: db '',10,'',00H
 section .bss
-	SC1 resb 256
 extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess
 
 stdout_query equ -11
@@ -22,63 +22,9 @@ section .bss
 section .text
 global main
 main:
-;;	str let
-;;	Input
-	mov rdx, SC0
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	mov rsi, InputBuffer
-	mov rax, 256
-	call _scanf
-	mov rdi, SC1
-	mov rcx, 256
-	rep movsb
-	mov rdx, SC1
-	call _countStrLen
-	cmp byte [rdx+rcx-1], 10
-	je label1
-	jmp label2
-	label1:
-	mov byte [rdx+rcx-1], 00H
-	label2:
-	cmp byte [rdx+rcx-2], 13
-	je label4
-	jmp label5
-	label4:
-	mov byte [rdx+rcx-2], 00H
-	label5:
-	push rdx
-	mov rsi, OutputBuffer
-	mov rdx, 20
-	call _clearBuffer
-	mov rsi, InputBuffer
-	mov rdx, 256
-	call _clearBuffer
-;;	/Input
-;;	/str let
-;;	Output
-	mov rdx, SC2
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	call _printf
-;;	/Output
-;;	Output
-	push QWORD [rsp + 0]
-	pop rdx
-	call _printf
-;;	/Output
-;;	Output
-	mov rdx, SC3
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	call _printf
-;;	/Output
 ;;	int let
 ;;	Input
-	mov rdx, SC4
+	mov rdx, SC0
 	push rdx
 	xor rdx, rdx
 	pop rdx
@@ -95,8 +41,209 @@ main:
 	call _clearBuffer
 ;;	/Input
 ;;	/int let
+;;	char let
+;;	Input
+	mov rdx, SC1
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	mov rsi, InputBuffer
+	mov rax, 256
+	call _scanf
+	movzx rdx, byte [rsi]
+	push rdx
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+	mov rsi, InputBuffer
+	mov rdx, 256
+	call _clearBuffer
+;;	/Input
+;;	/char let
+;;	int let
+;;	Input
+	mov rdx, SC2
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	mov rsi, InputBuffer
+	mov rax, 256
+	call _scanf
+	call _stoi
+	push rdi
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+	mov rsi, InputBuffer
+	mov rdx, 256
+	call _clearBuffer
+;;	/Input
+;;	/int let
+;;	int let
+	push rdx
+;;	/int let
+;;	if
+	push QWORD [rsp + 16]
+	mov rdx, '+'
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	je label3
+	mov rdx, 0
+	jmp label4
+	label3:
+	mov rdx, 1
+	label4:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	jle label0
+	push QWORD [rsp + 24]
+	push QWORD [rsp + 16]
+	pop rdi
+	pop rdx
+	add rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
+;;	/if
+	jmp label5
+	label0:
+;;	elif
+	push QWORD [rsp + 16]
+	mov rdx, '-'
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	je label9
+	mov rdx, 0
+	jmp label10
+	label9:
+	mov rdx, 1
+	label10:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	jle label6
+	push QWORD [rsp + 24]
+	push QWORD [rsp + 16]
+	pop rdi
+	pop rdx
+	sub rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
+	jmp label5
+;;	/elif
+	label6:
+;;	elif
+	push QWORD [rsp + 16]
+	mov rdx, '*'
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	je label14
+	mov rdx, 0
+	jmp label15
+	label14:
+	mov rdx, 1
+	label15:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	jle label11
+	push QWORD [rsp + 24]
+	push QWORD [rsp + 16]
+	pop rdi
+	pop rdx
+	imul rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
+	jmp label5
+;;	/elif
+	label11:
+;;	elif
+	push QWORD [rsp + 16]
+	mov rdx, '/'
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	je label19
+	mov rdx, 0
+	jmp label20
+	label19:
+	mov rdx, 1
+	label20:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	jle label16
+	push QWORD [rsp + 24]
+	push QWORD [rsp + 16]
+	pop rdi
+	pop rdx
+	mov rax, rdx
+	mov rdx, 0
+	idiv rdi
+	mov rdx, rax
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
+	jmp label5
+;;	/elif
+	label16:
+;;	else
 ;;	Output
-	mov rdx, SC5
+	mov rdx, SC3
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	call _printf
+;;	/Output
+;;	return
+	mov rdx, 10
+	push rdx
+	xor rdx, rdx
+	pop rcx
+	call ExitProcess
+;;	/return
+;;	/else
+	xor rdx, rdx
+	xor rdx, rdx
+	xor rdx, rdx
+	label5:
+	xor rdx, rdx
+;;	Output
+	mov rdx, SC4
 	push rdx
 	xor rdx, rdx
 	pop rdx
@@ -114,8 +261,15 @@ main:
 	mov rdx, 20
 	call _clearBuffer
 ;;	/Output
+;;	Output
+	mov rdx, SC5
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	call _printf
+;;	/Output
 ;;	return
-	mov rdx, 1
+	mov rdx, 0
 	push rdx
 	xor rdx, rdx
 	pop rcx
@@ -240,9 +394,9 @@ _stoi:
 	inc rsi
 	jmp next_digit
 	error:
-	mov rdx, ERR1
+	mov rdx, WAR1
 	call _printf
-	call ExitProcess
+	mov rdx, 0
 	done:
 	mov rsi, rdx
 	ret
@@ -264,4 +418,4 @@ _clearBuffer:
 	end:
 	ret
 
-ERR1: db 'Runtime Error. Cannot Convert String To Integer',7,00H
+WAR1: db 'Runtime Warning. Cannot Convert String To Integer. Assigned 0',7,10,00H

@@ -52,7 +52,7 @@ enum Tokens
     ELSE,
 };
 
-extern std::map<std::string, Tokens> TokensMap;
+extern std::map<std::string, Tokens> tokensMap;
 
 struct Token
 {
@@ -63,13 +63,13 @@ struct Token
 class tokenizer
 {
 public:
-    inline tokenizer(const std::string source) : m_src(std::move(source)){}
+    inline explicit tokenizer(std::string source) : m_src(std::move(source)){}
     
     std::vector<Token> tokenize();
 
 private:
 
-    std::optional<char> peek(int offset = 0) const;
+    [[nodiscard]] std::optional<char> peek(int offset = 0) const;
 
     char consume();
 

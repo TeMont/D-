@@ -1,6 +1,8 @@
 #include "lexer.hpp"
 
-std::optional<Token> parser::peek(int offset) const
+std::unordered_map<std::string, std::string> parser::m_vars;
+
+[[nodiscard]] std::optional<Token> parser::peek(int offset) const
 {
     if (m_index + offset >= m_tokens.size())
     {
@@ -49,14 +51,14 @@ std::optional<uint8_t> parser::op_to_prior(Tokens op)
     }
 }
 
-std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
+std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedType)
 {
     if (peek().has_value())
     {
         node::ValExpr valExpr;
         if (peek().value().type == Tokens::INT_LITERAL)
         {
-            if (ExpectedType == INT_TYPE || ExpectedType == ANY_TYPE)
+            if (expectedType == INT_TYPE || expectedType == ANY_TYPE)
             {
                 valExpr = {node::ExprIntLit{consume()}};
             }
@@ -67,9 +69,9 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
         }
         else if (peek().value().type == Tokens::QOUTE)
         {
-            consume(); // consume '"'
-            if (ExpectedType == STR_TYPE || ExpectedType == ANY_TYPE)
+            if (expectedType == STR_TYPE || expectedType == ANY_TYPE)
             {
+                consume(); // consume '"'
                 if (peek().has_value() && peek().value().type == Tokens::STRING_LITERAL)
                 {
                     valExpr = {node::ExprStrLit{consume()}};
@@ -96,10 +98,9 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
         }
         else if (peek().value().type == Tokens::APOST)
         {
-            consume(); // consume '
-            if (ExpectedType == CHAR_TYPE || ExpectedType == ANY_TYPE)
+            if (expectedType == CHAR_TYPE || expectedType == ANY_TYPE)
             {
-                auto x = peek().value().type;
+                consume(); // consume '
                 if (peek().has_value() && peek().value().type == Tokens::CHAR_LITERAL)
                 {
                     valExpr = {node::ExprCharLit{consume()}};
@@ -126,7 +127,7 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
         }
         else if (peek().value().type == Tokens::BOOL_LITERAL)
         {
-            if (ExpectedType == BOOL_TYPE || ExpectedType == ANY_TYPE)
+            if (expectedType == BOOL_TYPE || expectedType == ANY_TYPE)
             {
                 valExpr = {node::ExprBoolLit{consume()}};
             }
@@ -152,27 +153,27 @@ std::optional<node::ValExpr> parser::parseValExpr(std::string ExpectedType)
     }
 }
 
-std::optional<node::Expr> parser::parseExpr(std::string ExpectedType, uint8_t min_priority)
+std::optional<node::Expr> parser::parseExpr(const std::string& expectedType, uint8_t minPriority)
 {
     if (peek().has_value() && peek().value().type == Tokens::INPUT)
     {
-        auto TmpInpStmt = parseInputStmt().value();
-        return node::Expr{new node::StmtInput(TmpInpStmt)};
+        auto tmpInpStmt = parseInputStmt().value();
+        return node::Expr{new node::StmtInput(tmpInpStmt)};
     }
     else
     {
-        std::optional<node::ValExpr> val_fvl = parseValExpr(ExpectedType);
-        if (val_fvl.has_value())
+        std::optional<node::ValExpr> valFvl = parseValExpr(expectedType);
+        if (valFvl.has_value())
         {
-            node::Expr expr_fvl = {new node::ValExpr(val_fvl.value())};
+            node::Expr exprFvl = {new node::ValExpr(valFvl.value())};
 
-            while (1)
+            while (true)
             {
                 std::optional<uint8_t> priority;
                 if (peek().has_value())
                 {
                     priority = op_to_prior(peek().value().type);
-                    if (!priority.has_value() || priority < min_priority)
+                    if (!priority.has_value() || priority < minPriority)
                     {
                         break;
                     }
@@ -182,110 +183,110 @@ std::optional<node::Expr> parser::parseExpr(std::string ExpectedType, uint8_t mi
                     break;
                 }
                 Token opr = consume();
-                uint8_t next_min_priority = priority.value() + 1;
-                if (auto expr_svl = parseExpr(ExpectedType, next_min_priority))
+                uint8_t nextMinPriority = priority.value() + 1;
+                if (auto exprSvl = parseExpr(expectedType, nextMinPriority))
                 {
-                    if (expr_svl.has_value())
+                    if (exprSvl.has_value())
                     {
                         node::BinExpr expr;
-                        node::Expr expr_fvl2;
+                        node::Expr exprFvl2;
                         if (opr.type == Tokens::PLUS)
                         {
                             node::BinExprAdd add;
-                            expr_fvl2 = expr_fvl;
-                            add.fvl = new node::Expr(expr_fvl2);
-                            add.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            add.fvl = new node::Expr(exprFvl2);
+                            add.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::BinExprAdd(add);
                         }
                         else if (opr.type == Tokens::MINUS)
                         {
                             node::BinExprSub sub;
-                            expr_fvl2 = expr_fvl;
-                            sub.fvl = new node::Expr(expr_fvl2);
-                            sub.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            sub.fvl = new node::Expr(exprFvl2);
+                            sub.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::BinExprSub(sub);
                         }
                         else if (opr.type == Tokens::MULT)
                         {
                             node::BinExprMul mul;
-                            expr_fvl2 = expr_fvl;
-                            mul.fvl = new node::Expr(expr_fvl2);
-                            mul.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            mul.fvl = new node::Expr(exprFvl2);
+                            mul.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::BinExprMul(mul);
                         }
                         else if (opr.type == Tokens::DIV)
                         {
                             node::BinExprDiv div;
-                            expr_fvl2 = expr_fvl;
-                            div.fvl = new node::Expr(expr_fvl2);
-                            div.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            div.fvl = new node::Expr(exprFvl2);
+                            div.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::BinExprDiv(div);
                         }
                         else if (opr.type == Tokens::EQEQ)
                         {
                             node::EQCondition eq;
-                            expr_fvl2 = expr_fvl;
-                            eq.fvl = new node::Expr(expr_fvl2);
-                            eq.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            eq.fvl = new node::Expr(exprFvl2);
+                            eq.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::EQCondition(eq);
                         }
                         else if (opr.type == Tokens::NOTEQ)
                         {
-                            node::NotEQCondition NotEq;
-                            expr_fvl2 = expr_fvl;
-                            NotEq.fvl = new node::Expr(expr_fvl2);
-                            NotEq.svl = new node::Expr(expr_svl.value());
-                            expr.var = new node::NotEQCondition(NotEq);
+                            node::NotEQCondition notEq;
+                            exprFvl2 = exprFvl;
+                            notEq.fvl = new node::Expr(exprFvl2);
+                            notEq.svl = new node::Expr(exprSvl.value());
+                            expr.var = new node::NotEQCondition(notEq);
                         }
                         else if (opr.type == Tokens::LESS)
                         {
                             node::LessCondition less;
-                            expr_fvl2 = expr_fvl;
-                            less.fvl = new node::Expr(expr_fvl2);
-                            less.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            less.fvl = new node::Expr(exprFvl2);
+                            less.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::LessCondition(less);
                         }
                         else if (opr.type == Tokens::LESSEQ)
                         {
                             node::EQLessCondition lessEq;
-                            expr_fvl2 = expr_fvl;
-                            lessEq.fvl = new node::Expr(expr_fvl2);
-                            lessEq.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            lessEq.fvl = new node::Expr(exprFvl2);
+                            lessEq.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::EQLessCondition(lessEq);
                         }
                         else if (opr.type == Tokens::GREATER)
                         {
                             node::GreaterCondition greater;
-                            expr_fvl2 = expr_fvl;
-                            greater.fvl = new node::Expr(expr_fvl2);
-                            greater.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            greater.fvl = new node::Expr(exprFvl2);
+                            greater.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::GreaterCondition(greater);
                         }
                         else if (opr.type == Tokens::GREATEQ)
                         {
                             node::EQGreaterCondition greatEq;
-                            expr_fvl2 = expr_fvl;
-                            greatEq.fvl = new node::Expr(expr_fvl2);
-                            greatEq.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            greatEq.fvl = new node::Expr(exprFvl2);
+                            greatEq.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::EQGreaterCondition(greatEq);
                         }
                         else if (opr.type == Tokens::AND)
                         {
                             node::AndCondition And;
-                            expr_fvl2 = expr_fvl;
-                            And.fvl = new node::Expr(expr_fvl2);
-                            And.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            And.fvl = new node::Expr(exprFvl2);
+                            And.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::AndCondition(And);
                         }
                         else if (opr.type == Tokens::OR)
                         {
                             node::OrCondition Or;
-                            expr_fvl2 = expr_fvl;
-                            Or.fvl = new node::Expr(expr_fvl2);
-                            Or.svl = new node::Expr(expr_svl.value());
+                            exprFvl2 = exprFvl;
+                            Or.fvl = new node::Expr(exprFvl2);
+                            Or.svl = new node::Expr(exprSvl.value());
                             expr.var = new node::OrCondition(Or);
                         }
-                        expr_fvl.var = new node::BinExpr(expr);
+                        exprFvl.var = new node::BinExpr(expr);
                     }
                     else
                     {
@@ -299,7 +300,7 @@ std::optional<node::Expr> parser::parseExpr(std::string ExpectedType, uint8_t mi
                     exit(EXIT_FAILURE);
                 }
             }
-            return expr_fvl;
+            return exprFvl;
         }
         else
         {
@@ -378,18 +379,18 @@ std::optional<node::IfPred> parser::parseIfPred()
 {
     if (peek().has_value())
     {
-        std::optional<node::IfPred> stmt_pred;
+        std::optional<node::IfPred> stmtPred;
         if (peek().value().type == Tokens::ELIF)
         {
-            auto temp_if_stmt = parseIfStmt().value();
+            auto tempIfStmt = parseIfStmt().value();
 
-            if (temp_if_stmt.pred.has_value())
+            if (tempIfStmt.pred.has_value())
             {
-                stmt_pred = {new node::StmtElIf({temp_if_stmt.Cond, temp_if_stmt.statements, temp_if_stmt.pred})};
+                stmtPred = {new node::StmtElIf({tempIfStmt.Cond, tempIfStmt.statements, tempIfStmt.pred})};
             }
             else
             {
-                stmt_pred = {new node::StmtElIf({temp_if_stmt.Cond, temp_if_stmt.statements})};
+                stmtPred = {new node::StmtElIf({tempIfStmt.Cond, tempIfStmt.statements})};
             }
         }
         else if (peek().value().type == Tokens::ELSE)
@@ -407,7 +408,7 @@ std::optional<node::IfPred> parser::parseIfPred()
                     }
                 }
                 consume();
-                stmt_pred = {new node::StmtElse({stmts})};
+                stmtPred = {new node::StmtElse({stmts})};
             }
             else
             {
@@ -419,7 +420,7 @@ std::optional<node::IfPred> parser::parseIfPred()
         {
             return {};
         }
-        return stmt_pred;
+        return stmtPred;
     }
     else
     {
@@ -427,21 +428,21 @@ std::optional<node::IfPred> parser::parseIfPred()
     }
 }
 
-std::optional<node::StmtIntLet> parser::parseLet(std::string ExpectedType)
+std::optional<node::StmtIntLet> parser::parseLet(const std::string& expectedType)
 {
     consume();
     if (peek().has_value() && peek().value().type == Tokens::IDENT)
     {
-        auto var_ident = consume();
+        auto varIdent = consume();
         if (peek().has_value() && peek().value().type == Tokens::EQ)
         {
             consume();
-            if (auto node_expr = parseExpr(ExpectedType))
+            if (auto nodeExpr = parseExpr(expectedType))
             {
                 if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                 {
                     consume();
-                    return node::StmtIntLet{var_ident, new node::Expr(node_expr.value())};
+                    return node::StmtIntLet{varIdent, new node::Expr(nodeExpr.value())};
                 }
                 else
                 {
@@ -460,7 +461,7 @@ std::optional<node::StmtIntLet> parser::parseLet(std::string ExpectedType)
             if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
             {
                 consume();
-                return node::StmtIntLet{var_ident};
+                return node::StmtIntLet{varIdent};
             }
             else
             {
@@ -482,14 +483,14 @@ std::optional<node::StmtInput> parser::parseInputStmt()
     if (peek().has_value() && peek().value().type == Tokens::LPAREN)
     {
         consume();
-        if (auto node_expr = parseExpr(ANY_TYPE))
+        if (auto nodeExpr = parseExpr(ANY_TYPE))
         {
             if (peek().has_value() && peek().value().type == Tokens::RPAREN)
             {
                 consume();
                 if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                 {
-                    return node::StmtInput{new node::Expr(node_expr.value())};
+                    return node::StmtInput{new node::Expr(nodeExpr.value())};
                 }
                 else
                 {
@@ -518,15 +519,15 @@ std::optional<node::StmtInput> parser::parseInputStmt()
 
 std::optional<node::Stmt> parser::parseStmt()
 {
-    std::optional<node::Stmt> stmt_node;
+    std::optional<node::Stmt> stmtNode;
     if (peek().has_value())
     {
         if (peek().value().type == Tokens::RETURN)
         {
             consume();
-            if (auto node_expr = parseExpr(ANY_TYPE))
+            if (auto nodeExpr = parseExpr(ANY_TYPE))
             {
-                stmt_node = {{node::StmtReturn{new node::Expr(node_expr.value())}}};
+                stmtNode = {{node::StmtReturn{new node::Expr(nodeExpr.value())}}};
 
                 if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                 {
@@ -546,15 +547,15 @@ std::optional<node::Stmt> parser::parseStmt()
         }
         else if (peek().value().type == Tokens::IF)
         {
-            auto temp_if_stmt = parseIfStmt().value();
+            auto tempIfStmt = parseIfStmt().value();
 
-            if (temp_if_stmt.pred.has_value())
+            if (tempIfStmt.pred.has_value())
             {
-                stmt_node = {node::StmtIf({temp_if_stmt.Cond, temp_if_stmt.statements, temp_if_stmt.pred})};
+                stmtNode = {node::StmtIf({tempIfStmt.Cond, tempIfStmt.statements, tempIfStmt.pred})};
             }
             else
             {
-                stmt_node = {node::StmtIf({temp_if_stmt.Cond, temp_if_stmt.statements})};
+                stmtNode = {node::StmtIf({tempIfStmt.Cond, tempIfStmt.statements})};
             }
         }
         else if (peek().value().type == Tokens::ELIF)
@@ -573,7 +574,7 @@ std::optional<node::Stmt> parser::parseStmt()
             if (peek().value().type == Tokens::LPAREN)
             {
                 consume();
-                if (auto node_expr = parseExpr(ANY_TYPE))
+                if (auto nodeExpr = parseExpr(ANY_TYPE))
                 {
                     if (peek().value().type == Tokens::RPAREN)
                     {
@@ -581,7 +582,7 @@ std::optional<node::Stmt> parser::parseStmt()
                         if (peek().value().type == Tokens::SEMICOLON)
                         {
                             consume();
-                            stmt_node = {node::StmtOutput{new node::Expr(node_expr.value())}};
+                            stmtNode = {node::StmtOutput{new node::Expr(nodeExpr.value())}};
                         }
                         else
                         {
@@ -609,10 +610,10 @@ std::optional<node::Stmt> parser::parseStmt()
         }
         else if (peek().has_value() && peek().value().type == Tokens::INPUT)
         {
-            auto TmpInpStmt = parseInputStmt().value();
+            auto tmpInpStmt = parseInputStmt().value();
             if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
             {
-                stmt_node = node::Stmt{TmpInpStmt};
+                stmtNode = node::Stmt{tmpInpStmt};
             }
             else
             {
@@ -621,89 +622,108 @@ std::optional<node::Stmt> parser::parseStmt()
         }
         else if (peek().value().type == Tokens::INT_LET)
         {
-            auto temp_let_stmt = parseLet(INT_TYPE).value();
-            if (temp_let_stmt.Expr != nullptr)
+            auto tempLetStmt = parseLet(INT_TYPE).value();
+            if (tempLetStmt.Expr != nullptr)
             {
-                stmt_node = {node::StmtIntLet{temp_let_stmt.ident, temp_let_stmt.Expr}};
+                stmtNode = {node::StmtIntLet{tempLetStmt.ident, tempLetStmt.Expr}};
             }
             else
             {
-                stmt_node = {node::StmtIntLet{temp_let_stmt.ident}};
+                stmtNode = {node::StmtIntLet{tempLetStmt.ident}};
             }
+            m_vars.insert({tempLetStmt.ident.value.value(), INT_TYPE});
         }
         else if (peek().value().type == Tokens::STRING_LET)
         {
-            auto temp_let_stmt = parseLet(STR_TYPE).value();
-            if (temp_let_stmt.Expr != nullptr)
+            auto tempLetStmt = parseLet(STR_TYPE).value();
+            if (tempLetStmt.Expr != nullptr)
             {
-                stmt_node = {node::StmtStrLet{temp_let_stmt.ident, temp_let_stmt.Expr}};
+                stmtNode = {node::StmtStrLet{tempLetStmt.ident, tempLetStmt.Expr}};
             }
             else
             {
-                stmt_node = {node::StmtStrLet{temp_let_stmt.ident}};
+                stmtNode = {node::StmtStrLet{tempLetStmt.ident}};
             }
+            m_vars.insert({tempLetStmt.ident.value.value(), STR_TYPE});
         }
         else if (peek().value().type == Tokens::BOOL_LET)
         {
-            auto temp_let_stmt = parseLet(ANY_TYPE).value();
-            if (temp_let_stmt.Expr != nullptr)
+            auto tempLetStmt = parseLet(ANY_TYPE).value();
+            if (tempLetStmt.Expr != nullptr)
             {
-                stmt_node = {node::StmtBoolLet{temp_let_stmt.ident, temp_let_stmt.Expr}};
+                stmtNode = {node::StmtBoolLet{tempLetStmt.ident, tempLetStmt.Expr}};
             }
             else
             {
-                stmt_node = {node::StmtBoolLet{temp_let_stmt.ident}};
+                stmtNode = {node::StmtBoolLet{tempLetStmt.ident}};
             }
+            m_vars.insert({tempLetStmt.ident.value.value(), BOOL_TYPE});
         }
         else if (peek().value().type == Tokens::CHAR_LET)
         {
-            auto temp_let_stmt = parseLet(CHAR_TYPE).value();
-            if (temp_let_stmt.Expr != nullptr)
+            auto tempLetStmt = parseLet(CHAR_TYPE).value();
+            if (tempLetStmt.Expr != nullptr)
             {
-                stmt_node = {node::StmtCharLet{temp_let_stmt.ident, temp_let_stmt.Expr}};
+                stmtNode = {node::StmtCharLet{tempLetStmt.ident, tempLetStmt.Expr}};
             }
             else
             {
-                stmt_node = {node::StmtCharLet{temp_let_stmt.ident}};
+                stmtNode = {node::StmtCharLet{tempLetStmt.ident}};
             }
+            m_vars.insert({tempLetStmt.ident.value.value(), CHAR_TYPE});
         }
         else if (peek().value().type == Tokens::IDENT)
         {
-            auto var_ident = consume();
-            if (peek().value().type == Tokens::EQ)
+            auto varIdent = consume();
+            if (m_vars.count(varIdent.value.value()))
             {
-                consume();
-                if (auto node_expr = parseExpr(STR_TYPE))
-                {
-                    stmt_node = {{node::StmtStrVar{var_ident, new node::Expr(node_expr.value())}}};
-                }
-                else if (auto node_expr = parseExpr(INT_TYPE))
-                {
-                    stmt_node = {{node::StmtIntVar{var_ident, new node::Expr(node_expr.value())}}};
-                }
-                else if (auto node_expr = parseExpr(BOOL_TYPE))
-                {
-                    stmt_node = {{node::StmtBoolVar{var_ident, new node::Expr(node_expr.value())}}};
-                }
-                else
-                {
-                    std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
-                    exit(EXIT_FAILURE);
-                }
-
-                if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
+                if (peek().value().type == Tokens::EQ)
                 {
                     consume();
+                    if (auto nodeExpr = parseExpr(m_vars[varIdent.value.value()]))
+                    {
+                        if (m_vars[varIdent.value.value()] == STR_TYPE)
+                        {
+                            stmtNode = {{node::StmtStrVar{varIdent, new node::Expr(nodeExpr.value())}}};
+                        }
+                        else if (m_vars[varIdent.value.value()] == INT_TYPE)
+                        {
+                            stmtNode = {{node::StmtIntVar{varIdent, new node::Expr(nodeExpr.value())}}};
+                        }
+                        else if (m_vars[varIdent.value.value()] == CHAR_TYPE)
+                        {
+                            stmtNode = {{node::StmtCharVar{varIdent, new node::Expr(nodeExpr.value())}}};
+                        }
+                        else if (m_vars[varIdent.value.value()] == BOOL_TYPE)
+                        {
+                            stmtNode = {{node::StmtBoolVar{varIdent, new node::Expr(nodeExpr.value())}}};
+                        }
+
+                        if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
+                        {
+                            consume();
+                        }
+                        else
+                        {
+                            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
+                            exit(EXIT_FAILURE);
+                        }
+                    }
+                    else
+                    {
+                        std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
+                        exit(EXIT_FAILURE);
+                    }
                 }
                 else
                 {
-                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
+                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '='";
                     exit(EXIT_FAILURE);
                 }
             }
             else
             {
-                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '='";
+                std::cerr << "[Parse Error] ERR005 Undeclared Identifier '" << varIdent.value.value() << "'";
                 exit(EXIT_FAILURE);
             }
         }
@@ -717,7 +737,7 @@ std::optional<node::Stmt> parser::parseStmt()
     {
         return {};
     }
-    return stmt_node;
+    return stmtNode;
 }
 
 std::optional<node::Prog> parser::parseProg()
