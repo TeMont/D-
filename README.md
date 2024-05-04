@@ -18,10 +18,10 @@ The compiler is made using NASM & GoLink.
 - [X] One-Line Comments
 - [X] Multi-Line Comments
 - [X] Output
+- [X] Input
 - [ ] Float Variables
 - [ ] Const Variables
 - [ ] Loops
-- [ ] Input
 
 # GUIDE
 Dependencies: Nasm x86-64, gcc Linker
