@@ -209,13 +209,22 @@ public:
     std::optional<node::Stmt> parseStmt();
     std::optional<node::Prog> parseProg();
 
+    void setTokens(std::vector<Token> tokens)
+    {
+        m_tokens = std::move(tokens);
+    }
+    void pushToken(const Token& token)
+    {
+        m_tokens.push_back(token);
+    }
+
 private:
 
     [[nodiscard]] std::optional<Token> peek(int offset = 0) const;
     Token consume();
     static std::optional<uint8_t> op_to_prior(Tokens op);
 
-    const std::vector<Token> m_tokens;
+    std::vector<Token> m_tokens;
     static std::unordered_map<std::string, std::string> m_vars;
     size_t m_index = 0;
     node::Prog prog;

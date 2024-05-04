@@ -1,5 +1,5 @@
 # X-lang
-Сompiled programming language created with support of basic features.
+Compiled programming language created with support of basic features.
 The compiler is made using NASM & GoLink.
 
 # done
