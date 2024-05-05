@@ -196,9 +196,9 @@ struct exprVisitor
         default:
             FAIL() << "ERROR Incorrect operator\n";
         }
-        exprVisitor exrpVisit(op, expectedType);
-        std::visit(exrpVisit, fValExpr.var);
-        std::visit(exrpVisit, sValExpr.var);
+        exprVisitor exprVisit(op, expectedType);
+        std::visit(exprVisit, fValExpr.var);
+        std::visit(exprVisit, sValExpr.var);
     }
     void operator()([[maybe_unused]] node::StmtInput *input)
     {
@@ -253,45 +253,55 @@ TEST(ParserTest, ParseInputStmtTest)
 }
 TEST(ParserTest, ParseExprTest)
 {
-    for (int i = 0; i < typeArr.size(); ++i)
-    {
-        for (int j = 0; j < typeArr[i].size(); ++j)
-        {
-            for (auto & k : binOpArr)
-            {
-                parser p({});
-                for (const auto & o : litArr[i])
-                {
-                    p.pushToken(o);
-                }
-                p.pushToken(Token{k});
-                for (const auto & o : litArr[j])
-                {
-                    p.pushToken(o);
-                }
-                if (litArr[i][0].type == IDENT || i == j && j == 0)
-                {
-                    auto parsedExpr = p.parseExpr(typeArr[i][j]);
-                    ASSERT_TRUE(parsedExpr.has_value()) << "ERROR Parsed expression has not value\n";
-                    exprVisitor exprVisit(k, typeArr[i][j]);
-                    std::visit(exprVisit, parsedExpr.value().var);
-                }
-                else
-                {
-                    if (j == 0)
-                    {
-                        ASSERT_EXIT(p.parseExpr(typeArr[i][j]), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
-                        << "ERROR Was not thrown error while parsing incorrect expression\n";
-                    }
-                    else
-                    {
-                        ASSERT_FALSE(p.parseExpr(typeArr[i][j]).has_value())
-                        << "ERROR Incorrect parsed expression has value\n";
-                    }
-                }
-            }
-        }
-    }
+	for (int i = 0; i < typeArr.size(); ++i)
+	{
+		for (int j = 0; j < typeArr.size(); ++j)
+		{
+			for (int k = 0; k < typeArr[i].size(); ++k)
+			{
+				for (auto & l: binOpArr)
+	            {
+		            parser p({});
+		            for (const auto & o : litArr[i])
+	                {
+	                    p.pushToken(o);
+	                }
+	                p.pushToken(Token{l});
+	                for (const auto & o : litArr[j])
+	                {
+	                    p.pushToken(o);
+	                }
+					if ((litArr[i][0].type == IDENT && litArr[j][0].type == IDENT) || (i == j && k == 0))
+	                {
+	                    auto parsedExpr = p.parseExpr(typeArr[i][k]);
+	                    ASSERT_TRUE(parsedExpr.has_value()) << "ERROR Parsed expression has not value\n";
+	                    exprVisitor exprVisit(l, typeArr[i][k]);
+	                    std::visit(exprVisit, parsedExpr.value().var);
+	                }
+					else if (litArr[i][0].type == IDENT || litArr[j][0].type == IDENT)
+					{
+						if ((litArr[i][0].type == IDENT && typeArr[i][k] == typeArr[j][0]) || (litArr[j][0].type == IDENT && typeArr[i][k] == typeArr[i][0]))
+						{
+							auto parsedExpr = p.parseExpr(typeArr[i][k]);
+							ASSERT_TRUE(parsedExpr.has_value()) << "ERROR Parsed expression has not value\n";
+							exprVisitor exprVisit(l, typeArr[i][k]);
+							std::visit(exprVisit, parsedExpr.value().var);
+						}
+						else
+						{
+							ASSERT_EXIT(p.parseExpr(typeArr[i][k]), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+							<< "ERROR Was not thrown error while parsing incorrect expression(IDENT)\n";
+						}
+					}
+					else
+	                {
+						ASSERT_EXIT(p.parseExpr(typeArr[i][k]), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+						<< "ERROR Was not thrown error while parsing incorrect expression\n";
+	                }
+				}
+			}
+		}
+	}
 }
 TEST(ParserTest, ParseLetStmtTest)
 {

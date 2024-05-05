@@ -186,113 +186,105 @@ std::optional<node::Expr> parser::parseExpr(const std::string& expectedType, uin
                 uint8_t nextMinPriority = priority.value() + 1;
                 if (auto exprSvl = parseExpr(expectedType, nextMinPriority))
                 {
-                    if (exprSvl.has_value())
-                    {
-                        node::BinExpr expr;
-                        node::Expr exprFvl2;
-                        if (opr.type == Tokens::PLUS)
-                        {
-                            node::BinExprAdd add;
-                            exprFvl2 = exprFvl;
-                            add.fvl = new node::Expr(exprFvl2);
-                            add.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::BinExprAdd(add);
-                        }
-                        else if (opr.type == Tokens::MINUS)
-                        {
-                            node::BinExprSub sub;
-                            exprFvl2 = exprFvl;
-                            sub.fvl = new node::Expr(exprFvl2);
-                            sub.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::BinExprSub(sub);
-                        }
-                        else if (opr.type == Tokens::MULT)
-                        {
-                            node::BinExprMul mul;
-                            exprFvl2 = exprFvl;
-                            mul.fvl = new node::Expr(exprFvl2);
-                            mul.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::BinExprMul(mul);
-                        }
-                        else if (opr.type == Tokens::DIV)
-                        {
-                            node::BinExprDiv div;
-                            exprFvl2 = exprFvl;
-                            div.fvl = new node::Expr(exprFvl2);
-                            div.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::BinExprDiv(div);
-                        }
-                        else if (opr.type == Tokens::EQEQ)
-                        {
-                            node::EQCondition eq;
-                            exprFvl2 = exprFvl;
-                            eq.fvl = new node::Expr(exprFvl2);
-                            eq.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::EQCondition(eq);
-                        }
-                        else if (opr.type == Tokens::NOTEQ)
-                        {
-                            node::NotEQCondition notEq;
-                            exprFvl2 = exprFvl;
-                            notEq.fvl = new node::Expr(exprFvl2);
-                            notEq.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::NotEQCondition(notEq);
-                        }
-                        else if (opr.type == Tokens::LESS)
-                        {
-                            node::LessCondition less;
-                            exprFvl2 = exprFvl;
-                            less.fvl = new node::Expr(exprFvl2);
-                            less.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::LessCondition(less);
-                        }
-                        else if (opr.type == Tokens::LESSEQ)
-                        {
-                            node::EQLessCondition lessEq;
-                            exprFvl2 = exprFvl;
-                            lessEq.fvl = new node::Expr(exprFvl2);
-                            lessEq.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::EQLessCondition(lessEq);
-                        }
-                        else if (opr.type == Tokens::GREATER)
-                        {
-                            node::GreaterCondition greater;
-                            exprFvl2 = exprFvl;
-                            greater.fvl = new node::Expr(exprFvl2);
-                            greater.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::GreaterCondition(greater);
-                        }
-                        else if (opr.type == Tokens::GREATEQ)
-                        {
-                            node::EQGreaterCondition greatEq;
-                            exprFvl2 = exprFvl;
-                            greatEq.fvl = new node::Expr(exprFvl2);
-                            greatEq.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::EQGreaterCondition(greatEq);
-                        }
-                        else if (opr.type == Tokens::AND)
-                        {
-                            node::AndCondition And;
-                            exprFvl2 = exprFvl;
-                            And.fvl = new node::Expr(exprFvl2);
-                            And.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::AndCondition(And);
-                        }
-                        else if (opr.type == Tokens::OR)
-                        {
-                            node::OrCondition Or;
-                            exprFvl2 = exprFvl;
-                            Or.fvl = new node::Expr(exprFvl2);
-                            Or.svl = new node::Expr(exprSvl.value());
-                            expr.var = new node::OrCondition(Or);
-                        }
-                        exprFvl.var = new node::BinExpr(expr);
-                    }
-                    else
-                    {
-                        std::cerr << "[Parse Error] Expected Expression After Operator";
-                        exit(EXIT_FAILURE);
-                    }
+					node::BinExpr expr;
+					node::Expr exprFvl2;
+					if (opr.type == Tokens::PLUS)
+					{
+						node::BinExprAdd add;
+						exprFvl2 = exprFvl;
+						add.fvl = new node::Expr(exprFvl2);
+						add.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::BinExprAdd(add);
+					}
+					else if (opr.type == Tokens::MINUS)
+					{
+						node::BinExprSub sub;
+						exprFvl2 = exprFvl;
+						sub.fvl = new node::Expr(exprFvl2);
+						sub.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::BinExprSub(sub);
+					}
+					else if (opr.type == Tokens::MULT)
+					{
+						node::BinExprMul mul;
+						exprFvl2 = exprFvl;
+						mul.fvl = new node::Expr(exprFvl2);
+						mul.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::BinExprMul(mul);
+					}
+					else if (opr.type == Tokens::DIV)
+					{
+						node::BinExprDiv div;
+						exprFvl2 = exprFvl;
+						div.fvl = new node::Expr(exprFvl2);
+						div.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::BinExprDiv(div);
+					}
+					else if (opr.type == Tokens::EQEQ)
+					{
+						node::EQCondition eq;
+						exprFvl2 = exprFvl;
+						eq.fvl = new node::Expr(exprFvl2);
+						eq.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::EQCondition(eq);
+					}
+					else if (opr.type == Tokens::NOTEQ)
+					{
+						node::NotEQCondition notEq;
+						exprFvl2 = exprFvl;
+						notEq.fvl = new node::Expr(exprFvl2);
+						notEq.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::NotEQCondition(notEq);
+					}
+					else if (opr.type == Tokens::LESS)
+					{
+						node::LessCondition less;
+						exprFvl2 = exprFvl;
+						less.fvl = new node::Expr(exprFvl2);
+						less.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::LessCondition(less);
+					}
+					else if (opr.type == Tokens::LESSEQ)
+					{
+						node::EQLessCondition lessEq;
+						exprFvl2 = exprFvl;
+						lessEq.fvl = new node::Expr(exprFvl2);
+						lessEq.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::EQLessCondition(lessEq);
+					}
+					else if (opr.type == Tokens::GREATER)
+					{
+						node::GreaterCondition greater;
+						exprFvl2 = exprFvl;
+						greater.fvl = new node::Expr(exprFvl2);
+						greater.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::GreaterCondition(greater);
+					}
+					else if (opr.type == Tokens::GREATEQ)
+					{
+						node::EQGreaterCondition greatEq;
+						exprFvl2 = exprFvl;
+						greatEq.fvl = new node::Expr(exprFvl2);
+						greatEq.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::EQGreaterCondition(greatEq);
+					}
+					else if (opr.type == Tokens::AND)
+					{
+						node::AndCondition And;
+						exprFvl2 = exprFvl;
+						And.fvl = new node::Expr(exprFvl2);
+						And.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::AndCondition(And);
+					}
+					else if (opr.type == Tokens::OR)
+					{
+						node::OrCondition Or;
+						exprFvl2 = exprFvl;
+						Or.fvl = new node::Expr(exprFvl2);
+						Or.svl = new node::Expr(exprSvl.value());
+						expr.var = new node::OrCondition(Or);
+					}
+					exprFvl.var = new node::BinExpr(expr);
                 }
                 else
                 {
@@ -304,7 +296,8 @@ std::optional<node::Expr> parser::parseExpr(const std::string& expectedType, uin
         }
         else
         {
-            return {};
+	        std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
+	        exit(EXIT_FAILURE);
         }
     }
 }
