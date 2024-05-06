@@ -12,6 +12,8 @@ bool createObjectFile(const std::string& path)
     return true;
 }
 
+
+
 bool linkObjectFiles(const std::string& path)
 {
 
@@ -21,7 +23,6 @@ bool linkObjectFiles(const std::string& path)
         std::cerr << "Error Linking File";
         exit(EXIT_FAILURE);
     }
-    std::this_thread::sleep_for(std::chrono::seconds(1));
     return true;
 }
 

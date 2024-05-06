@@ -209,6 +209,7 @@ public:
     std::optional<node::Stmt> parseStmt();
     std::optional<node::Prog> parseProg();
 
+#ifdef TEST
     void setTokens(std::vector<Token> tokens)
     {
         m_tokens = std::move(tokens);
@@ -217,6 +218,7 @@ public:
     {
         m_tokens.push_back(token);
     }
+#endif
 
 private:
 

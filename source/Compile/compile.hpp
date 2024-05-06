@@ -16,7 +16,6 @@ public:
 
     std::stringstream compile();
 
-private:
     static bool compExpr(const node::Expr &expr, const std::string& expectedType);
     static bool compBinExpr(const node::BinExpr &expr, const std::string& expectedType);
     static void compBoolExpr(const std::optional<std::string> &literal);
@@ -28,8 +27,42 @@ private:
     static void compStmt(const node::Stmt &stmt);
     static std::string createLabel();
     static std::string createSCLabel();
-    static void push(const std::string &reg); 
+    static void push(const std::string &reg);
     static void pop(const std::string &reg);
+
+#ifdef TEST
+    static std::string getM_output()
+    {
+        std::string s = m_output.str();
+        return s;
+    }
+
+    static void pushVar(const std::string& name, const std::string& type)
+    {
+        m_vars.insert({name, Var{m_stackSize, type}});
+    }
+    static void clearM_vars()
+    {
+        m_vars.clear();
+    }
+    static void clearM_output()
+    {
+        m_output.str("");
+    }
+    static void resetM_stackSize()
+    {
+        m_stackSize = 0;
+    }
+    static void resetM_labelCount()
+    {
+        m_labelCount = 0;
+        m_SCCount = 0;
+    }
+#endif
+
+
+
+private:
 
     struct Var
     {

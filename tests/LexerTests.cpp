@@ -205,7 +205,25 @@ struct exprVisitor
         FAIL() << "ERROR Unexpected input statement\n";
     }
 };
-
+TEST(ParserTest, ParseInputStmtTest)
+{
+    for (int i = 0; i < litArr.size(); ++i)
+    {
+        parser p({});
+        p.pushToken(Token{INPUT});
+        p.pushToken(Token{LPAREN});
+        for (const auto & k : litArr[i])
+        {
+            p.pushToken(k);
+        }
+        p.pushToken(Token{RPAREN});
+        p.pushToken(Token{SEMICOLON});
+        auto parsedInput = p.parseInputStmt();
+        ASSERT_TRUE(parsedInput.has_value()) << "ERROR Parsed input statement has not value\n";
+        exprVisitor exprVisit(typeArr[i][0]);
+        std::visit(exprVisit, parsedInput.value().msg->var);
+    }
+}
 TEST(ParserTest, parseValExprTest)
 {
     for (int i = 0; i < typeArr.size(); ++i)
@@ -230,25 +248,6 @@ TEST(ParserTest, parseValExprTest)
                 << "ERROR Incorrect parsed value expression has value\n";
             }
         }
-    }
-}
-TEST(ParserTest, ParseInputStmtTest)
-{
-    for (int i = 0; i < litArr.size(); ++i)
-    {
-        parser p({});
-        p.pushToken(Token{INPUT});
-        p.pushToken(Token{LPAREN});
-        for (const auto & k : litArr[i])
-        {
-            p.pushToken(k);
-        }
-        p.pushToken(Token{RPAREN});
-        p.pushToken(Token{SEMICOLON});
-        auto parsedInput = p.parseInputStmt();
-        ASSERT_TRUE(parsedInput.has_value()) << "ERROR Parsed input statement has not value\n";
-        exprVisitor exprVisit(typeArr[i][0]);
-        std::visit(exprVisit, parsedInput.value().msg->var);
     }
 }
 TEST(ParserTest, ParseExprTest)
@@ -283,7 +282,7 @@ TEST(ParserTest, ParseExprTest)
 						if ((litArr[i][0].type == IDENT && typeArr[i][k] == typeArr[j][0]) || (litArr[j][0].type == IDENT && typeArr[i][k] == typeArr[i][0]))
 						{
 							auto parsedExpr = p.parseExpr(typeArr[i][k]);
-							ASSERT_TRUE(parsedExpr.has_value()) << "ERROR Parsed expression has not value\n";
+							ASSERT_TRUE(parsedExpr.has_value()) << "ERROR Parsed expression has not value(IDENT)\n";
 							exprVisitor exprVisit(l, typeArr[i][k]);
 							std::visit(exprVisit, parsedExpr.value().var);
 						}
