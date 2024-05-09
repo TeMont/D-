@@ -22,6 +22,9 @@ The compiler is made using NASM & GoLink.
 - [ ] Float Variables
 - [ ] Const Variables
 - [ ] Loops
+- [ ] Negative Integers
+- [ ] ! operator
+- [ ] Switch-case statement
 
 # GUIDE
 Dependencies: Nasm x86-64, gcc Linker
@@ -39,22 +42,43 @@ cmake --build .
 # Code Example
 
 ```c
-int x = 2;
-int y;
-int o;
+int firstNum;
+int secondNum;
+int result;
+char symbol;
 
-y = x + 8 * 2;
-o = y / x;
+firstNum = stdInput("Enter First Num: ");
+symbol = stdInput("Enter Action Symbol: ");
+secondNum = stdInput("Enter Second Num: ");
 
-return o;
+if (symbol == '+')
+{
+    result = firstNum + secondNum;
+}
+elif (symbol == '-')
+{
+    result = firstNum - secondNum;
+}
+elif (symbol == '*')
+{
+    result = firstNum * secondNum;
+}
+elif (symbol == '/')
+{
+    result = firstNum / secondNum;
+}
+else
+{
+    stdOut("You Entered Incorrect Symbol");
+    return 1;
+}
+stdOut(result);
+return 0;
 ```
 
 # Code Compile
 ### Terminal
 ```bash
-./XComp.exe input.xy
-./result.exe
+./XComp.exe <filename>.xy
+./<filename>.exe
 ```
-
-### OUTPUT 
-9

@@ -64,7 +64,6 @@ int main(int argc, char *argv[])
                     {
                         system(("del " + projName + ".obj").c_str());
                         std::cout << argv[1] << " Was successfully compiled!\n";
-                        std::cout << "Code ended with: " << system((projName + ".exe").c_str());
                     }
                     else
                     {

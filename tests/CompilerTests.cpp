@@ -120,13 +120,13 @@ TEST(CompilerTest, CompValExprTest)
 					if (typeArr[i][0] == INT_TYPE)
 					{
 						ASSERT_EQ(compiler::getM_output(), "\tmov rdx, " + valExprToken.value.value() +
-															   "\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
+															   "\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
 							<< "ERROR Incorrect output for INT_TYPE(BOOLEAN)\n";
 					}
 					else if (typeArr[i][0] == CHAR_TYPE)
 					{
 						ASSERT_EQ(compiler::getM_output(), "\tmov rdx, '" + valExprToken.value.value() +
-															   "'\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
+															   "'\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
 							<< "ERROR Incorrect output for CHAR_TYPE(BOOLEAN)\n";
 					}
 					else
@@ -163,7 +163,7 @@ TEST(CompilerTest, CompValExprTest)
 						ASSERT_TRUE(compiler::compValExpr(valExprArr[i], typeArr[i][k]))
 							<< "ERROR Incorrect type error while compiling value expression(BOOLEAN IDENT)\n";
 						ASSERT_EQ(compiler::getM_output(), "\tpush rdx\n\tmov rdx, QWORD [rsp + 0]\n\tcmp rdx, 0"
-														   "\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
+														   "\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
 							<< "ERROR Incorrect output (BOOLEAN IDENT)\n";
 					}
 					else
@@ -375,13 +375,13 @@ TEST(CompilerTest, CompBoolExprTest)
 		if (i.has_value())
 		{
 			ASSERT_EQ(compiler::getM_output(),
-					  "\tmov rdx, " + i.value() + "\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
+					  "\tmov rdx, " + i.value() + "\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
 				<< "ERROR Incorrect output with value";
 		}
 		else
 		{
 			ASSERT_EQ(compiler::getM_output(),
-					  "\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
+					  "\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
 				<< "ERROR Incorrect output without value";
 		}
 	}
@@ -489,7 +489,7 @@ TEST(CompilerTest, CompVarTest)
 								ASSERT_EQ(compiler::getM_output(),
 										  "\tpush rdx\n\tmov rdx, " + std::to_string(valExprToken.value.value() == "true") +
 											  "\n\tpush rdx\n\txor rdx, rdx\n\tpop rdx\n\tmov rdx, rdx"
-											  "\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0"
+											  "\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0"
 											  "\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n\tpop rdx\n\tmov [rsp + 0], rdx\n\txor rdx, rdx\n")
 									<< "ERROR Incorrect output (BOOLEAN BOOL_LITERAL)";
 							}
@@ -498,7 +498,7 @@ TEST(CompilerTest, CompVarTest)
 								ASSERT_EQ(compiler::getM_output(),
 										  "\tpush rdx\n\tmov rdx, '" + valExprToken.value.value() +
 											  "'\n\tpush rdx\n\txor rdx, rdx\n\tpop rdx\n\tmov rdx, rdx"
-											  "\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0"
+											  "\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0"
 											  "\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n\tpop rdx\n\tmov [rsp + 0], rdx\n\txor rdx, rdx\n")
 									<< "ERROR Incorrect output (BOOLEAN CHAR_LITERAL)";
 							}
@@ -507,7 +507,7 @@ TEST(CompilerTest, CompVarTest)
 								ASSERT_EQ(compiler::getM_output(),
 										  "\tpush rdx\n\tmov rdx, " + valExprToken.value.value() +
 											  "\n\tpush rdx\n\txor rdx, rdx\n\tpop rdx\n\tmov rdx, rdx"
-											  "\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0"
+											  "\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:\n\tmov rdx, 0"
 											  "\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n\tpop rdx\n\tmov [rsp + 0], rdx\n\txor rdx, rdx\n")
 									<< "ERROR Incorrect output (BOOLEAN INT_LITERAL)";
 							}
@@ -533,7 +533,7 @@ TEST(CompilerTest, CompVarTest)
 									compiler::compVar(ident,
 													  new node::Expr{new node::ValExpr({node::ExprIdent{IDENT, ident.value.value() + "1"}})}, typeArr[i][k]);
 									ASSERT_EQ(compiler::getM_output(), "\tpush rdx\n\tpush rdx\n\tpush QWORD [rsp + 0]\n\tpop rdx\n\tmov rdx, rdx"
-																	   "\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:"
+																	   "\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:"
 																	   "\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n\tpop rdx\n\tmov [rsp + 8], rdx\n\txor rdx, rdx\n")
 										<< "ERROR Incorrect output (IDENT BOOLEAN)";
 								}
@@ -659,14 +659,14 @@ TEST(CompilerTest, CompLetTest)
 						if (valExprToken.type == INT_LITERAL)
 						{
 							ASSERT_EQ(compiler::getM_output(), "\tmov rdx, " + valExprToken.value.value() + "\n\tpush rdx\n\txor rdx, rdx\n\tpop rdx\n\tmov rdx, rdx"
-															   "\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:"
+															   "\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:"
 															   "\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
 							<< "ERROR Incorrect output (BOOLEAN INT_LITERAL)";
 						}
 						else if (valExprToken.type == CHAR_LITERAL)
 						{
 							ASSERT_EQ(compiler::getM_output(), "\tmov rdx, '" + valExprToken.value.value() + "'\n\tpush rdx\n\txor rdx, rdx\n\tpop rdx\n\tmov rdx, rdx"
-							                                   "\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:"
+							                                   "\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:"
 							                                   "\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
 							<< "ERROR Incorrect output (BOOLEAN CHAR_LITERAL)";
 						}
@@ -674,7 +674,7 @@ TEST(CompilerTest, CompLetTest)
 						{
 							ASSERT_EQ(compiler::getM_output(), "\tmov rdx, " + std::to_string(valExprToken.value.value() == "true") +
 															   "\n\tpush rdx\n\txor rdx, rdx\n\tpop rdx\n\tmov rdx, rdx"
-							                                   "\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:"
+							                                   "\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:"
 							                                   "\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
 							<< "ERROR Incorrect output (BOOLEAN BOOL_LITERAL)";
 						}
@@ -704,7 +704,7 @@ TEST(CompilerTest, CompLetTest)
 						{
 							compiler::compLet(ident, new node::Expr{new node::ValExpr(node::ExprIdent{valExprToken.type, valExprToken.value.value()+"1"})}, typeArr[i][j]);
 							ASSERT_EQ(compiler::getM_output(), "\tpush rdx\n\tpush QWORD [rsp + 0]\n\tpop rdx\n\tmov rdx, rdx"
-															   "\n\tcmp rdx, 0\n\tjle label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:"
+															   "\n\tcmp rdx, 0\n\tje label1\n\tmov rdx, 1\n\tjmp label0\n\tlabel1:"
 															   "\n\tmov rdx, 0\n\tlabel0:\n\tpush rdx\n\txor rdx, rdx\n")
 							<< "ERROR Incorrect output (IDENT BOOLEAN)";
 						}

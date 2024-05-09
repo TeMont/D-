@@ -1,9 +1,7 @@
-SC0: db 'Enter First Number: ',00H
-SC1: db 'Enter Action (+ - * /): ',00H
-SC2: db 'Enter Second Number: ',00H
-SC3: db 'Incorrect Action Symbol',00H
-SC4: db 'Result: ',00H
-SC5: db '',10,'',00H
+SC0: db 'Enter First Num: ',00H
+SC1: db 'Enter Action Symbol: ',00H
+SC2: db 'Enter Second Num: ',00H
+SC3: db 'You Entered Incorrect Symbol',00H
 section .bss
 extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess
 
@@ -23,6 +21,17 @@ section .text
 global main
 main:
 ;;	int let
+	push rdx
+;;	/int let
+;;	int let
+	push rdx
+;;	/int let
+;;	int let
+	push rdx
+;;	/int let
+;;	char let
+	push rdx
+;;	/char let
 ;;	Input
 	mov rdx, SC0
 	push rdx
@@ -40,8 +49,9 @@ main:
 	mov rdx, 256
 	call _clearBuffer
 ;;	/Input
-;;	/int let
-;;	char let
+	pop rdx
+	mov [rsp + 24], rdx
+	xor rdx, rdx
 ;;	Input
 	mov rdx, SC1
 	push rdx
@@ -59,8 +69,9 @@ main:
 	mov rdx, 256
 	call _clearBuffer
 ;;	/Input
-;;	/char let
-;;	int let
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
 ;;	Input
 	mov rdx, SC2
 	push rdx
@@ -78,12 +89,11 @@ main:
 	mov rdx, 256
 	call _clearBuffer
 ;;	/Input
-;;	/int let
-;;	int let
-	push rdx
-;;	/int let
+	pop rdx
+	mov [rsp + 16], rdx
+	xor rdx, rdx
 ;;	if
-	push QWORD [rsp + 16]
+	push QWORD [rsp + 0]
 	mov rdx, '+'
 	push rdx
 	xor rdx, rdx
@@ -103,7 +113,7 @@ main:
 	cmp rdx, 0
 	jle label0
 	push QWORD [rsp + 24]
-	push QWORD [rsp + 16]
+	push QWORD [rsp + 24]
 	pop rdi
 	pop rdx
 	add rdx, rdi
@@ -111,13 +121,13 @@ main:
 	xor rdx, rdx
 	xor rdi, rdi
 	pop rdx
-	mov [rsp + 0], rdx
+	mov [rsp + 8], rdx
 	xor rdx, rdx
 ;;	/if
 	jmp label5
 	label0:
 ;;	elif
-	push QWORD [rsp + 16]
+	push QWORD [rsp + 0]
 	mov rdx, '-'
 	push rdx
 	xor rdx, rdx
@@ -135,9 +145,9 @@ main:
 	xor rdi, rdi
 	pop rdx
 	cmp rdx, 0
-	jle label6
+	je label6
 	push QWORD [rsp + 24]
-	push QWORD [rsp + 16]
+	push QWORD [rsp + 24]
 	pop rdi
 	pop rdx
 	sub rdx, rdi
@@ -145,13 +155,13 @@ main:
 	xor rdx, rdx
 	xor rdi, rdi
 	pop rdx
-	mov [rsp + 0], rdx
+	mov [rsp + 8], rdx
 	xor rdx, rdx
 	jmp label5
 ;;	/elif
 	label6:
 ;;	elif
-	push QWORD [rsp + 16]
+	push QWORD [rsp + 0]
 	mov rdx, '*'
 	push rdx
 	xor rdx, rdx
@@ -169,9 +179,9 @@ main:
 	xor rdi, rdi
 	pop rdx
 	cmp rdx, 0
-	jle label11
+	je label11
 	push QWORD [rsp + 24]
-	push QWORD [rsp + 16]
+	push QWORD [rsp + 24]
 	pop rdi
 	pop rdx
 	imul rdx, rdi
@@ -179,13 +189,13 @@ main:
 	xor rdx, rdx
 	xor rdi, rdi
 	pop rdx
-	mov [rsp + 0], rdx
+	mov [rsp + 8], rdx
 	xor rdx, rdx
 	jmp label5
 ;;	/elif
 	label11:
 ;;	elif
-	push QWORD [rsp + 16]
+	push QWORD [rsp + 0]
 	mov rdx, '/'
 	push rdx
 	xor rdx, rdx
@@ -203,9 +213,9 @@ main:
 	xor rdi, rdi
 	pop rdx
 	cmp rdx, 0
-	jle label16
+	je label16
 	push QWORD [rsp + 24]
-	push QWORD [rsp + 16]
+	push QWORD [rsp + 24]
 	pop rdi
 	pop rdx
 	mov rax, rdx
@@ -216,7 +226,7 @@ main:
 	xor rdx, rdx
 	xor rdi, rdi
 	pop rdx
-	mov [rsp + 0], rdx
+	mov [rsp + 8], rdx
 	xor rdx, rdx
 	jmp label5
 ;;	/elif
@@ -230,7 +240,7 @@ main:
 	call _printf
 ;;	/Output
 ;;	return
-	mov rdx, 10
+	mov rdx, 1
 	push rdx
 	xor rdx, rdx
 	pop rcx
@@ -243,14 +253,7 @@ main:
 	label5:
 	xor rdx, rdx
 ;;	Output
-	mov rdx, SC4
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	call _printf
-;;	/Output
-;;	Output
-	push QWORD [rsp + 0]
+	push QWORD [rsp + 8]
 	pop rdx
 	mov rax, rdx
 	mov rsi, OutputBuffer
@@ -260,13 +263,6 @@ main:
 	mov rsi, OutputBuffer
 	mov rdx, 20
 	call _clearBuffer
-;;	/Output
-;;	Output
-	mov rdx, SC5
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	call _printf
 ;;	/Output
 ;;	return
 	mov rdx, 0

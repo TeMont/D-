@@ -187,7 +187,7 @@ void compiler::compBoolExpr(const std::optional<std::string> &literal)
         m_output << "\tmov rdx, " << literal.value() << '\n';
     }
     m_output << "\tcmp rdx, 0\n";
-    m_output << "\tjle " << falseLabel << "\n";
+    m_output << "\tje " << falseLabel << "\n";
     m_output << "\tmov rdx, 1\n";
     m_output << "\tjmp " << endLabel << "\n";
     m_output << "\t" << falseLabel << ":\n";
@@ -701,7 +701,7 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
             {
                 pop("rdx");
                 m_output << "\tcmp rdx, 0\n";
-                m_output << "\tjle " << falseLabel << "\n";
+                m_output << "\tje " << falseLabel << "\n";
                 for (auto const &i : elIf->statements)
                 {
                     compStmt(i);

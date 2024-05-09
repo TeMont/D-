@@ -1,31 +1,32 @@
-int firstNum = stdInput("Enter First Number: ");
-char Symbol = stdInput("Enter Action (+ - * /): ");
-int SecondNum = stdInput("Enter Second Number: ");
-int Result;
+int firstNum;
+int secondNum;
+int result;
+char symbol;
 
-if (Symbol == '+')
-{
-    Result = firstNum + SecondNum;
-}
-elif (Symbol == '-')
-{
-    Result = firstNum - SecondNum;
-}
-elif (Symbol == '*')
-{
-    Result = firstNum * SecondNum;
-}
-elif (Symbol == '/')
-{
-    Result = firstNum / SecondNum;
-}
-else 
-{
-    stdOut("Incorrect Action Symbol\n");
-    return 10;
-}
-stdOut("Result: ");
-stdOut(Result);
-stdOut("\n");
+firstNum = stdInput("Enter First Num: ");
+symbol = stdInput("Enter Action Symbol: ");
+secondNum = stdInput("Enter Second Num: ");
 
+if (symbol == '+')
+{
+    result = firstNum + secondNum;
+}
+elif (symbol == '-')
+{
+    result = firstNum - secondNum;
+}
+elif (symbol == '*')
+{
+    result = firstNum * secondNum;
+}
+elif (symbol == '/')
+{
+    result = firstNum / secondNum;
+}
+else
+{
+    stdOut("You Entered Incorrect Symbol");
+    return 1;
+}
+stdOut(result);
 return 0;
