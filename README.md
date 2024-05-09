@@ -1,6 +1,6 @@
 # X-lang
 Compiled programming language created with support of basic features.
-The compiler is made using NASM & GoLink.
+The compiler is made using NASM & gcc Linker.
 
 # done
 - [X] Variables
