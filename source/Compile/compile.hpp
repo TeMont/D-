@@ -18,7 +18,7 @@ public:
 
     static bool compExpr(const node::Expr &expr, const std::string& expectedType);
     static bool compBinExpr(const node::BinExpr &expr, const std::string& expectedType);
-    static void compBoolExpr(const std::optional<std::string> &literal);
+    static void compBoolExpr(const std::optional<std::string> &literal, bool isReversed = false);
     static bool compValExpr(const node::ValExpr &expr, const std::string& expectedType);
     static void compIfPred(const node::IfPred &pred, const std::string& endLabel);
     static void compVar(Token ident, node::Expr *expr, const std::string& expectedType);

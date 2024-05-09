@@ -1,32 +1,10 @@
-int firstNum;
-int secondNum;
-int result;
-char symbol;
+int Age;
 
-firstNum = stdInput("Enter First Num: ");
-symbol = stdInput("Enter Action Symbol: ");
-secondNum = stdInput("Enter Second Num: ");
+Age = stdInput("Enter Your Age: ");
 
-if (symbol == '+')
+if (!Age)
 {
-    result = firstNum + secondNum;
+    stdOut("You Entered Incorrect Age");
+    return false;
 }
-elif (symbol == '-')
-{
-    result = firstNum - secondNum;
-}
-elif (symbol == '*')
-{
-    result = firstNum * secondNum;
-}
-elif (symbol == '/')
-{
-    result = firstNum / secondNum;
-}
-else
-{
-    stdOut("You Entered Incorrect Symbol");
-    return 1;
-}
-stdOut(result);
-return 0;
+return true;

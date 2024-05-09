@@ -19,12 +19,13 @@ The compiler is made using NASM & GoLink.
 - [X] Multi-Line Comments
 - [X] Output
 - [X] Input
+- [X] ! operator
 - [ ] Float Variables
 - [ ] Const Variables
 - [ ] Loops
 - [ ] Negative Integers
-- [ ] ! operator
 - [ ] Switch-case statement
+- [ ] Increment and Decrement
 
 # GUIDE
 Dependencies: Nasm x86-64, gcc Linker

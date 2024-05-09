@@ -78,6 +78,9 @@ struct valExprVisitor
         ASSERT_EQ(exprIdent.ident.type, IDENT) << "ERROR Incorrect token type for IDENT\n";
         ASSERT_EQ(exprIdent.ident.value, "val") << "ERROR Incorrect token value for IDENT\n";
     }
+	void operator()(const node::NotCondition &exprNotCond) const
+	{
+	}
 };
 
 struct exprVisitor

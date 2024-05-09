@@ -34,6 +34,10 @@ struct valExprVisitor
 	{
 		return exprChar.charLit;
 	}
+	Token operator()(const node::NotCondition &exprNotCond)
+	{
+		return {};
+	}
 };
 node::BinExprAdd createBinExpr(node::ValExpr *fvl, node::ValExpr *svl)
 {

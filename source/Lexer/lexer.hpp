@@ -7,6 +7,7 @@
 namespace node 
 {
     struct Expr;
+	struct ValExpr;
     struct Stmt;
     struct StmtInput;
     struct ExprIntLit
@@ -29,9 +30,13 @@ namespace node
     {
         Token ident;
     };
+	struct NotCondition
+	{
+		ValExpr* val = nullptr;
+	};
     struct ValExpr
     {
-        std::variant<ExprIntLit, ExprStrLit, ExprBoolLit, ExprCharLit, ExprIdent> var;
+        std::variant<ExprIntLit, ExprStrLit, ExprBoolLit, ExprCharLit, ExprIdent, NotCondition> var;
     };
 
     struct BinExprAdd
@@ -89,14 +94,17 @@ namespace node
         Expr* fvl = nullptr;
         Expr* svl = nullptr;
     };
-    struct OrCondition
+	struct OrCondition
+	{
+		Expr* fvl = nullptr;
+		Expr* svl = nullptr;
+	};
+	struct BinExpr
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
-    };    
-    struct BinExpr
-    {
-        std::variant<BinExprAdd*, BinExprSub*, BinExprMul*, BinExprDiv*, EQCondition*, NotEQCondition*, LessCondition*, GreaterCondition*, EQLessCondition*, EQGreaterCondition*, AndCondition*, OrCondition*> var;
+        std::variant<
+                    BinExprAdd*, BinExprSub*, BinExprMul*, BinExprDiv*,
+					EQCondition*, NotEQCondition*, LessCondition*, GreaterCondition*,
+					EQLessCondition*, EQGreaterCondition*, AndCondition*, OrCondition*> var;
     };
 
     struct Expr

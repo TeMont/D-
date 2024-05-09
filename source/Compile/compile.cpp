@@ -67,12 +67,10 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
                 if (expectedType == var.Type)
                 {
                     push("QWORD [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "]");
-                    return true;
                 }
                 else if (expectedType == BOOL_TYPE && var.Type != STR_TYPE)
                 {
                     compBoolExpr({"QWORD [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "]"});
-                    return true;
                 }
                 else
                 {
@@ -84,6 +82,7 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
                 std::cerr << "[Compile Error] ERR005 Undeclared Identifier '" << exprIdent.ident.value.value() << "'";
                 exit(EXIT_FAILURE);
             }
+	        return true;
         }
         bool operator()(const node::ExprIntLit &exprInt) const
         {
@@ -95,17 +94,16 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
                 }
                 push("rdx");
                 m_output << "\txor rdx, rdx\n";
-                return true;
             }
             else if (expectedType == BOOL_TYPE)
             {
                 compBoolExpr(exprInt.intLit.value);
-                return true;
             }
             else
             {
                 return false;
             }
+			return true;
         }
         bool operator()(const node::ExprCharLit &exprChar) const
         {
@@ -117,17 +115,16 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
                 }
                 push("rdx");
                 m_output << "\txor rdx, rdx\n";
-                return true;
             }
             else if (expectedType == BOOL_TYPE)
             {
                 compBoolExpr({'\'' + exprChar.charLit.value.value() + '\''});
-                return true;
             }
             else
             {
                 return false;
             }
+			return true;
         }
         bool operator()(const node::ExprStrLit &exprStr) const
         {
@@ -141,12 +138,12 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
                 }
                 push("rdx");
                 m_output << "\txor rdx, rdx\n";
-                return true;
             }
             else
             {
                 return false;
             }
+			return true;
         }
         bool operator()(const node::ExprBoolLit &exprBool) const
         {
@@ -165,20 +162,33 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
                 }
                 push("rdx");
                 m_output << "\txor rdx, rdx\n";
-                return true;
             }
             else
             {
                 return false;
             }
+			return true;
         }
+	    bool operator()(const node::NotCondition &exprNotCond) const
+	    {
+			if (compValExpr(*exprNotCond.val, expectedType))
+			{
+				pop("rdx");
+				compBoolExpr("rdx", true);
+			}
+			else
+			{
+				return false;
+			}
+			return true;
+		}
     };
 
     exprVisitor visitor(expectedType);
     return std::visit(visitor, expr.var);
 }
 
-void compiler::compBoolExpr(const std::optional<std::string> &literal)
+void compiler::compBoolExpr(const std::optional<std::string> &literal, bool isReversed)
 {
     std::string endLabel = createLabel();
     std::string falseLabel = createLabel();
@@ -187,7 +197,14 @@ void compiler::compBoolExpr(const std::optional<std::string> &literal)
         m_output << "\tmov rdx, " << literal.value() << '\n';
     }
     m_output << "\tcmp rdx, 0\n";
-    m_output << "\tje " << falseLabel << "\n";
+	if (isReversed)
+	{
+		m_output << "\tjne " << falseLabel << "\n";
+	}
+	else
+	{
+		m_output << "\tje " << falseLabel << "\n";
+	}
     m_output << "\tmov rdx, 1\n";
     m_output << "\tjmp " << endLabel << "\n";
     m_output << "\t" << falseLabel << ":\n";
@@ -528,38 +545,38 @@ bool compiler::compBinExpr(const node::BinExpr &expr, const std::string &expecte
                 return false;
             }
         }
-        bool operator()(const node::OrCondition *binOrCond) const
-        {
-            if (compExpr(*binOrCond->fvl, STR_TYPE) || compExpr(*binOrCond->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            std::string trueLabel = createLabel();
-            std::string endLabel = createLabel();
-            if (compExpr(*binOrCond->fvl, expectedType) && compExpr(*binOrCond->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tcmp rdx, 0\n";
-                m_output << "\tjg " << trueLabel << "\n";
-                m_output << "\tcmp rdi, 0\n";
-                m_output << "\tjg " << trueLabel << "\n";
-                m_output << "\tmov rdx, 0\n";
-                m_output << "\tjmp " << endLabel << "\n";
-                m_output << "\t" << trueLabel << ":\n";
-                m_output << "\tmov rdx, 1\n";
-                m_output << "\t" << endLabel << ":\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
+	    bool operator()(const node::OrCondition *binOrCond) const
+	    {
+		    if (compExpr(*binOrCond->fvl, STR_TYPE) || compExpr(*binOrCond->svl, STR_TYPE))
+		    {
+			    std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+			    exit(EXIT_FAILURE);
+		    }
+		    std::string trueLabel = createLabel();
+		    std::string endLabel = createLabel();
+		    if (compExpr(*binOrCond->fvl, expectedType) && compExpr(*binOrCond->svl, expectedType))
+		    {
+			    pop("rdi");
+			    pop("rdx");
+			    m_output << "\tcmp rdx, 0\n";
+			    m_output << "\tjg " << trueLabel << "\n";
+			    m_output << "\tcmp rdi, 0\n";
+			    m_output << "\tjg " << trueLabel << "\n";
+			    m_output << "\tmov rdx, 0\n";
+			    m_output << "\tjmp " << endLabel << "\n";
+			    m_output << "\t" << trueLabel << ":\n";
+			    m_output << "\tmov rdx, 1\n";
+			    m_output << "\t" << endLabel << ":\n";
+			    push("rdx");
+			    m_output << "\txor rdx, rdx\n";
+			    m_output << "\txor rdi, rdi\n";
+			    return true;
+		    }
+		    else
+		    {
+			    return false;
+		    }
+	    }
     };
 
     exprVisitor visitor(expectedType);
@@ -866,7 +883,7 @@ void compiler::compStmt(const node::Stmt &stmt)
             {
                 pop("rdx");
                 m_output << "\tcmp rdx, 0\n";
-                m_output << "\tjle " << falseLabel << "\n";
+                m_output << "\tje " << falseLabel << "\n";
                 for (auto const &i : stmtIf.statements)
                 {
                     compStmt(i);

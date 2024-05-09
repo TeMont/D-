@@ -136,6 +136,21 @@ std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedTyp
                 return {};
             }
         }
+		else if (peek().value().type == Tokens::NOT)
+        {
+			consume();
+			if (expectedType == BOOL_TYPE || ANY_TYPE)
+			{
+				if (auto nodeExpr = parseValExpr(ANY_TYPE))
+				{
+					valExpr = {node::NotCondition({new node::ValExpr(nodeExpr.value())})};
+				}
+				else
+				{
+					return {};
+				}
+			}
+		}
         else if (peek().value().type == Tokens::IDENT)
         {
             valExpr = {node::ExprIdent{consume()}};
