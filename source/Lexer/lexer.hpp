@@ -146,21 +146,25 @@ namespace node
     {
         Token ident;
         Expr* Expr = nullptr;
+		bool isConst = false;
     };
     struct StmtStrLet
     {
         Token ident;
         Expr* Expr = nullptr;
+		bool isConst = false;
     };
     struct StmtBoolLet
     {
         Token ident;
         Expr* Expr = nullptr;
+		bool isConst = false;
     };
     struct StmtCharLet
     {
         Token ident;
         Expr* Expr = nullptr;
+		bool isConst = false;
     };
     struct StmtIntVar
     {

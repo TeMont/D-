@@ -1,10 +1,8 @@
-int Age;
+const int x = 20;
+const char y = 'c';
+const string z = "02";
 
-Age = stdInput("Enter Your Age: ");
 
-if (!Age)
-{
-    stdOut("You Entered Incorrect Age");
-    return false;
-}
-return true;
+bool o = 20;
+o = 2;
+stdOut(o);

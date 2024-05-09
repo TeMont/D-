@@ -762,6 +762,11 @@ void compiler::compVar(Token ident, node::Expr *expr, const std::string &expecte
     if (m_vars.count(ident.value.value()))
     {
         const auto &var = m_vars[ident.value.value()];
+		if (var.isConst)
+		{
+			std::cerr << "[Compile Error] ERR012 Cannot Change Value Of Const Variables";
+			exit(EXIT_FAILURE);
+		}
         if (var.Type == BOOL_TYPE)
         {
             if (compExpr(*expr, INT_TYPE) || compExpr(*expr, CHAR_TYPE) || compExpr(*expr, BOOL_TYPE))
@@ -805,7 +810,7 @@ void compiler::compVar(Token ident, node::Expr *expr, const std::string &expecte
     }
 }
 
-void compiler::compLet(Token ident, node::Expr *expr, const std::string &expectedType)
+void compiler::compLet(Token ident, node::Expr *expr, const std::string &expectedType, bool isConst)
 {
     if (m_vars.count(ident.value.value()))
     {
@@ -814,7 +819,7 @@ void compiler::compLet(Token ident, node::Expr *expr, const std::string &expecte
     }
     else
     {
-        m_vars.insert({ident.value.value(), Var{m_stackSize, expectedType}});
+        m_vars.insert({ident.value.value(), Var{m_stackSize, expectedType, isConst}});
         if (expectedType == BOOL_TYPE)
         {
             if (expr != nullptr)
@@ -847,6 +852,11 @@ void compiler::compLet(Token ident, node::Expr *expr, const std::string &expecte
             }
             else
             {
+				if (isConst)
+				{
+					std::cerr << "[Compile Error] ERR011 Const Variables Cannot Be Declared Without Value";
+					exit(EXIT_FAILURE);
+				}
                 push("rdx");
             }
         }
@@ -957,25 +967,25 @@ void compiler::compStmt(const node::Stmt &stmt)
         void operator()(const node::StmtIntLet &stmtIntLet)
         {
             m_output << ";;\tint let\n";
-            compLet(stmtIntLet.ident, stmtIntLet.Expr, INT_TYPE);
+            compLet(stmtIntLet.ident, stmtIntLet.Expr, INT_TYPE, stmtIntLet.isConst);
             m_output << ";;\t/int let\n";
         }
         void operator()(const node::StmtStrLet &stmtStrLet)
         {
             m_output << ";;\tstr let\n";
-            compLet(stmtStrLet.ident, stmtStrLet.Expr, STR_TYPE);
+            compLet(stmtStrLet.ident, stmtStrLet.Expr, STR_TYPE, stmtStrLet.isConst);
             m_output << ";;\t/str let\n";
         }
         void operator()(const node::StmtBoolLet &stmtBoolLet)
         {
             m_output << ";;\tbool let\n";
-            compLet(stmtBoolLet.ident, stmtBoolLet.Expr, BOOL_TYPE);
+            compLet(stmtBoolLet.ident, stmtBoolLet.Expr, BOOL_TYPE, stmtBoolLet.isConst);
             m_output << ";;\t/bool let\n";
         }
         void operator()(const node::StmtCharLet &stmtCharLet)
         {
             m_output << ";;\tchar let\n";
-            compLet(stmtCharLet.ident, stmtCharLet.Expr, CHAR_TYPE);
+            compLet(stmtCharLet.ident, stmtCharLet.Expr, CHAR_TYPE, stmtCharLet.isConst);
             m_output << ";;\t/char let\n";
         }
         void operator()(const node::StmtIntVar &stmtIntVar)

@@ -38,6 +38,7 @@ std::map<std::string, Tokens> tokensMap =
         {"if", IF},
         {"elif", ELIF},
         {"else", ELSE},
+        {"const", CONST},
 };
 
 std::vector<Token> tokenizer::tokenize()

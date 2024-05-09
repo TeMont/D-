@@ -1,5 +1,3 @@
-SC0: db 'Enter Your Age: ',00H
-SC1: db 'You Entered Incorrect Age',00H
 section .bss
 extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess
 
@@ -18,69 +16,51 @@ section .bss
 section .text
 global main
 main:
-;;	int let
-	push rdx
-;;	/int let
-;;	Input
-	mov rdx, SC0
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	mov rsi, InputBuffer
-	mov rax, 256
-	call _scanf
-	call _stoi
-	push rdi
-	mov rsi, OutputBuffer
+;;	bool let
 	mov rdx, 20
-	call _clearBuffer
-	mov rsi, InputBuffer
-	mov rdx, 256
-	call _clearBuffer
-;;	/Input
-	pop rdx
-	mov [rsp + 0], rdx
+	push rdx
 	xor rdx, rdx
-;;	if
-	push QWORD [rsp + 0]
 	pop rdx
 	mov rdx, rdx
 	cmp rdx, 0
-	jne label2
+	je label1
 	mov rdx, 1
-	jmp label1
-	label2:
-	mov rdx, 0
+	jmp label0
 	label1:
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	cmp rdx, 0
-	je label0
-;;	Output
-	mov rdx, SC1
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	call _printf
-;;	/Output
-;;	return
 	mov rdx, 0
-	push rdx
-	xor rdx, rdx
-	pop rcx
-	call ExitProcess
-;;	/return
-;;	/if
 	label0:
-	xor rdx, rdx
-;;	return
-	mov rdx, 1
 	push rdx
 	xor rdx, rdx
-	pop rcx
-	call ExitProcess
-;;	/return
+;;	/bool let
+	mov rdx, 2
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	mov rdx, rdx
+	cmp rdx, 0
+	je label3
+	mov rdx, 1
+	jmp label2
+	label3:
+	mov rdx, 0
+	label2:
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
+;;	Output
+	push QWORD [rsp + 0]
+	pop rdx
+	mov rax, rdx
+	mov rsi, OutputBuffer
+	call _itoa
+	mov rdx, rsi
+	call _printf
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+;;	/Output
 
 _printf:
 	; INPUT:

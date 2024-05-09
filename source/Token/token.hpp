@@ -50,6 +50,7 @@ enum Tokens
     IF,
     ELIF,
     ELSE,
+	CONST,
 };
 
 extern std::map<std::string, Tokens> tokensMap;

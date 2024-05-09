@@ -58,7 +58,7 @@ std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedTyp
         node::ValExpr valExpr;
         if (peek().value().type == Tokens::INT_LITERAL)
         {
-            if (expectedType == INT_TYPE || expectedType == ANY_TYPE)
+            if (expectedType == INT_TYPE || expectedType == BOOL_TYPE || expectedType == ANY_TYPE)
             {
                 valExpr = {node::ExprIntLit{consume()}};
             }
@@ -98,7 +98,7 @@ std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedTyp
         }
         else if (peek().value().type == Tokens::APOST)
         {
-            if (expectedType == CHAR_TYPE || expectedType == ANY_TYPE)
+            if (expectedType == CHAR_TYPE || expectedType == BOOL_TYPE || expectedType == ANY_TYPE)
             {
                 consume(); // consume '
                 if (peek().has_value() && peek().value().type == Tokens::CHAR_LITERAL)
@@ -438,7 +438,18 @@ std::optional<node::IfPred> parser::parseIfPred()
 
 std::optional<node::StmtIntLet> parser::parseLet(const std::string& expectedType)
 {
+	bool isConst = false;
+	if (peek().value().type == CONST)
+	{
+		isConst = true;
+		consume();
+	}
     consume();
+	if (peek().has_value() && peek().value().type == CONST)
+	{
+		isConst = true;
+		consume();
+	}
     if (peek().has_value() && peek().value().type == Tokens::IDENT)
     {
         auto varIdent = consume();
@@ -450,7 +461,7 @@ std::optional<node::StmtIntLet> parser::parseLet(const std::string& expectedType
                 if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
                 {
                     consume();
-                    return node::StmtIntLet{varIdent, new node::Expr(nodeExpr.value())};
+                    return node::StmtIntLet{varIdent, new node::Expr(nodeExpr.value()), isConst};
                 }
                 else
                 {
@@ -469,7 +480,7 @@ std::optional<node::StmtIntLet> parser::parseLet(const std::string& expectedType
             if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
             {
                 consume();
-                return node::StmtIntLet{varIdent};
+                return node::StmtIntLet{varIdent, nullptr, isConst};
             }
             else
             {
@@ -628,56 +639,28 @@ std::optional<node::Stmt> parser::parseStmt()
                 std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
             }
         }
-        else if (peek().value().type == Tokens::INT_LET)
+        else if (peek().value().type == Tokens::INT_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::INT_LET)
         {
             auto tempLetStmt = parseLet(INT_TYPE).value();
-            if (tempLetStmt.Expr != nullptr)
-            {
-                stmtNode = {node::StmtIntLet{tempLetStmt.ident, tempLetStmt.Expr}};
-            }
-            else
-            {
-                stmtNode = {node::StmtIntLet{tempLetStmt.ident}};
-            }
+            stmtNode = {node::StmtIntLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
             m_vars.insert({tempLetStmt.ident.value.value(), INT_TYPE});
         }
-        else if (peek().value().type == Tokens::STRING_LET)
+        else if (peek().value().type == Tokens::STRING_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::STRING_LET)
         {
             auto tempLetStmt = parseLet(STR_TYPE).value();
-            if (tempLetStmt.Expr != nullptr)
-            {
-                stmtNode = {node::StmtStrLet{tempLetStmt.ident, tempLetStmt.Expr}};
-            }
-            else
-            {
-                stmtNode = {node::StmtStrLet{tempLetStmt.ident}};
-            }
+            stmtNode = {node::StmtStrLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
             m_vars.insert({tempLetStmt.ident.value.value(), STR_TYPE});
         }
-        else if (peek().value().type == Tokens::BOOL_LET)
+        else if (peek().value().type == Tokens::BOOL_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::BOOL_LET)
         {
             auto tempLetStmt = parseLet(ANY_TYPE).value();
-            if (tempLetStmt.Expr != nullptr)
-            {
-                stmtNode = {node::StmtBoolLet{tempLetStmt.ident, tempLetStmt.Expr}};
-            }
-            else
-            {
-                stmtNode = {node::StmtBoolLet{tempLetStmt.ident}};
-            }
+            stmtNode = {node::StmtBoolLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
             m_vars.insert({tempLetStmt.ident.value.value(), BOOL_TYPE});
         }
-        else if (peek().value().type == Tokens::CHAR_LET)
+        else if (peek().value().type == Tokens::CHAR_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::CHAR_LET)
         {
             auto tempLetStmt = parseLet(CHAR_TYPE).value();
-            if (tempLetStmt.Expr != nullptr)
-            {
-                stmtNode = {node::StmtCharLet{tempLetStmt.ident, tempLetStmt.Expr}};
-            }
-            else
-            {
-                stmtNode = {node::StmtCharLet{tempLetStmt.ident}};
-            }
+            stmtNode = {node::StmtCharLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
             m_vars.insert({tempLetStmt.ident.value.value(), CHAR_TYPE});
         }
         else if (peek().value().type == Tokens::IDENT)

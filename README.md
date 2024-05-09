@@ -20,8 +20,8 @@ The compiler is made using NASM & gcc Linker.
 - [X] Output
 - [X] Input
 - [X] ! operator
+- [X] Const Variables
 - [ ] Float Variables
-- [ ] Const Variables
 - [ ] Loops
 - [ ] Negative Integers
 - [ ] Switch-case statement
