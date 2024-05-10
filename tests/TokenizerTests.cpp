@@ -3,17 +3,17 @@
 
 TEST(TokenizerTest, TokenizeTest)
 {
-    std::string source = "//int x = 10 string \"string\" bool true char 'a' + - * / ( ) ; { } return stdOut stdInput ==  < > >= <= ! != || && if elif else\n"
-                         "int x = 10 string \"string\" bool true char 'a' + - * / ( ) ; { } return stdOut stdInput ==  < > >= <= ! != || && if elif else\n"
-                         "/*int x = 10 string \"string\" bool true char 'a' + - * / ( ) ; { } return stdOut stdInput ==  < > >= <= ! != || && if elif else\n"
-                         "int x = 10 string \"string\" bool true char 'a' + - * / ( ) ; { } return stdOut stdInput ==  < > >= <= ! != || && if elif else\n"
-                         "int x = 10 string \"string\" bool true char 'a' + - * / ( ) ; { } return stdOut stdInput ==  < > >= <= ! != || && if elif else*/\n";
+    std::string source = "//int x = 10 string \"string\" bool true char 'a' + - * / ( ) ; { } return stdOut stdInput ==  < > >= <= ! != || && if elif else const\n"
+                         "int x = 10 string \"string\" bool true char 'a' + - * / ( ) ; { } return stdOut stdInput ==  < > >= <= ! != || && if elif else const\n"
+                         "/*int x = 10 string \"string\" bool true char 'a' + - * / ( ) ; { } return stdOut stdInput ==  < > >= <= ! != || && if elif else const\n"
+                         "int x = 10 string \"string\" bool true char 'a' + - * / ( ) ; { } return stdOut stdInput ==  < > >= <= ! != || && if elif else const\n"
+                         "int x = 10 string \"string\" bool true char 'a' + - * / ( ) ; { } return stdOut stdInput ==  < > >= <= ! != || && if elif else const*/\n";
 
     tokenizer tknzr(source);
 
     std::vector<Token> tokens = tknzr.tokenize();
 
-    ASSERT_EQ(tokens.size(), 38) << "ERROR Incorrect tokens array size\n";
+    ASSERT_EQ(tokens.size(), 39) << "ERROR Incorrect tokens array size\n";
     ASSERT_EQ(tokens[0].type, INT_LET) << "ERROR Incorrect type at index 0: " << tokens[0].type << "\n";
     ASSERT_EQ(tokens[1].type, IDENT) << "ERROR Incorrect type at index 1: " << tokens[1].type << "\n";
     ASSERT_EQ(tokens[1].value, "x") << "ERROR Incorrect value at index 1: " << tokens[1].value.value() << "\n";
@@ -56,5 +56,6 @@ TEST(TokenizerTest, TokenizeTest)
     ASSERT_EQ(tokens[34].type, AND) << "ERROR Incorrect type at index 34: " << tokens[34].type << "\n";
     ASSERT_EQ(tokens[35].type, IF) << "ERROR Incorrect type at index 35: " << tokens[35].type << "\n";
     ASSERT_EQ(tokens[36].type, ELIF) << "ERROR Incorrect type at index 36: " << tokens[36].type << "\n";
-    ASSERT_EQ(tokens[37].type, ELSE) << "ERROR Incorrect type at index 37: " << tokens[37].type << "\n";
+	ASSERT_EQ(tokens[37].type, ELSE) << "ERROR Incorrect type at index 37: " << tokens[37].type << "\n";
+	ASSERT_EQ(tokens[38].type, CONST) << "ERROR Incorrect type at index 38: " << tokens[37].type << "\n";
 }

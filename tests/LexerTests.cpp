@@ -27,7 +27,7 @@ struct valExprVisitor
     explicit valExprVisitor(std::string expectedType) : expectedType(std::move(expectedType)) {}
     void operator()(const node::ExprIntLit &exprInt) const
     {
-        if (expectedType == INT_TYPE)
+        if (expectedType == INT_TYPE || expectedType == BOOL_TYPE)
         {
             ASSERT_EQ(exprInt.intLit.type, INT_LITERAL) << "ERROR Incorrect token type for INT_TYPE\n";
             ASSERT_EQ(exprInt.intLit.value, "val") << "ERROR Incorrect token value for INT_TYPE\n";
@@ -51,7 +51,7 @@ struct valExprVisitor
     }
     void operator()(const node::ExprCharLit &exprChar) const
     {
-        if (expectedType == CHAR_TYPE)
+        if (expectedType == CHAR_TYPE || expectedType == BOOL_TYPE)
         {
             ASSERT_EQ(exprChar.charLit.type, CHAR_LITERAL) << "ERROR Incorrect token type for CHAR_TYPE\n";
             ASSERT_EQ(exprChar.charLit.value, "val") << "ERROR Incorrect token value for CHAR_TYPE\n";
@@ -63,7 +63,7 @@ struct valExprVisitor
     }
     void operator()(const node::ExprBoolLit &exprBool) const
     {
-        if (expectedType == BOOL_TYPE)
+        if (expectedType == BOOL_TYPE || expectedType == BOOL_TYPE)
         {
             ASSERT_EQ(exprBool.boolLit.type, BOOL_LITERAL) << "ERROR Incorrect token type for BOOL_TYPE\n";
             ASSERT_EQ(exprBool.boolLit.value, "val") << "ERROR Incorrect token value for BOOL_TYPE\n";
@@ -238,7 +238,7 @@ TEST(ParserTest, parseValExprTest)
             {
                 p.pushToken(k);
             }
-            if (j == 0 || litArr[i][0].type == IDENT)
+            if (j == 0 || litArr[i][0].type == IDENT || typeArr[i][j] == BOOL_TYPE && typeArr[i][0] != STR_TYPE)
             {
                 auto parsedValExpr = p.parseValExpr(typeArr[i][j]);
                 ASSERT_TRUE(parsedValExpr.has_value()) << "ERROR Parsed value expression has not value\n";
@@ -273,7 +273,7 @@ TEST(ParserTest, ParseExprTest)
 	                {
 	                    p.pushToken(o);
 	                }
-					if ((litArr[i][0].type == IDENT && litArr[j][0].type == IDENT) || (i == j && k == 0))
+					if (litArr[i][0].type == IDENT && litArr[j][0].type == IDENT || i == j && k == 0 || typeArr[i][k] == BOOL_TYPE && typeArr[i][0] != STR_TYPE && typeArr[j][0] != STR_TYPE)
 	                {
 	                    auto parsedExpr = p.parseExpr(typeArr[i][k]);
 	                    ASSERT_TRUE(parsedExpr.has_value()) << "ERROR Parsed expression has not value\n";
@@ -282,7 +282,7 @@ TEST(ParserTest, ParseExprTest)
 	                }
 					else if (litArr[i][0].type == IDENT || litArr[j][0].type == IDENT)
 					{
-						if ((litArr[i][0].type == IDENT && typeArr[i][k] == typeArr[j][0]) || (litArr[j][0].type == IDENT && typeArr[i][k] == typeArr[i][0]))
+						if (litArr[i][0].type == IDENT && typeArr[i][k] == typeArr[j][0] || litArr[j][0].type == IDENT && typeArr[i][k] == typeArr[i][0])
 						{
 							auto parsedExpr = p.parseExpr(typeArr[i][k]);
 							ASSERT_TRUE(parsedExpr.has_value()) << "ERROR Parsed expression has not value(IDENT)\n";
@@ -321,7 +321,7 @@ TEST(ParserTest, ParseLetStmtTest)
                 p.pushToken(k);
             }
             p.pushToken({SEMICOLON});
-            if (j == 0 || litArr[i][0].type == IDENT)
+            if (j == 0 || litArr[i][0].type == IDENT || typeArr[i][j] == BOOL_TYPE && typeArr[i][0] != STR_TYPE)
             {
                 auto parsedLet = p.parseLet(typeArr[i][j]);
                 ASSERT_TRUE(parsedLet.has_value()) << "ERROR Parsed let statement has not value\n";
