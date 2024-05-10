@@ -58,97 +58,54 @@ std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedTyp
         node::ValExpr valExpr;
         if (peek().value().type == Tokens::INT_LITERAL)
         {
-            if (expectedType == INT_TYPE || expectedType == BOOL_TYPE || expectedType == ANY_TYPE)
-            {
-                valExpr = {node::ExprIntLit{consume()}};
-            }
-            else
-            {
+			if (expectedType != INT_TYPE && expectedType != BOOL_TYPE && expectedType != ANY_TYPE)
+			{
                 return {};
-            }
+			}
+            valExpr = {node::ExprIntLit{consume()}};
         }
         else if (peek().value().type == Tokens::QOUTE)
         {
-            if (expectedType == STR_TYPE || expectedType == ANY_TYPE)
-            {
-                consume(); // consume '"'
-                if (peek().has_value() && peek().value().type == Tokens::STRING_LITERAL)
-                {
-                    valExpr = {node::ExprStrLit{consume()}};
-                    if (peek().value().type == Tokens::QOUTE)
-                    {
-                        consume(); // consume '"'
-                    }
-                    else
-                    {
-                        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '\"'";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else
-                {
-                    std::cerr << "[Parse Error] ERR001 Syntax Error Expected String Literal";
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                return {};
-            }
+			if (expectedType != STR_TYPE && expectedType != ANY_TYPE)
+			{
+				return {};
+			}
+	        consume(); // consume '"'
+            valExpr = {node::ExprStrLit{consume()}};
+			consume(); // consume '"'
         }
         else if (peek().value().type == Tokens::APOST)
         {
-            if (expectedType == CHAR_TYPE || expectedType == BOOL_TYPE || expectedType == ANY_TYPE)
-            {
-                consume(); // consume '
-                if (peek().has_value() && peek().value().type == Tokens::CHAR_LITERAL)
-                {
-                    valExpr = {node::ExprCharLit{consume()}};
-                    if (peek().value().type == Tokens::APOST)
-                    {
-                        consume(); // consume '
-                    }
-                    else
-                    {
-                        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '\"'";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else
-                {
-                    std::cerr << "[Parse Error] ERR001 Syntax Error Expected Char Literal";
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                return {};
-            }
+	        if (expectedType != CHAR_TYPE && expectedType != BOOL_TYPE && expectedType != ANY_TYPE)
+	        {
+				return {};
+			}
+            consume(); // consume '
+			valExpr = {node::ExprCharLit{consume()}};
+			consume(); // consume '
         }
         else if (peek().value().type == Tokens::BOOL_LITERAL)
         {
-            if (expectedType == BOOL_TYPE || expectedType == ANY_TYPE)
-            {
-                valExpr = {node::ExprBoolLit{consume()}};
-            }
-            else
+            if (expectedType != BOOL_TYPE && expectedType != ANY_TYPE)
             {
                 return {};
             }
+			valExpr = {node::ExprBoolLit{consume()}};
         }
-		else if (peek().value().type == Tokens::NOT)
+		else if (peek().value().type == Tokens::NOT)//FOR EXPRESSIONS LIKE !20, !x
         {
 			consume();
-			if (expectedType == BOOL_TYPE || ANY_TYPE)
+			if (expectedType != BOOL_TYPE && expectedType != ANY_TYPE)
 			{
-				if (auto nodeExpr = parseValExpr(ANY_TYPE))
-				{
-					valExpr = {node::NotCondition({new node::ValExpr(nodeExpr.value())})};
-				}
-				else
-				{
-					return {};
-				}
+				return {};
+			}
+			if (auto nodeExpr = parseValExpr(ANY_TYPE))
+			{
+				valExpr = {node::NotCondition({new node::ValExpr(nodeExpr.value())})};
+			}
+			else
+			{
+				return {};
 			}
 		}
         else if (peek().value().type == Tokens::IDENT)
@@ -178,296 +135,143 @@ std::optional<node::Expr> parser::parseExpr(const std::string& expectedType, uin
     else
     {
         std::optional<node::ValExpr> valFvl = parseValExpr(expectedType);
-        if (valFvl.has_value())
-        {
-            node::Expr exprFvl = {new node::ValExpr(valFvl.value())};
+        if (!valFvl.has_value())
+		{
+			std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
+			exit(EXIT_FAILURE);
+        }
+        node::Expr exprFvl = {new node::ValExpr(valFvl.value())};
 
-            while (true)
-            {
-                std::optional<uint8_t> priority;
-                if (peek().has_value())
-                {
-                    priority = op_to_prior(peek().value().type);
-                    if (!priority.has_value() || priority < minPriority)
-                    {
-                        break;
-                    }
-                }
-                else
-                {
-                    break;
-                }
-                Token opr = consume();
-                uint8_t nextMinPriority = priority.value() + 1;
-                if (auto exprSvl = parseExpr(expectedType, nextMinPriority))
-                {
-					node::BinExpr expr;
-					node::Expr exprFvl2;
-					if (opr.type == Tokens::PLUS)
-					{
-						node::BinExprAdd add;
-						exprFvl2 = exprFvl;
-						add.fvl = new node::Expr(exprFvl2);
-						add.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::BinExprAdd(add);
-					}
-					else if (opr.type == Tokens::MINUS)
-					{
-						node::BinExprSub sub;
-						exprFvl2 = exprFvl;
-						sub.fvl = new node::Expr(exprFvl2);
-						sub.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::BinExprSub(sub);
-					}
-					else if (opr.type == Tokens::MULT)
-					{
-						node::BinExprMul mul;
-						exprFvl2 = exprFvl;
-						mul.fvl = new node::Expr(exprFvl2);
-						mul.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::BinExprMul(mul);
-					}
-					else if (opr.type == Tokens::DIV)
-					{
-						node::BinExprDiv div;
-						exprFvl2 = exprFvl;
-						div.fvl = new node::Expr(exprFvl2);
-						div.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::BinExprDiv(div);
-					}
-					else if (opr.type == Tokens::EQEQ)
-					{
-						node::EQCondition eq;
-						exprFvl2 = exprFvl;
-						eq.fvl = new node::Expr(exprFvl2);
-						eq.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::EQCondition(eq);
-					}
-					else if (opr.type == Tokens::NOTEQ)
-					{
-						node::NotEQCondition notEq;
-						exprFvl2 = exprFvl;
-						notEq.fvl = new node::Expr(exprFvl2);
-						notEq.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::NotEQCondition(notEq);
-					}
-					else if (opr.type == Tokens::LESS)
-					{
-						node::LessCondition less;
-						exprFvl2 = exprFvl;
-						less.fvl = new node::Expr(exprFvl2);
-						less.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::LessCondition(less);
-					}
-					else if (opr.type == Tokens::LESSEQ)
-					{
-						node::EQLessCondition lessEq;
-						exprFvl2 = exprFvl;
-						lessEq.fvl = new node::Expr(exprFvl2);
-						lessEq.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::EQLessCondition(lessEq);
-					}
-					else if (opr.type == Tokens::GREATER)
-					{
-						node::GreaterCondition greater;
-						exprFvl2 = exprFvl;
-						greater.fvl = new node::Expr(exprFvl2);
-						greater.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::GreaterCondition(greater);
-					}
-					else if (opr.type == Tokens::GREATEQ)
-					{
-						node::EQGreaterCondition greatEq;
-						exprFvl2 = exprFvl;
-						greatEq.fvl = new node::Expr(exprFvl2);
-						greatEq.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::EQGreaterCondition(greatEq);
-					}
-					else if (opr.type == Tokens::AND)
-					{
-						node::AndCondition And;
-						exprFvl2 = exprFvl;
-						And.fvl = new node::Expr(exprFvl2);
-						And.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::AndCondition(And);
-					}
-					else if (opr.type == Tokens::OR)
-					{
-						node::OrCondition Or;
-						exprFvl2 = exprFvl;
-						Or.fvl = new node::Expr(exprFvl2);
-						Or.svl = new node::Expr(exprSvl.value());
-						expr.var = new node::OrCondition(Or);
-					}
-					exprFvl.var = new node::BinExpr(expr);
-                }
-                else
-                {
-                    std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
-                    exit(EXIT_FAILURE);
-                }
-            }
-            return exprFvl;
-        }
-        else
+        while (true)
         {
-	        std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
-	        exit(EXIT_FAILURE);
-        }
-    }
-}
-
-std::optional<node::StmtIf> parser::parseIfStmt()
-{
-    consume();
-    if (peek().has_value() && peek().value().type == Tokens::LPAREN)
-    {
-        consume();
-        if (auto cond = parseExpr(ANY_TYPE))
-        {
-            if (peek().has_value() && peek().value().type == Tokens::RPAREN)
+            std::optional<uint8_t> priority;
+            if (!peek().has_value())
             {
-                consume();
-                if (peek().has_value() && peek().value().type == Tokens::LBRACKET)
-                {
-                    consume();
-                    std::vector<node::Stmt> stmts;
-                    while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
-                    {
-                        if (auto stmt = parseStmt())
-                        {
-                            stmts.push_back(stmt.value());
-                        }
-                    }
-                    if (peek().has_value() && peek().value().type == Tokens::RBRACKET)
-                    {
-                        consume(); // consume '}'
-                        auto pred = parseIfPred();
-                        if (pred.has_value())
-                        {
-                            return {node::StmtIf({new node::Expr(cond.value()), stmts, {new node::IfPred(pred.value())}})};
-                        }
-                        else
-                        {
-                            return {node::StmtIf({new node::Expr(cond.value()), stmts})};
-                        }
-                    }
-                    else
-                    {
-                        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '}'";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else
-                {
-                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '{'";
-                    exit(EXIT_FAILURE);
-                }
+                break;
             }
-            else
+            priority = op_to_prior(peek().value().type);
+            if (!priority.has_value() || priority < minPriority)
             {
-                std::cerr << "ERR001 Invalid Syntax Expected ')'";
-                exit(EXIT_FAILURE);
+                break;
             }
-        }
-        else
-        {
-            std::cerr << "[Parse Error] ERR007 Expected Condition";
-            exit(EXIT_FAILURE);
-        }
-    }
-    else
-    {
-        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
-        exit(EXIT_FAILURE);
-    }
-}
-
-std::optional<node::IfPred> parser::parseIfPred()
-{
-    if (peek().has_value())
-    {
-        std::optional<node::IfPred> stmtPred;
-        if (peek().value().type == Tokens::ELIF)
-        {
-            auto tempIfStmt = parseIfStmt().value();
-
-            if (tempIfStmt.pred.has_value())
+            Token opr = consume();
+            uint8_t nextMinPriority = priority.value() + 1;
+            if (auto exprSvl = parseExpr(expectedType, nextMinPriority))
             {
-                stmtPred = {new node::StmtElIf({tempIfStmt.Cond, tempIfStmt.statements, tempIfStmt.pred})};
-            }
-            else
-            {
-                stmtPred = {new node::StmtElIf({tempIfStmt.Cond, tempIfStmt.statements})};
-            }
-        }
-        else if (peek().value().type == Tokens::ELSE)
-        {
-            consume();
-            if (peek().has_value() && peek().value().type == Tokens::LBRACKET)
-            {
-                consume();
-                std::vector<node::Stmt> stmts;
-                while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
-                {
-                    if (auto stmt = parseStmt())
-                    {
-                        stmts.push_back(stmt.value());
-                    }
-                }
-                consume();
-                stmtPred = {new node::StmtElse({stmts})};
-            }
-            else
-            {
-                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '{'";
-                exit(EXIT_FAILURE);
-            }
-        }
-        else
-        {
-            return {};
-        }
-        return stmtPred;
-    }
-    else
-    {
-        return {};
-    }
-}
-
-std::optional<node::StmtIntLet> parser::parseLet(const std::string& expectedType)
-{
-	bool isConst = false;
-	if (peek().value().type == CONST)
-	{
-		isConst = true;
-		consume();
-	}
-    consume();
-	if (peek().has_value() && peek().value().type == CONST)
-	{
-		isConst = true;
-		consume();
-	}
-    if (peek().has_value() && peek().value().type == Tokens::IDENT)
-    {
-        auto varIdent = consume();
-        if (peek().has_value() && peek().value().type == Tokens::EQ)
-        {
-            consume();
-            if (auto nodeExpr = parseExpr(expectedType))
-            {
-                if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-                {
-                    consume();
-                    return node::StmtIntLet{varIdent, new node::Expr(nodeExpr.value()), isConst};
-                }
-                else
-                {
-                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-                    exit(EXIT_FAILURE);
-                }
+				node::BinExpr expr;
+				node::Expr exprFvl2;
+	            switch (opr.type)
+	            {
+		        case Tokens::PLUS:
+		        {
+		            node::BinExprAdd add;
+		            exprFvl2 = exprFvl;
+		            add.fvl = new node::Expr(exprFvl2);
+		            add.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::BinExprAdd(add);
+		            break;
+		        }
+		        case Tokens::MINUS:
+		        {
+		            node::BinExprSub sub;
+		            exprFvl2 = exprFvl;
+		            sub.fvl = new node::Expr(exprFvl2);
+		            sub.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::BinExprSub(sub);
+		            break;
+		        }
+		        case Tokens::MULT:
+		        {
+		            node::BinExprMul mul;
+		            exprFvl2 = exprFvl;
+		            mul.fvl = new node::Expr(exprFvl2);
+		            mul.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::BinExprMul(mul);
+		            break;
+		        }
+		        case Tokens::DIV:
+		        {
+		            node::BinExprDiv div;
+		            exprFvl2 = exprFvl;
+		            div.fvl = new node::Expr(exprFvl2);
+		            div.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::BinExprDiv(div);
+		            break;
+		        }
+		        case Tokens::EQEQ:
+		        {
+		            node::EQCondition eq;
+		            exprFvl2 = exprFvl;
+		            eq.fvl = new node::Expr(exprFvl2);
+		            eq.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::EQCondition(eq);
+		            break;
+		        }
+		        case Tokens::NOTEQ:
+		        {
+		            node::NotEQCondition notEq;
+		            exprFvl2 = exprFvl;
+		            notEq.fvl = new node::Expr(exprFvl2);
+		            notEq.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::NotEQCondition(notEq);
+		            break;
+		        }
+		        case Tokens::LESS:
+		        {
+		            node::LessCondition less;
+		            exprFvl2 = exprFvl;
+		            less.fvl = new node::Expr(exprFvl2);
+		            less.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::LessCondition(less);
+		            break;
+		        }
+		        case Tokens::LESSEQ:
+		        {
+		            node::EQLessCondition lessEq;
+		            exprFvl2 = exprFvl;
+		            lessEq.fvl = new node::Expr(exprFvl2);
+		            lessEq.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::EQLessCondition(lessEq);
+		            break;
+		        }
+		        case Tokens::GREATER:
+		        {
+		            node::GreaterCondition greater;
+		            exprFvl2 = exprFvl;
+		            greater.fvl = new node::Expr(exprFvl2);
+		            greater.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::GreaterCondition(greater);
+		            break;
+		        }
+		        case Tokens::GREATEQ:
+		        {
+		            node::EQGreaterCondition greatEq;
+		            exprFvl2 = exprFvl;
+		            greatEq.fvl = new node::Expr(exprFvl2);
+		            greatEq.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::EQGreaterCondition(greatEq);
+		            break;
+		        }
+		        case Tokens::AND:
+		        {
+		            node::AndCondition And;
+		            exprFvl2 = exprFvl;
+		            And.fvl = new node::Expr(exprFvl2);
+		            And.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::AndCondition(And);
+		            break;
+		        }
+		        case Tokens::OR:
+		        {
+		            node::OrCondition Or;
+		            exprFvl2 = exprFvl;
+		            Or.fvl = new node::Expr(exprFvl2);
+		            Or.svl = new node::Expr(exprSvl.value());
+		            expr.var = new node::OrCondition(Or);
+		            break;
+		        }
+	            }
+	            exprFvl.var = new node::BinExpr(expr);
             }
             else
             {
@@ -475,63 +279,180 @@ std::optional<node::StmtIntLet> parser::parseLet(const std::string& expectedType
                 exit(EXIT_FAILURE);
             }
         }
+        return exprFvl;
+    }
+}
+
+std::optional<node::StmtIf> parser::parseIfStmt()
+{
+    consume();
+    if (peek().has_value() && peek().value().type != Tokens::LPAREN || !peek().has_value())
+    {
+	    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
+	    exit(EXIT_FAILURE);
+	}
+    consume();
+    if (auto cond = parseExpr(ANY_TYPE))
+    {
+        if (peek().has_value() && peek().value().type != Tokens::RPAREN || !peek().has_value())
+        {
+	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ')'";
+	        exit(EXIT_FAILURE);
+		}
+        consume(); // consume ')'
+        if (peek().has_value() && peek().value().type != Tokens::LBRACKET || !peek().has_value())
+        {
+	        std::cerr << "ERR001 Invalid Syntax Expected '{'";
+	        exit(EXIT_FAILURE);
+		}
+        consume(); // consume '{'
+        std::vector<node::Stmt> stmts;
+        while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
+        {
+            if (auto stmt = parseStmt())
+            {
+                stmts.push_back(stmt.value());
+            }
+        }
+        if (peek().has_value() && peek().value().type != Tokens::RBRACKET || !peek().has_value())
+        {
+	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '}'";
+	        exit(EXIT_FAILURE);
+		}
+		consume(); // consume '}'
+		auto pred = parseIfPred();
+		if (pred.has_value())
+		{
+			return {node::StmtIf({new node::Expr(cond.value()), stmts, {new node::IfPred(pred.value())}})};
+		}
+		return {node::StmtIf({new node::Expr(cond.value()), stmts})};
+    }
+    else
+    {
+        std::cerr << "[Parse Error] ERR007 Expected Condition";
+        exit(EXIT_FAILURE);
+    }
+}
+
+std::optional<node::IfPred> parser::parseIfPred()
+{
+    if (!peek().has_value())
+    {
+	    return {};
+	}
+    std::optional<node::IfPred> stmtPred;
+    if (peek().value().type == Tokens::ELIF)
+    {
+        auto tempIfStmt = parseIfStmt().value();
+        if (tempIfStmt.pred.has_value())
+        {
+            stmtPred = {new node::StmtElIf({tempIfStmt.Cond, tempIfStmt.statements, tempIfStmt.pred})};
+        }
+		else
+        {
+            stmtPred = {new node::StmtElIf({tempIfStmt.Cond, tempIfStmt.statements})};
+		}
+    }
+    else if (peek().value().type == Tokens::ELSE)
+    {
+        consume();
+        if (peek().has_value() && peek().value().type != Tokens::LBRACKET || !peek().has_value())
+        {
+	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '{'";
+	        exit(EXIT_FAILURE);
+		}
+        consume();
+        std::vector<node::Stmt> stmts;
+        while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
+        {
+            if (auto stmt = parseStmt())
+            {
+                stmts.push_back(stmt.value());
+            }
+        }
+        consume();
+        stmtPred = {new node::StmtElse({stmts})};
+    }
+    else
+    {
+        return {};
+    }
+    return stmtPred;
+}
+
+std::optional<node::StmtIntLet> parser::parseLet(const std::string& expectedType)
+{
+	bool isConst = false;
+	if (peek().value().type == CONST || peek(1).has_value() && peek(1).value().type == CONST)
+	{
+		isConst = true;
+		consume();
+	}
+    consume();
+    if (peek().has_value() && peek().value().type != Tokens::IDENT || !peek().has_value())
+    {
+	    std::cerr << "[Parse Error] ERR002 Expected An Identifier";
+	    exit(EXIT_FAILURE);
+	}
+    auto varIdent = consume();
+    if (peek().has_value() && peek().value().type == Tokens::EQ)
+    {
+        consume();
+        if (auto nodeExpr = parseExpr(expectedType))
+        {
+            if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
+            {
+	            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
+	            exit(EXIT_FAILURE);
+			}
+            consume();
+            return node::StmtIntLet{varIdent, new node::Expr(nodeExpr.value()), isConst};
+        }
         else
         {
-            if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-            {
-                consume();
-                return node::StmtIntLet{varIdent, nullptr, isConst};
-            }
-            else
-            {
-                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-                exit(EXIT_FAILURE);
-            }
+            std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
+            exit(EXIT_FAILURE);
         }
     }
     else
     {
-        std::cerr << "[Parse Error] ERR002 Expected An Identifier";
-        exit(EXIT_FAILURE);
+        if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
+        {
+	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
+	        exit(EXIT_FAILURE);
+		}
+        consume();
+        return node::StmtIntLet{varIdent, nullptr, isConst};
     }
 }
 
 std::optional<node::StmtInput> parser::parseInputStmt()
 {
     consume();
-    if (peek().has_value() && peek().value().type == Tokens::LPAREN)
+    if (peek().has_value() && peek().value().type != Tokens::LPAREN || !peek().has_value())
     {
+	    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
+	    exit(EXIT_FAILURE);
+	}
+    consume();
+    if (auto nodeExpr = parseExpr(ANY_TYPE))
+    {
+        if (peek().has_value() && peek().value().type != Tokens::RPAREN || !peek().has_value())
+        {
+	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ')'";
+	        exit(EXIT_FAILURE);
+		}
         consume();
-        if (auto nodeExpr = parseExpr(ANY_TYPE))
+        if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
         {
-            if (peek().has_value() && peek().value().type == Tokens::RPAREN)
-            {
-                consume();
-                if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-                {
-                    return node::StmtInput{new node::Expr(nodeExpr.value())};
-                }
-                else
-                {
-                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ')'";
-                exit(EXIT_FAILURE);
-            }
+	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
+	        exit(EXIT_FAILURE);
         }
-        else
-        {
-            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected Expression";
-            exit(EXIT_FAILURE);
-        }
+		return node::StmtInput{new node::Expr(nodeExpr.value())};
     }
     else
     {
-        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
+        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected Expression";
         exit(EXIT_FAILURE);
     }
 }
@@ -539,194 +460,164 @@ std::optional<node::StmtInput> parser::parseInputStmt()
 std::optional<node::Stmt> parser::parseStmt()
 {
     std::optional<node::Stmt> stmtNode;
-    if (peek().has_value())
+    if (!peek().has_value())
     {
-        if (peek().value().type == Tokens::RETURN)
+	    return {};
+	}
+    if (peek().value().type == Tokens::RETURN)
+    {
+        consume();
+        if (auto nodeExpr = parseExpr(ANY_TYPE))
         {
-            consume();
-            if (auto nodeExpr = parseExpr(ANY_TYPE))
+            stmtNode = {{node::StmtReturn{new node::Expr(nodeExpr.value())}}};
+            if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
             {
-                stmtNode = {{node::StmtReturn{new node::Expr(nodeExpr.value())}}};
-
-                if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-                {
-                    consume();
-                }
-                else
-                {
-                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-                    exit(EXIT_FAILURE);
-                }
+	            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
+	            exit(EXIT_FAILURE);
             }
-            else
-            {
-                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected Expression";
-                exit(EXIT_FAILURE);
-            }
-        }
-        else if (peek().value().type == Tokens::IF)
-        {
-            auto tempIfStmt = parseIfStmt().value();
-
-            if (tempIfStmt.pred.has_value())
-            {
-                stmtNode = {node::StmtIf({tempIfStmt.Cond, tempIfStmt.statements, tempIfStmt.pred})};
-            }
-            else
-            {
-                stmtNode = {node::StmtIf({tempIfStmt.Cond, tempIfStmt.statements})};
-            }
-        }
-        else if (peek().value().type == Tokens::ELIF)
-        {
-            std::cerr << "[Parse Error] ERR008 Illegal 'elif' without matching if";
-            exit(EXIT_FAILURE);
-        }
-        else if (peek().value().type == Tokens::ELSE)
-        {
-            std::cerr << "[Parse Error] ERR008 Illegal 'else' without matching if";
-            exit(EXIT_FAILURE);
-        }
-        else if (peek().value().type == Tokens::OUTPUT)
-        {
-            consume();
-            if (peek().value().type == Tokens::LPAREN)
-            {
-                consume();
-                if (auto nodeExpr = parseExpr(ANY_TYPE))
-                {
-                    if (peek().value().type == Tokens::RPAREN)
-                    {
-                        consume();
-                        if (peek().value().type == Tokens::SEMICOLON)
-                        {
-                            consume();
-                            stmtNode = {node::StmtOutput{new node::Expr(nodeExpr.value())}};
-                        }
-                        else
-                        {
-                            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-                            exit(EXIT_FAILURE);
-                        }
-                    }
-                    else
-                    {
-                        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ')'";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else
-                {
-                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected Expression";
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
-                exit(EXIT_FAILURE);
-            }
-        }
-        else if (peek().has_value() && peek().value().type == Tokens::INPUT)
-        {
-            auto tmpInpStmt = parseInputStmt().value();
-            if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-            {
-                stmtNode = node::Stmt{tmpInpStmt};
-            }
-            else
-            {
-                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-            }
-        }
-        else if (peek().value().type == Tokens::INT_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::INT_LET)
-        {
-            auto tempLetStmt = parseLet(INT_TYPE).value();
-            stmtNode = {node::StmtIntLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
-            m_vars.insert({tempLetStmt.ident.value.value(), INT_TYPE});
-        }
-        else if (peek().value().type == Tokens::STRING_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::STRING_LET)
-        {
-            auto tempLetStmt = parseLet(STR_TYPE).value();
-            stmtNode = {node::StmtStrLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
-            m_vars.insert({tempLetStmt.ident.value.value(), STR_TYPE});
-        }
-        else if (peek().value().type == Tokens::BOOL_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::BOOL_LET)
-        {
-            auto tempLetStmt = parseLet(ANY_TYPE).value();
-            stmtNode = {node::StmtBoolLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
-            m_vars.insert({tempLetStmt.ident.value.value(), BOOL_TYPE});
-        }
-        else if (peek().value().type == Tokens::CHAR_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::CHAR_LET)
-        {
-            auto tempLetStmt = parseLet(CHAR_TYPE).value();
-            stmtNode = {node::StmtCharLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
-            m_vars.insert({tempLetStmt.ident.value.value(), CHAR_TYPE});
-        }
-        else if (peek().value().type == Tokens::IDENT)
-        {
-            auto varIdent = consume();
-            if (m_vars.count(varIdent.value.value()))
-            {
-                if (peek().value().type == Tokens::EQ)
-                {
-                    consume();
-                    if (auto nodeExpr = parseExpr(m_vars[varIdent.value.value()]))
-                    {
-                        if (m_vars[varIdent.value.value()] == STR_TYPE)
-                        {
-                            stmtNode = {{node::StmtStrVar{varIdent, new node::Expr(nodeExpr.value())}}};
-                        }
-                        else if (m_vars[varIdent.value.value()] == INT_TYPE)
-                        {
-                            stmtNode = {{node::StmtIntVar{varIdent, new node::Expr(nodeExpr.value())}}};
-                        }
-                        else if (m_vars[varIdent.value.value()] == CHAR_TYPE)
-                        {
-                            stmtNode = {{node::StmtCharVar{varIdent, new node::Expr(nodeExpr.value())}}};
-                        }
-                        else if (m_vars[varIdent.value.value()] == BOOL_TYPE)
-                        {
-                            stmtNode = {{node::StmtBoolVar{varIdent, new node::Expr(nodeExpr.value())}}};
-                        }
-
-                        if (peek().has_value() && peek().value().type == Tokens::SEMICOLON)
-                        {
-                            consume();
-                        }
-                        else
-                        {
-                            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-                            exit(EXIT_FAILURE);
-                        }
-                    }
-                    else
-                    {
-                        std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
-                        exit(EXIT_FAILURE);
-                    }
-                }
-                else
-                {
-                    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '='";
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                std::cerr << "[Parse Error] ERR005 Undeclared Identifier '" << varIdent.value.value() << "'";
-                exit(EXIT_FAILURE);
-            }
+			consume();
         }
         else
         {
-            std::cerr << "[Parse Error] ERR001 Syntax Error";
+            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected Expression";
+            exit(EXIT_FAILURE);
+        }
+    }
+    else if (peek().value().type == Tokens::IF)
+    {
+        auto tempIfStmt = parseIfStmt().value();
+        if (tempIfStmt.pred.has_value())
+        {
+            stmtNode = {node::StmtIf({tempIfStmt.Cond, tempIfStmt.statements, tempIfStmt.pred})};
+			return stmtNode;
+        }
+		stmtNode = {node::StmtIf({tempIfStmt.Cond, tempIfStmt.statements})};
+    }
+    else if (peek().value().type == Tokens::ELIF)
+    {
+        std::cerr << "[Parse Error] ERR008 Illegal 'elif' without matching if";
+        exit(EXIT_FAILURE);
+    }
+    else if (peek().value().type == Tokens::ELSE)
+    {
+        std::cerr << "[Parse Error] ERR008 Illegal 'else' without matching if";
+        exit(EXIT_FAILURE);
+    }
+    else if (peek().value().type == Tokens::OUTPUT)
+    {
+        consume();
+        if (peek().value().type != Tokens::LPAREN)
+        {
+	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
+	        exit(EXIT_FAILURE);
+		}
+        consume();
+        if (auto nodeExpr = parseExpr(ANY_TYPE))
+        {
+            if (peek().value().type != Tokens::RPAREN)
+            {
+	            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ')'";
+	            exit(EXIT_FAILURE);
+			}
+            consume();
+            if (peek().value().type != Tokens::SEMICOLON)
+            {
+	            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
+	            exit(EXIT_FAILURE);
+			}
+            consume();
+            stmtNode = {node::StmtOutput{new node::Expr(nodeExpr.value())}};
+        }
+        else
+        {
+            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected Expression";
+            exit(EXIT_FAILURE);
+        }
+    }
+    else if (peek().has_value() && peek().value().type == Tokens::INPUT)
+    {
+        auto tmpInpStmt = parseInputStmt().value();
+        if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
+        {
+            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
+			exit(EXIT_FAILURE);
+        }
+		stmtNode = node::Stmt{tmpInpStmt};
+    }
+    else if (peek().value().type == Tokens::INT_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::INT_LET)
+    {
+        auto tempLetStmt = parseLet(INT_TYPE).value();
+        stmtNode = {node::StmtIntLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
+        m_vars.insert({tempLetStmt.ident.value.value(), INT_TYPE});
+    }
+    else if (peek().value().type == Tokens::STRING_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::STRING_LET)
+    {
+        auto tempLetStmt = parseLet(STR_TYPE).value();
+        stmtNode = {node::StmtStrLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
+        m_vars.insert({tempLetStmt.ident.value.value(), STR_TYPE});
+    }
+    else if (peek().value().type == Tokens::BOOL_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::BOOL_LET)
+    {
+        auto tempLetStmt = parseLet(ANY_TYPE).value();
+        stmtNode = {node::StmtBoolLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
+        m_vars.insert({tempLetStmt.ident.value.value(), BOOL_TYPE});
+    }
+    else if (peek().value().type == Tokens::CHAR_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::CHAR_LET)
+    {
+        auto tempLetStmt = parseLet(CHAR_TYPE).value();
+        stmtNode = {node::StmtCharLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
+        m_vars.insert({tempLetStmt.ident.value.value(), CHAR_TYPE});
+    }
+    else if (peek().value().type == Tokens::IDENT)
+    {
+        auto varIdent = consume();
+        if (!m_vars.count(varIdent.value.value()))
+        {
+	        std::cerr << "[Parse Error] ERR005 Undeclared Identifier '" << varIdent.value.value() << "'";
+	        exit(EXIT_FAILURE);
+		}
+        if (peek().has_value() && peek().value().type != Tokens::EQ || !peek().has_value())
+        {
+	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '='";
+	        exit(EXIT_FAILURE);
+		}
+        consume();
+        if (auto nodeExpr = parseExpr(m_vars[varIdent.value.value()]))
+        {
+            if (m_vars[varIdent.value.value()] == STR_TYPE)
+            {
+                stmtNode = {{node::StmtStrVar{varIdent, new node::Expr(nodeExpr.value())}}};
+            }
+            else if (m_vars[varIdent.value.value()] == INT_TYPE)
+            {
+                stmtNode = {{node::StmtIntVar{varIdent, new node::Expr(nodeExpr.value())}}};
+            }
+            else if (m_vars[varIdent.value.value()] == CHAR_TYPE)
+            {
+                stmtNode = {{node::StmtCharVar{varIdent, new node::Expr(nodeExpr.value())}}};
+            }
+            else if (m_vars[varIdent.value.value()] == BOOL_TYPE)
+            {
+                stmtNode = {{node::StmtBoolVar{varIdent, new node::Expr(nodeExpr.value())}}};
+            }
+
+            if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
+            {
+	            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
+	            exit(EXIT_FAILURE);
+			}
+			consume();
+        }
+        else
+        {
+            std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
             exit(EXIT_FAILURE);
         }
     }
     else
     {
-        return {};
+        std::cerr << "[Parse Error] ERR001 Syntax Error";
+        exit(EXIT_FAILURE);
     }
     return stmtNode;
 }

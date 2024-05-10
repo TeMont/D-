@@ -1,6 +1,6 @@
 #include "token.hpp"
 
-std::map<std::string, Tokens> tokensMap =
+std::map<std::string, Tokens> tokensMap = //CONVERT STRING TO TOKEN
     {
         {"return", RETURN},
         {"int", INT_LET},
@@ -48,7 +48,8 @@ std::vector<Token> tokenizer::tokenize()
 
     while (peek().has_value())
     {
-        if (std::isalpha(peek().value()))
+		char ch = peek().value();
+        if (std::isalpha(ch))
         {
             buffer.push_back(consume());
             while (peek().has_value() && std::isalnum(peek().value()))
@@ -61,7 +62,6 @@ std::vector<Token> tokenizer::tokenize()
             {
                 tokens.push_back({tokensMap[buffer]});
                 buffer.clear();
-                continue;
             }
             else
             {
@@ -74,10 +74,9 @@ std::vector<Token> tokenizer::tokenize()
                     tokens.push_back({tokensMap["identifier"], buffer});
                 }
                 buffer.clear();
-                continue;
             }
         }
-        else if (std::isdigit(peek().value()))
+        else if (std::isdigit(ch))
         {
             buffer.push_back(consume());
             while (peek().has_value() && std::isdigit(peek().value()))
@@ -86,25 +85,22 @@ std::vector<Token> tokenizer::tokenize()
             }
             tokens.push_back({tokensMap["intLit"], buffer});
             buffer.clear();
-            continue;
         }
-        else if (std::isspace(peek().value()))
+        else if (std::isspace(ch))
         {
             consume();
-            continue;
         }
-        else if (peek().value() == '"')
+        else if (ch == '"')//STRING LITERAL
         {
             buffer.push_back(consume());
             tokens.push_back({tokensMap[buffer]});
             buffer.clear();
-
             while (peek().has_value() && peek().value() != '"')
             {
                 if (peek().value() == '\\')
                 {
                     consume();
-                    auto symbol = consume();
+                    char symbol = consume();
                     buffer.push_back('\'');
                     buffer.push_back(',');
                     switch (symbol)
@@ -165,56 +161,43 @@ std::vector<Token> tokenizer::tokenize()
                 }
                 buffer.push_back(consume());
             }
-
-            if (peek().has_value() && peek().value() == '"')
+            if (peek().has_value() && peek().value() != '"' || !peek().has_value())
             {
-                tokens.push_back({tokensMap["stringLit"], buffer});
-                buffer.clear();
-
-                buffer.push_back(consume()); // consume '"'
-                tokens.push_back({tokensMap[buffer]});
-                buffer.clear();
+	            std::cerr << "[Tokenize Error] ERR001 Syntax Error Expected '\"'";
+	            exit(EXIT_FAILURE);
             }
-            else
-            {
-                std::cerr << "[Tokenize Error] ERR001 Syntax Error Expected '\"'";
-                exit(EXIT_FAILURE);
-            }
-
-            continue;
+            tokens.push_back({tokensMap["stringLit"], buffer});
+            buffer.clear();
+            buffer.push_back(consume()); // consume '"'
+            tokens.push_back({tokensMap[buffer]});
+            buffer.clear();
         }
-        else if (peek().value() == '\'')
+        else if (ch == '\'')//CHAR LITERAL
         {
             buffer.push_back(consume());
             tokens.push_back({tokensMap[buffer]});
             buffer.clear();
-
             while (peek().has_value() && peek().value() != '\'')
             {
                 buffer.push_back(consume());
             }
-
-            if (peek().has_value() && peek().value() == '\'')
+            if (peek().has_value() && peek().value() != '\'' || !peek().has_value())
             {
-                if (buffer.size() > 1)
-                {
-                    std::cerr << "[Tokenize Error] ERR010 Char Literal Cannot Be More Than One Symbol";
-                    exit(EXIT_FAILURE);
-                }
-                tokens.push_back({tokensMap["charLit"], buffer});
-                buffer.clear();
-
-                buffer.push_back(consume()); // consume '''
-                tokens.push_back({tokensMap[buffer]});
-                buffer.clear();
+	            std::cerr << "[Tokenize Error] ERR001 Syntax Error Expected '\''";
+	            exit(EXIT_FAILURE);
             }
-            else
+            if (buffer.size() > 1)
             {
-                std::cerr << "[Tokenize Error] ERR001 Syntax Error Expected '\''";
+                std::cerr << "[Tokenize Error] ERR010 Char Literal Cannot Be More Than One Symbol";
                 exit(EXIT_FAILURE);
             }
+            tokens.push_back({tokensMap["charLit"], buffer});
+            buffer.clear();
+            buffer.push_back(consume()); // consume '''
+            tokens.push_back({tokensMap[buffer]});
+            buffer.clear();
         }
-        else if (peek().value() == '/' && peek(1).has_value() && peek(1).value() == '/') // ONE-LINE COMMENT
+        else if (ch == '/' && peek(1).has_value() && peek(1).value() == '/') // ONE-LINE COMMENT
         {
             consume(); // consume '/'
             consume(); // consume '/'
@@ -222,9 +205,8 @@ std::vector<Token> tokenizer::tokenize()
             {
                 consume();
             }
-            continue;
         }
-        else if (peek().value() == '/' && peek(1).has_value() && peek(1).value() == '*') // MULTI-LINE COMMENT
+        else if (ch == '/' && peek(1).has_value() && peek(1).value() == '*') // MULTI-LINE COMMENT
         {
             consume(); // consume '/'
             consume(); // consume '*'
@@ -232,18 +214,13 @@ std::vector<Token> tokenizer::tokenize()
             {
                 consume();
             }
-
-            if (peek().has_value() && peek(1).has_value())
+            if (!peek().has_value() || !peek(1).has_value())
             {
-                consume(); // consume '*'
-                consume(); // consume '/'
+	            std::cerr << "[Tokenize Error] Expected end of multi-line comment";
+	            exit(EXIT_FAILURE);
             }
-            else
-            {
-                std::cerr << "[Tokenize Error] Expected end of multi-line comment";
-                exit(EXIT_FAILURE);
-            }
-            continue;
+			consume(); // consume '*'
+			consume(); // consume '/'
         }
         else
         {
@@ -253,7 +230,7 @@ std::vector<Token> tokenizer::tokenize()
             {
                 if (peek().has_value())
                 {
-                    if (peek().value() == '=')
+                    if (peek().value() == '=')// USED FOR TOKENS LIKE != <= >=
                     {
                         buffer.push_back(consume());
                     }
@@ -261,24 +238,18 @@ std::vector<Token> tokenizer::tokenize()
                 auto it2 = tokensMap.find(buffer);
                 if (it2 == tokensMap.end())
                 {
-                    buffer.pop_back();
+                    buffer.pop_back();//IF IS NOT IN TOKENS MAP POP '=' SYMBOL
                 }
                 tokens.push_back({tokensMap[buffer]});
                 buffer.clear();
-                continue;
             }
             else if (!peek().has_value())
             {
                 std::cerr << "ERR001 Syntax Error Unexpected '" << buffer << "'";
                 exit(EXIT_FAILURE);
             }
-            else
-            {
-                continue;
-            }
         }
     }
-
     return tokens;
 }
 

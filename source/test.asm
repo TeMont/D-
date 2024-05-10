@@ -1,3 +1,7 @@
+SC0: db 'Enter First Num: ',00H
+SC1: db 'Enter Action Symbol: ',00H
+SC2: db 'Enter Second Num: ',00H
+SC3: db 'You Entered Incorrect Symbol',00H
 section .bss
 extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess
 
@@ -16,41 +20,240 @@ section .bss
 section .text
 global main
 main:
-;;	bool let
+;;	int let
+	push rdx
+;;	/int let
+;;	int let
+	push rdx
+;;	/int let
+;;	int let
+	push rdx
+;;	/int let
+;;	char let
+	push rdx
+;;	/char let
+;;	Input
+	mov rdx, SC0
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	mov rsi, InputBuffer
+	mov rax, 256
+	call _scanf
+	call _stoi
+	push rdi
+	mov rsi, OutputBuffer
 	mov rdx, 20
+	call _clearBuffer
+	mov rsi, InputBuffer
+	mov rdx, 256
+	call _clearBuffer
+;;	/Input
+	pop rdx
+	mov [rsp + 24], rdx
+	xor rdx, rdx
+;;	Input
+	mov rdx, SC1
 	push rdx
 	xor rdx, rdx
 	pop rdx
-	mov rdx, rdx
-	cmp rdx, 0
-	je label1
-	mov rdx, 1
-	jmp label0
-	label1:
-	mov rdx, 0
-	label0:
+	mov rsi, InputBuffer
+	mov rax, 256
+	call _scanf
+	movzx rdx, byte [rsi]
 	push rdx
-	xor rdx, rdx
-;;	/bool let
-	mov rdx, 2
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	mov rdx, rdx
-	cmp rdx, 0
-	je label3
-	mov rdx, 1
-	jmp label2
-	label3:
-	mov rdx, 0
-	label2:
-	push rdx
-	xor rdx, rdx
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+	mov rsi, InputBuffer
+	mov rdx, 256
+	call _clearBuffer
+;;	/Input
 	pop rdx
 	mov [rsp + 0], rdx
 	xor rdx, rdx
-;;	Output
+;;	Input
+	mov rdx, SC2
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	mov rsi, InputBuffer
+	mov rax, 256
+	call _scanf
+	call _stoi
+	push rdi
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+	mov rsi, InputBuffer
+	mov rdx, 256
+	call _clearBuffer
+;;	/Input
+	pop rdx
+	mov [rsp + 16], rdx
+	xor rdx, rdx
+;;	if
 	push QWORD [rsp + 0]
+	mov rdx, '+'
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	je label3
+	mov rdx, 0
+	jmp label4
+	label3:
+	mov rdx, 1
+	label4:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	je label0
+	push QWORD [rsp + 24]
+	push QWORD [rsp + 24]
+	pop rdi
+	pop rdx
+	add rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 8], rdx
+	xor rdx, rdx
+;;	/if
+	jmp label5
+	label0:
+;;	elif
+	push QWORD [rsp + 0]
+	mov rdx, '-'
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	je label9
+	mov rdx, 0
+	jmp label10
+	label9:
+	mov rdx, 1
+	label10:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	je label6
+	push QWORD [rsp + 24]
+	push QWORD [rsp + 24]
+	pop rdi
+	pop rdx
+	sub rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 8], rdx
+	xor rdx, rdx
+	jmp label5
+;;	/elif
+	label6:
+;;	elif
+	push QWORD [rsp + 0]
+	mov rdx, '*'
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	je label14
+	mov rdx, 0
+	jmp label15
+	label14:
+	mov rdx, 1
+	label15:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	je label11
+	push QWORD [rsp + 24]
+	push QWORD [rsp + 24]
+	pop rdi
+	pop rdx
+	imul rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 8], rdx
+	xor rdx, rdx
+	jmp label5
+;;	/elif
+	label11:
+;;	elif
+	push QWORD [rsp + 0]
+	mov rdx, '/'
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	je label19
+	mov rdx, 0
+	jmp label20
+	label19:
+	mov rdx, 1
+	label20:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	je label16
+	push QWORD [rsp + 24]
+	push QWORD [rsp + 24]
+	pop rdi
+	pop rdx
+	mov rax, rdx
+	mov rdx, 0
+	idiv rdi
+	mov rdx, rax
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 8], rdx
+	xor rdx, rdx
+	jmp label5
+;;	/elif
+	label16:
+;;	else
+;;	Output
+	mov rdx, SC3
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	call _printf
+;;	/Output
+;;	return
+	mov rdx, 1
+	push rdx
+	xor rdx, rdx
+	pop rcx
+	call ExitProcess
+;;	/return
+;;	/else
+	xor rdx, rdx
+	xor rdx, rdx
+	xor rdx, rdx
+	label5:
+	xor rdx, rdx
+;;	Output
+	push QWORD [rsp + 8]
 	pop rdx
 	mov rax, rdx
 	mov rsi, OutputBuffer
@@ -61,6 +264,13 @@ main:
 	mov rdx, 20
 	call _clearBuffer
 ;;	/Output
+;;	return
+	mov rdx, 0
+	push rdx
+	xor rdx, rdx
+	pop rcx
+	call ExitProcess
+;;	/return
 
 _printf:
 	; INPUT:

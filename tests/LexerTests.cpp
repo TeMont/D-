@@ -214,12 +214,20 @@ TEST(ParserTest, ParseInputStmtTest)
     {
         parser p({});
         p.pushToken(Token{INPUT});
+	    ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         p.pushToken(Token{LPAREN});
+	    ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         for (const auto & k : litArr[i])
         {
             p.pushToken(k);
         }
+	    ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         p.pushToken(Token{RPAREN});
+	    ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         p.pushToken(Token{SEMICOLON});
         auto parsedInput = p.parseInputStmt();
         ASSERT_TRUE(parsedInput.has_value()) << "ERROR Parsed input statement has not value\n";
@@ -234,6 +242,8 @@ TEST(ParserTest, parseValExprTest)
         for (int j = 0; j < typeArr[i].size(); ++j)
         {
             parser p({});
+			ASSERT_FALSE(p.parseValExpr(typeArr[i][j]))
+			<< "ERROR Successfully parsed without literal";
             for (const auto & k : litArr[i])
             {
                 p.pushToken(k);
@@ -264,11 +274,15 @@ TEST(ParserTest, ParseExprTest)
 				for (auto & l: binOpArr)
 	            {
 		            parser p({});
+		            ASSERT_EXIT(p.parseExpr(typeArr[i][k]), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+					<< "ERROR Was not thrown error without first literal";
 		            for (const auto & o : litArr[i])
 	                {
 	                    p.pushToken(o);
 	                }
 	                p.pushToken(Token{l});
+		            ASSERT_EXIT(p.parseExpr(typeArr[i][k]), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+					<< "ERROR Was not thrown error without second literal";
 	                for (const auto & o : litArr[j])
 	                {
 	                    p.pushToken(o);
@@ -314,8 +328,14 @@ TEST(ParserTest, ParseLetStmtTest)
         {
             parser p({});
             p.pushToken({letArr[i]});
+	        ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+			<< "ERROR Successfully parsed without all tokens";
             p.pushToken({IDENT, "val"});
+	        ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+			<< "ERROR Successfully parsed without all tokens";
             p.pushToken({EQ});
+	        ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+			<< "ERROR Successfully parsed without all tokens";
             for (const auto & k : litArr[i])
             {
                 p.pushToken(k);
@@ -346,13 +366,21 @@ TEST(ParserTest, ParseIfStmtTest)
     {
         parser p({});
         p.pushToken({IF});
+	    ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         p.pushToken({LPAREN});
+		ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         for (const auto & j : litArr[i])
         {
             p.pushToken(j);
         }
         p.pushToken({RPAREN});
+		ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         p.pushToken({LBRACKET});
+		ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         p.pushToken({RBRACKET});
         auto parsedIf = p.parseIfStmt();
         ASSERT_TRUE(parsedIf.has_value()) << "ERROR Parsed if statement has not value\n";
@@ -385,13 +413,21 @@ TEST(ParserTest, ParseIfPredTest)
     {
         parser p({});
         p.pushToken({ELIF});
+		ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         p.pushToken({LPAREN});
+		ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         for (const auto & j : litArr[i])
         {
             p.pushToken(j);
         }
         p.pushToken({RPAREN});
+		ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         p.pushToken({LBRACKET});
+		ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+		<< "ERROR Successfully parsed without all tokens";
         p.pushToken({RBRACKET});
         auto parsedIfPred = p.parseIfPred();
         ASSERT_TRUE(parsedIfPred.has_value()) << "ERROR Parsed if pred(ELIF) has not value\n";
@@ -400,7 +436,11 @@ TEST(ParserTest, ParseIfPredTest)
     }
     parser p({});
     p.pushToken({ELSE});
+	ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+	<< "ERROR Successfully parsed without all tokens";
     p.pushToken({LBRACKET});
+	ASSERT_EXIT(p.parseInputStmt(), ::testing::ExitedWithCode(EXIT_FAILURE), ".*")
+	<< "ERROR Successfully parsed without all tokens";
     p.pushToken({RBRACKET});
     auto parsedIfPred = p.parseIfPred();
     ASSERT_TRUE(parsedIfPred.has_value()) << "ERROR Parsed if pred(ELSE) has not value\n";

@@ -61,26 +61,23 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
 
         bool operator()(const node::ExprIdent &exprIdent) const
         {
-            if (m_vars.count(exprIdent.ident.value.value()))
+            if (!m_vars.count(exprIdent.ident.value.value()))
             {
-                const auto &var = m_vars[exprIdent.ident.value.value()];
-                if (expectedType == var.Type)
-                {
-                    push("QWORD [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "]");
-                }
-                else if (expectedType == BOOL_TYPE && var.Type != STR_TYPE)
-                {
-                    compBoolExpr({"QWORD [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "]"});
-                }
-                else
-                {
-                    return false;
-                }
+	            std::cerr << "[Compile Error] ERR005 Undeclared Identifier '" << exprIdent.ident.value.value() << "'";
+	            exit(EXIT_FAILURE);
+			}
+            const auto &var = m_vars[exprIdent.ident.value.value()];
+            if (expectedType == var.Type)
+            {
+                push("QWORD [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "]");
+            }
+            else if (expectedType == BOOL_TYPE && var.Type != STR_TYPE)
+            {
+                compBoolExpr({"QWORD [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "]"});
             }
             else
             {
-                std::cerr << "[Compile Error] ERR005 Undeclared Identifier '" << exprIdent.ident.value.value() << "'";
-                exit(EXIT_FAILURE);
+                return false;
             }
 	        return true;
         }
@@ -128,58 +125,49 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
         }
         bool operator()(const node::ExprStrLit &exprStr) const
         {
-            if (expectedType == STR_TYPE)
+            if (expectedType != STR_TYPE)
             {
-                if ((exprStr.strLit.value.has_value()))
-                {
-                    std::string SC = createSCLabel();
-                    m_SC << SC << ": db '" << exprStr.strLit.value.value() << "',00H\n";
-                    m_output << "\tmov rdx, " << SC << '\n';
-                }
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-            }
-            else
-            {
-                return false;
-            }
+				return false;
+			}
+			if ((exprStr.strLit.value.has_value()))
+			{
+				std::string SC = createSCLabel();
+				m_SC << SC << ": db '" << exprStr.strLit.value.value() << "',00H\n";
+				m_output << "\tmov rdx, " << SC << '\n';
+			}
+			push("rdx");
+			m_output << "\txor rdx, rdx\n";
 			return true;
         }
         bool operator()(const node::ExprBoolLit &exprBool) const
         {
-            if (expectedType == BOOL_TYPE)
+            if (expectedType != BOOL_TYPE)
             {
-                if ((exprBool.boolLit.value.has_value()))
+	            return false;
+			}
+            if ((exprBool.boolLit.value.has_value()))
+            {
+                if (exprBool.boolLit.value.value() == "false")
                 {
-                    if (exprBool.boolLit.value.value() == "false")
-                    {
-                        m_output << "\tmov rdx, 0\n";
-                    }
-                    else if (exprBool.boolLit.value.value() == "true")
-                    {
-                        m_output << "\tmov rdx, 1\n";
-                    }
+                    m_output << "\tmov rdx, 0\n";
                 }
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
+                else if (exprBool.boolLit.value.value() == "true")
+                {
+                    m_output << "\tmov rdx, 1\n";
+                }
             }
-            else
-            {
-                return false;
-            }
+            push("rdx");
+            m_output << "\txor rdx, rdx\n";
 			return true;
         }
 	    bool operator()(const node::NotCondition &exprNotCond) const
 	    {
-			if (compValExpr(*exprNotCond.val, expectedType))
-			{
-				pop("rdx");
-				compBoolExpr("rdx", true);
-			}
-			else
+			if (!compValExpr(*exprNotCond.val, expectedType))
 			{
 				return false;
 			}
+			pop("rdx");
+			compBoolExpr("rdx", true);
 			return true;
 		}
     };
@@ -197,14 +185,8 @@ void compiler::compBoolExpr(const std::optional<std::string> &literal, bool isRe
         m_output << "\tmov rdx, " << literal.value() << '\n';
     }
     m_output << "\tcmp rdx, 0\n";
-	if (isReversed)
-	{
-		m_output << "\tjne " << falseLabel << "\n";
-	}
-	else
-	{
-		m_output << "\tje " << falseLabel << "\n";
-	}
+	m_output << (isReversed ? "\tjne " : "\tje ");
+	m_output << falseLabel << "\n";
     m_output << "\tmov rdx, 1\n";
     m_output << "\tjmp " << endLabel << "\n";
     m_output << "\t" << falseLabel << ":\n";
@@ -713,34 +695,31 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
         {
             m_output << ";;\telif\n";
             std::string falseLabel = createLabel();
-            if (compExpr(*elIf->Cond, INT_TYPE) || compExpr(*elIf->Cond, CHAR_TYPE) ||
-                compExpr(*elIf->Cond, BOOL_TYPE))
+            if (!compExpr(*elIf->Cond, INT_TYPE) && !compExpr(*elIf->Cond, CHAR_TYPE) &&
+                !compExpr(*elIf->Cond, BOOL_TYPE))
             {
-                pop("rdx");
-                m_output << "\tcmp rdx, 0\n";
-                m_output << "\tje " << falseLabel << "\n";
-                for (auto const &i : elIf->statements)
-                {
-                    compStmt(i);
-                    m_output << "\tjmp " << endLabel << "\n";
-                }
-                m_output << ";;\t/elif\n";
-                if (elIf->pred.has_value())
-                {
-                    m_output << "\t" << falseLabel << ":\n";
-                    compIfPred(*elIf->pred.value(), endLabel);
-                }
-                else
-                {
-                    m_output << falseLabel << ":\n";
-                }
-                m_output << "\txor rdx, rdx\n";
-            }
-            else if (compExpr(*elIf->Cond, STR_TYPE))
+	            std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
+	            exit(EXIT_FAILURE);
+			}
+            pop("rdx");
+            m_output << "\tcmp rdx, 0\n";
+            m_output << "\tje " << falseLabel << "\n";
+            for (auto const &i : elIf->statements)
             {
-                std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
-                exit(EXIT_FAILURE);
+                compStmt(i);
             }
+			m_output << "\tjmp " << endLabel << "\n";
+            m_output << ";;\t/elif\n";
+            if (elIf->pred.has_value())
+            {
+                m_output << "\t" << falseLabel << ":\n";
+                compIfPred(*elIf->pred.value(), endLabel);
+            }
+            else
+            {
+                m_output << falseLabel << ":\n";
+            }
+            m_output << "\txor rdx, rdx\n";
         }
         void operator()(const node::StmtElse *Else)
         {
@@ -759,53 +738,44 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
 
 void compiler::compVar(Token ident, node::Expr *expr, const std::string &expectedType)
 {
-    if (m_vars.count(ident.value.value()))
+    if (!m_vars.count(ident.value.value()))
     {
-        const auto &var = m_vars[ident.value.value()];
-		if (var.isConst)
-		{
-			std::cerr << "[Compile Error] ERR012 Cannot Change Value Of Const Variables";
-			exit(EXIT_FAILURE);
+	    std::cerr << "[Compile Error] ERR004 Identifier '" << ident.value.value() << "' Was Not Declared";
+	    exit(EXIT_FAILURE);
+	}
+    const auto &var = m_vars[ident.value.value()];
+	if (var.isConst)
+	{
+		std::cerr << "[Compile Error] ERR012 Cannot Change Value Of Const Variables";
+		exit(EXIT_FAILURE);
+	}
+    if (var.Type == BOOL_TYPE)
+    {
+        if (!compExpr(*expr, INT_TYPE) && !compExpr(*expr, CHAR_TYPE) && !compExpr(*expr, BOOL_TYPE))
+        {
+	        std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
+	        exit(EXIT_FAILURE);
 		}
-        if (var.Type == BOOL_TYPE)
+        pop("rdx");
+        compBoolExpr("rdx");
+        pop("rdx");
+        m_output << "\tmov [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
+        m_output << "\txor rdx, rdx\n";
+    }
+    else if (var.Type == expectedType)
+    {
+        if (!compExpr(*expr, expectedType))
         {
-            if (compExpr(*expr, INT_TYPE) || compExpr(*expr, CHAR_TYPE) || compExpr(*expr, BOOL_TYPE))
-            {
-                pop("rdx");
-                compBoolExpr("rdx");
-                pop("rdx");
-                m_output << "\tmov [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
-                m_output << "\txor rdx, rdx\n";
-            }
-            else if (compExpr(*expr, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
-                exit(EXIT_FAILURE);
-            }
-        }
-        else if (var.Type == expectedType)
-        {
-            if (compExpr(*expr, expectedType))
-            {
-                pop("rdx");
-                m_output << "\tmov [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
-                m_output << "\txor rdx, rdx\n";
-            }
-            else
-            {
-                std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
-                exit(EXIT_FAILURE);
-            }
-        }
-        else
-        {
-            std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
-            exit(EXIT_FAILURE);
-        }
+	        std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
+	        exit(EXIT_FAILURE);
+		}
+		pop("rdx");
+		m_output << "\tmov [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
+		m_output << "\txor rdx, rdx\n";
     }
     else
     {
-        std::cerr << "[Compile Error] ERR004 Identifier '" << ident.value.value() << "' Was Not Declared";
+        std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
         exit(EXIT_FAILURE);
     }
 }
@@ -817,48 +787,42 @@ void compiler::compLet(Token ident, node::Expr *expr, const std::string &expecte
         std::cerr << "[Compile Error] ERR004 Identifier '" << ident.value.value() << "' Is Already Declared";
         exit(EXIT_FAILURE);
     }
+    m_vars.insert({ident.value.value(), Var{m_stackSize, expectedType, isConst}});
+    if (expectedType == BOOL_TYPE)
+    {
+        if (expr != nullptr)
+        {
+            if (!compExpr(*expr, INT_TYPE) && !compExpr(*expr, CHAR_TYPE) && !compExpr(*expr, BOOL_TYPE))
+            {
+	            std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
+	            exit(EXIT_FAILURE);
+			}
+            pop("rdx");
+            compBoolExpr("rdx");
+        }
+        else
+        {
+            push("rdx");
+        }
+    }
     else
     {
-        m_vars.insert({ident.value.value(), Var{m_stackSize, expectedType, isConst}});
-        if (expectedType == BOOL_TYPE)
+        if (expr != nullptr)
         {
-            if (expr != nullptr)
+            if (!compExpr(*expr, expectedType))
             {
-                if (compExpr(*expr, INT_TYPE) || compExpr(*expr, CHAR_TYPE) || compExpr(*expr, BOOL_TYPE))
-                {
-                    pop("rdx");
-                    compBoolExpr("rdx");
-                }
-                else if (compExpr(*expr, STR_TYPE))
-                {
-                    std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-                push("rdx");
+                std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
+                exit(EXIT_FAILURE);
             }
         }
         else
         {
-            if (expr != nullptr)
-            {
-                if (!compExpr(*expr, expectedType))
-                {
-                    std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
-                    exit(EXIT_FAILURE);
-                }
-            }
-            else
-            {
-				if (isConst)
-				{
-					std::cerr << "[Compile Error] ERR011 Const Variables Cannot Be Declared Without Value";
-					exit(EXIT_FAILURE);
-				}
-                push("rdx");
-            }
+			if (isConst)
+			{
+				std::cerr << "[Compile Error] ERR011 Const Variables Cannot Be Declared Without Value";
+				exit(EXIT_FAILURE);
+			}
+            push("rdx");
         }
     }
 }
@@ -870,54 +834,48 @@ void compiler::compStmt(const node::Stmt &stmt)
         void operator()(const node::StmtReturn &stmtRet)
         {
             m_output << ";;\treturn\n";
-            if (compExpr(*stmtRet.Expr, INT_TYPE) || compExpr(*stmtRet.Expr, CHAR_TYPE) ||
-                compExpr(*stmtRet.Expr, BOOL_TYPE))
+            if (!compExpr(*stmtRet.Expr, INT_TYPE) && !compExpr(*stmtRet.Expr, CHAR_TYPE) &&
+				!compExpr(*stmtRet.Expr, BOOL_TYPE))
             {
-                pop("rcx");
-                m_output << "\tcall ExitProcess"
-                         << "\n";
-                m_output << ";;\t/return\n";
-            }
-            else if (compExpr(*stmtRet.Expr, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
-                exit(EXIT_FAILURE);
-            }
+	            std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
+	            exit(EXIT_FAILURE);
+			}
+            pop("rcx");
+            m_output << "\tcall ExitProcess"
+                     << "\n";
+            m_output << ";;\t/return\n";
         }
         void operator()(const node::StmtIf &stmtIf)
         {
             m_output << ";;\tif\n";
             std::string falseLabel = createLabel();
-            if (compExpr(*stmtIf.Cond, INT_TYPE) || compExpr(*stmtIf.Cond, CHAR_TYPE) ||
-                compExpr(*stmtIf.Cond, BOOL_TYPE))
+            if (!compExpr(*stmtIf.Cond, INT_TYPE) && !compExpr(*stmtIf.Cond, CHAR_TYPE) &&
+                !compExpr(*stmtIf.Cond, BOOL_TYPE))
             {
-                pop("rdx");
-                m_output << "\tcmp rdx, 0\n";
-                m_output << "\tje " << falseLabel << "\n";
-                for (auto const &i : stmtIf.statements)
-                {
-                    compStmt(i);
-                }
-                m_output << ";;\t/if\n";
-                if (stmtIf.pred.has_value())
-                {
-                    std::string endLabel = createLabel();
-                    m_output << "\tjmp " << endLabel << "\n";
-                    m_output << "\t" << falseLabel << ":\n";
-                    compIfPred(*stmtIf.pred.value(), endLabel);
-                    m_output << "\t" << endLabel << ":\n";
-                }
-                else
-                {
-                    m_output << "\t" << falseLabel << ":\n";
-                }
-                m_output << "\txor rdx, rdx\n";
-            }
-            else if (compExpr(*stmtIf.Cond, STR_TYPE))
+	            std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
+	            exit(EXIT_FAILURE);
+			}
+            pop("rdx");
+            m_output << "\tcmp rdx, 0\n";
+            m_output << "\tje " << falseLabel << "\n";
+            for (auto const &i : stmtIf.statements)
             {
-                std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
-                exit(EXIT_FAILURE);
+                compStmt(i);
             }
+            m_output << ";;\t/if\n";
+            if (stmtIf.pred.has_value())
+            {
+                std::string endLabel = createLabel();
+                m_output << "\tjmp " << endLabel << "\n";
+                m_output << "\t" << falseLabel << ":\n";
+                compIfPred(*stmtIf.pred.value(), endLabel);
+                m_output << "\t" << endLabel << ":\n";
+            }
+            else
+            {
+                m_output << "\t" << falseLabel << ":\n";
+            }
+            m_output << "\txor rdx, rdx\n";
         }
         void operator()(const node::StmtOutput &stmtOutput)
         {
