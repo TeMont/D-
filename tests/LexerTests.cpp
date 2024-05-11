@@ -385,7 +385,7 @@ TEST(ParserTest, ParseIfStmtTest)
         auto parsedIf = p.parseIfStmt();
         ASSERT_TRUE(parsedIf.has_value()) << "ERROR Parsed if statement has not value\n";
         exprVisitor exprVisit(typeArr[i][0]);
-        std::visit(exprVisit, parsedIf.value().Cond->var);
+        std::visit(exprVisit, parsedIf.value().cond->var);
         ASSERT_FALSE(parsedIf.value().pred.has_value()) << "ERROR Unused if pred in if statement has value\n";
         ASSERT_TRUE(parsedIf.value().statements.empty()) << "ERROR Unused statements in if statement has value\n";
     }
@@ -400,7 +400,7 @@ TEST(ParserTest, ParseIfPredTest)
         void operator()(const node::StmtElIf *stmtElif) const
         {
             exprVisitor exprVisit(expectedType);
-            std::visit(exprVisit, stmtElif->Cond->var);
+            std::visit(exprVisit, stmtElif->cond->var);
             ASSERT_FALSE(stmtElif->pred.has_value()) << "ERROR Unused if pred in elif statement has value\n";
             ASSERT_TRUE(stmtElif->statements.empty()) << "ERROR Unused statements in elif statement has value\n";
         }

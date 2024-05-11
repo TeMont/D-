@@ -38,6 +38,8 @@ std::map<std::string, Tokens> tokensMap = //CONVERT STRING TO TOKEN
         {"if", IF},
         {"elif", ELIF},
         {"else", ELSE},
+        {"for", FOR},
+        {"while", WHILE},
         {"const", CONST},
 };
 

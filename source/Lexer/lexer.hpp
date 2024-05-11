@@ -116,14 +116,14 @@ namespace node
 
     struct StmtIf
     {
-        Expr* Cond = nullptr;
+        Expr* cond = nullptr;
         std::vector<Stmt> statements;
         std::optional<IfPred*> pred;
     };
 
     struct StmtElIf
     {
-        Expr* Cond = nullptr;
+        Expr* cond = nullptr;
         std::vector<Stmt> statements;
         std::optional<IfPred*> pred;
     };
@@ -137,6 +137,12 @@ namespace node
     {
         std::variant<StmtElIf*, StmtElse*> var;
     };
+
+	struct StmtWhileLoop
+	{
+		Expr* cond = nullptr;
+		std::vector<Stmt> statements;
+	};
 
     struct StmtReturn
     {
@@ -197,7 +203,7 @@ namespace node
 
     struct Stmt
     {
-        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtCharLet, StmtStrVar, StmtIntVar, StmtBoolVar, StmtCharVar, StmtIf, StmtOutput, StmtInput> var; 
+        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtCharLet, StmtStrVar, StmtIntVar, StmtBoolVar, StmtCharVar, StmtIf, StmtOutput, StmtInput, StmtWhileLoop> var;
     };
     
     struct Prog

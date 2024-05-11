@@ -50,6 +50,8 @@ enum Tokens
     IF,
     ELIF,
     ELSE,
+	FOR,
+	WHILE,
 	CONST,
 };
 

@@ -695,8 +695,8 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
         {
             m_output << ";;\telif\n";
             std::string falseLabel = createLabel();
-            if (!compExpr(*elIf->Cond, INT_TYPE) && !compExpr(*elIf->Cond, CHAR_TYPE) &&
-                !compExpr(*elIf->Cond, BOOL_TYPE))
+            if (!compExpr(*elIf->cond, INT_TYPE) && !compExpr(*elIf->cond, CHAR_TYPE) &&
+                !compExpr(*elIf->cond, BOOL_TYPE))
             {
 	            std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 	            exit(EXIT_FAILURE);
@@ -849,8 +849,8 @@ void compiler::compStmt(const node::Stmt &stmt)
         {
             m_output << ";;\tif\n";
             std::string falseLabel = createLabel();
-            if (!compExpr(*stmtIf.Cond, INT_TYPE) && !compExpr(*stmtIf.Cond, CHAR_TYPE) &&
-                !compExpr(*stmtIf.Cond, BOOL_TYPE))
+            if (!compExpr(*stmtIf.cond, INT_TYPE) && !compExpr(*stmtIf.cond, CHAR_TYPE) &&
+                !compExpr(*stmtIf.cond, BOOL_TYPE))
             {
 	            std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 	            exit(EXIT_FAILURE);
@@ -922,6 +922,29 @@ void compiler::compStmt(const node::Stmt &stmt)
             m_output << "\tcall _clearBuffer\n";
             m_output << ";;\t/Input\n";
         }
+		void operator()(const node::StmtWhileLoop &whileLoop)
+		{
+			m_output << ";;\twhile loop\n";
+			std::string startLabel = createLabel();
+			std::string endLabel = createLabel();
+			m_output << "\t" << startLabel << ":\n";
+			if (!compExpr(*whileLoop.cond, INT_TYPE) && !compExpr(*whileLoop.cond, BOOL_TYPE) &&
+				!compExpr(*whileLoop.cond, CHAR_TYPE))
+			{
+				std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
+				exit(EXIT_FAILURE);
+			}
+			pop("rdx");
+			m_output << "\tcmp rdx, 0\n";
+			m_output << "\tje " << endLabel << "\n";
+			for (auto const& stmt : whileLoop.statements)
+			{
+				compStmt(stmt);
+			}
+			m_output << "\tjmp " << startLabel << "\n";
+			m_output << "\t" << endLabel << ":\n";
+			m_output << ";;\t/while loop\n";
+		}
         void operator()(const node::StmtIntLet &stmtIntLet)
         {
             m_output << ";;\tint let\n";
