@@ -53,6 +53,8 @@ enum Tokens
 	FOR,
 	WHILE,
 	CONST,
+	INC,
+	DEC,
 };
 
 extern std::map<std::string, Tokens> tokensMap;

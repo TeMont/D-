@@ -38,6 +38,22 @@ struct valExprVisitor
 	{
 		return {};
 	}
+	Token operator()(const node::PrefixInc &prefInc)
+	{
+		return prefInc.ident;
+	}
+	Token operator()(const node::PrefixDec &prefDec)
+	{
+		return prefDec.ident;
+	}
+	Token operator()(const node::PostfixInc &postInc)
+	{
+		return postInc.ident;
+	}
+	Token operator()(const node::PostfixDec &postDec)
+	{
+		return postDec.ident;
+	}
 };
 node::BinExprAdd createBinExpr(node::ValExpr *fvl, node::ValExpr *svl)
 {

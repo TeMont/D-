@@ -35,6 +35,8 @@ std::map<std::string, Tokens> tokensMap = //CONVERT STRING TO TOKEN
         {"!=", NOTEQ},
         {"||", OR},
         {"&&", AND},
+        {"++", INC},
+        {"--", DEC},
         {"if", IF},
         {"elif", ELIF},
         {"else", ELSE},
@@ -228,6 +230,13 @@ std::vector<Token> tokenizer::tokenize()
         {
             buffer.push_back(consume());
             auto it = tokensMap.find(buffer);
+			if (buffer == "+" || buffer == "-")
+			{
+				if (peek() == buffer[0])
+				{
+					buffer.push_back(consume());
+				}
+			}
             if (it != tokensMap.end())
             {
                 if (peek().has_value())
@@ -247,7 +256,7 @@ std::vector<Token> tokenizer::tokenize()
             }
             else if (!peek().has_value())
             {
-                std::cerr << "ERR001 Syntax Error Unexpected '" << buffer << "'";
+                std::cerr << "[Tokenize Error] ERR001 Syntax Error Unexpected '" << buffer << "'";
                 exit(EXIT_FAILURE);
             }
         }

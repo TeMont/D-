@@ -170,6 +170,52 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
 			compBoolExpr("rdx", true);
 			return true;
 		}
+	    bool operator()(const node::PrefixInc &prefInc) const
+	    {
+			if (expectedType != INT_TYPE)
+			{
+				return false;
+			}
+		    compPrefIncDec(prefInc.ident, true, expectedType);
+		    return compValExpr(node::ValExpr{node::ExprIdent{prefInc.ident}}, expectedType);
+	    }
+	    bool operator()(const node::PrefixDec &prefDec) const
+	    {
+			if (expectedType != INT_TYPE)
+			{
+				return false;
+			}
+		    compPrefIncDec(prefDec.ident, false, expectedType);
+		    return compValExpr(node::ValExpr{node::ExprIdent{prefDec.ident}}, expectedType);
+	    }
+	    bool operator()(const node::PostfixInc &postInc) const
+	    {
+			if (expectedType != INT_TYPE)
+			{
+				return false;
+			}
+		    bool isSuccess = compValExpr(node::ValExpr{node::ExprIdent{postInc.ident}}, expectedType);
+			if (!isSuccess)
+			{
+				return false;
+			}
+		    compPrefIncDec(postInc.ident, true, expectedType);
+		    return true;
+	    }
+	    bool operator()(const node::PostfixDec &postDec) const
+	    {
+		    if (expectedType != INT_TYPE)
+			{
+				return false;
+			}
+		    bool isSuccess = compValExpr(node::ValExpr{node::ExprIdent{postDec.ident}}, expectedType);
+		    if (!isSuccess)
+		    {
+			    return false;
+		    }
+		    compPrefIncDec(postDec.ident, false, expectedType);
+		    return true;
+	    }
     };
 
     exprVisitor visitor(expectedType);
@@ -194,6 +240,20 @@ void compiler::compBoolExpr(const std::optional<std::string> &literal, bool isRe
     m_output << "\t" << endLabel << ":\n";
     push("rdx");
     m_output << "\txor rdx, rdx\n";
+}
+
+void compiler::compPrefIncDec(Token ident, bool isInc, const std::string& expectedType)
+{
+	auto *fvl = new node::Expr{new node::ValExpr{node::ExprIdent{ident}}};
+	auto *svl = new node::Expr{new node::ValExpr{node::ExprIntLit{INT_LITERAL, "1"}}};
+	if (isInc)
+	{
+		compVar(ident, new node::Expr{new node::BinExpr{new node::BinExprAdd{fvl, svl}}}, expectedType);
+	}
+	else
+	{
+		compVar(ident, new node::Expr{new node::BinExpr{new node::BinExprSub{fvl, svl}}}, expectedType);
+	}
 }
 
 bool compiler::compBinExpr(const node::BinExpr &expr, const std::string &expectedType)

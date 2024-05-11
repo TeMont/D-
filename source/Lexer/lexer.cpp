@@ -108,9 +108,43 @@ std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedTyp
 				return {};
 			}
 		}
+        else if (peek().value().type == Tokens::INC)
+        {
+			consume();
+			if (peek().has_value() && peek().value().type != Tokens::IDENT || !peek().has_value())
+			{
+				std::cerr << "[Parse Error] ERR001 Syntax Error Expected Identifier";
+				exit(EXIT_FAILURE);
+			}
+			valExpr = {node::PrefixInc{consume()}};
+        }
+        else if (peek().value().type == Tokens::DEC)
+        {
+	        consume();
+	        if (peek().has_value() && peek().value().type != Tokens::IDENT || !peek().has_value())
+	        {
+		        std::cerr << "[Parse Error] ERR001 Syntax Error Expected Identifier";
+		        exit(EXIT_FAILURE);
+	        }
+	        valExpr = {node::PrefixDec{consume()}};
+        }
         else if (peek().value().type == Tokens::IDENT)
         {
-            valExpr = {node::ExprIdent{consume()}};
+			auto ident = consume();
+			if (peek().has_value() && peek().value().type == INC)
+			{
+				valExpr = {node::PostfixInc{ident}};
+				consume();
+			}
+			else if (peek().has_value() && peek().value().type == DEC)
+			{
+				valExpr = {node::PostfixDec{ident}};
+				consume();
+			}
+			else
+			{
+                valExpr = {node::ExprIdent{ident}};
+			}
         }
         else
         {

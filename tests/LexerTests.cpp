@@ -81,6 +81,18 @@ struct valExprVisitor
 	void operator()(const node::NotCondition &exprNotCond) const
 	{
 	}
+	void operator()(const node::PrefixInc &prefInc) const
+	{
+	}
+	void operator()(const node::PrefixDec &prefDec) const
+	{
+	}
+	void operator()(const node::PostfixInc &postInc) const
+	{
+	}
+	void operator()(const node::PostfixDec &postDec) const
+	{
+	}
 };
 
 struct exprVisitor

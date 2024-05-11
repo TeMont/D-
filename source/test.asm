@@ -1,5 +1,4 @@
 SC0: db '',10,'',00H
-SC1: db '',10,'',00H
 section .bss
 extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess
 
@@ -23,6 +22,80 @@ main:
 	push rdx
 	xor rdx, rdx
 ;;	/int let
+;;	int let
+	push QWORD [rsp + 0]
+	mov rdx, 1
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	sub rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
+	push QWORD [rsp + 0]
+	mov rdx, 10
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	add rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	mov rdx, 2
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	sub rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	push QWORD [rsp + 8]
+	push QWORD [rsp + 16]
+	mov rdx, 1
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	add rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 16], rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	add rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	push QWORD [rsp + 8]
+	push QWORD [rsp + 16]
+	mov rdx, 1
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	sub rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 16], rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	sub rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+;;	/int let
 ;;	Output
 	push QWORD [rsp + 0]
 	pop rdx
@@ -42,111 +115,6 @@ main:
 	pop rdx
 	call _printf
 ;;	/Output
-;;	int let
-	mov rdx, 20
-	push rdx
-	xor rdx, rdx
-;;	/int let
-;;	while loop
-	label0:
-	mov rdx, 's'
-	cmp rdx, 0
-	je label39
-	mov rdx, 1
-	jmp label38
-	label39:
-	mov rdx, 0
-	label38:
-	push rdx
-	xor rdx, rdx
-	mov rdx, 's'
-	cmp rdx, 0
-	je label41
-	mov rdx, 1
-	jmp label40
-	label41:
-	mov rdx, 0
-	label40:
-	push rdx
-	xor rdx, rdx
-	pop rdi
-	pop rdx
-	cmp rdx, rdi
-	je label36
-	mov rdx, 0
-	jmp label37
-	label36:
-	mov rdx, 1
-	label37:
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	mov rdx, QWORD [rsp + 8]
-	cmp rdx, 0
-	je label45
-	mov rdx, 1
-	jmp label44
-	label45:
-	mov rdx, 0
-	label44:
-	push rdx
-	xor rdx, rdx
-	mov rdx, 0
-	cmp rdx, 0
-	je label47
-	mov rdx, 1
-	jmp label46
-	label47:
-	mov rdx, 0
-	label46:
-	push rdx
-	xor rdx, rdx
-	pop rdi
-	pop rdx
-	cmp rdx, rdi
-	jg label42
-	mov rdx, 0
-	jmp label43
-	label42:
-	mov rdx, 1
-	label43:
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdi
-	pop rdx
-	cmp rdx, 0
-	jle label34
-	cmp rdi, 0
-	jle label34
-	mov rdx, 1
-	jmp label35
-	label34:
-	mov rdx, 0
-	label35:
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	mov rdx, 1
-	push rdx
-	xor rdx, rdx
-	pop rdi
-	pop rdx
-	cmp rdx, 0
-	jle label28
-	cmp rdi, 0
-	jle label28
-	mov rdx, 1
-	jmp label29
-	label28:
-	mov rdx, 0
-	label29:
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	cmp rdx, 0
-	je label1
 ;;	Output
 	push QWORD [rsp + 8]
 	pop rdx
@@ -159,42 +127,6 @@ main:
 	mov rdx, 20
 	call _clearBuffer
 ;;	/Output
-;;	Output
-	mov rdx, SC1
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	call _printf
-;;	/Output
-	push QWORD [rsp + 8]
-	mov rdx, 1
-	push rdx
-	xor rdx, rdx
-	pop rdi
-	pop rdx
-	sub rdx, rdi
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	mov [rsp + 8], rdx
-	xor rdx, rdx
-	push QWORD [rsp + 0]
-	mov rdx, 2
-	push rdx
-	xor rdx, rdx
-	pop rdi
-	pop rdx
-	sub rdx, rdi
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	mov [rsp + 0], rdx
-	xor rdx, rdx
-	jmp label0
-	label1:
-;;	/while loop
 
 _printf:
 	; INPUT:

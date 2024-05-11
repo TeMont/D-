@@ -1,9 +1,6 @@
 int x = 10;
-int y = 20;
-while('s' == 's' && y > 0 && true)
-{
-    stdOut(x);
-    stdOut("\n");
-    x = x - 1;
-    y = y - 2;
-}
+int y = --x + 10 - 2 + x++ - x--;
+
+stdOut(y);
+stdOut("\n");
+stdOut(x);

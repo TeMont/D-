@@ -21,11 +21,12 @@ The compiler is made using NASM & gcc Linker.
 - [X] Input
 - [X] ! operator
 - [X] Const Variables
+- [X] Increment and Decrement
+- [X] While Loop
+- [ ] For Loop
 - [ ] Float Variables
-- [ ] Loops
 - [ ] Negative Integers
 - [ ] Switch-case statement
-- [ ] Increment and Decrement
 
 # GUIDE
 Dependencies: Nasm x86-64, gcc Linker

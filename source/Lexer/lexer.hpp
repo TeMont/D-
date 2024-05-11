@@ -34,9 +34,25 @@ namespace node
 	{
 		ValExpr* val = nullptr;
 	};
+	struct PostfixInc
+	{
+		Token ident;
+	};
+	struct PrefixInc
+	{
+		Token ident;
+	};
+	struct PostfixDec
+	{
+		Token ident;
+	};
+	struct PrefixDec
+	{
+		Token ident;
+	};
     struct ValExpr
     {
-        std::variant<ExprIntLit, ExprStrLit, ExprBoolLit, ExprCharLit, ExprIdent, NotCondition> var;
+        std::variant<ExprIntLit, ExprStrLit, ExprBoolLit, ExprCharLit, ExprIdent, NotCondition, PostfixInc, PrefixInc, PostfixDec, PrefixDec> var;
     };
 
     struct BinExprAdd

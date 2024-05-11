@@ -21,7 +21,8 @@ public:
     static void compBoolExpr(const std::optional<std::string> &literal, bool isReversed = false);
     static bool compValExpr(const node::ValExpr &expr, const std::string& expectedType);
     static void compIfPred(const node::IfPred &pred, const std::string& endLabel);
-    static void compVar(Token ident, node::Expr *expr, const std::string& expectedType);
+	static void compVar(Token ident, node::Expr *expr, const std::string& expectedType);
+	static void compPrefIncDec(Token ident, bool isInc, const std::string& expectedType);
     static void compLet(Token ident, node::Expr *expr, const std::string& expectedType, bool isConst = false);
     static void compInput(const node::StmtInput &stmtInput);
     static void compStmt(const node::Stmt &stmt);
