@@ -176,7 +176,7 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
 			{
 				return false;
 			}
-		    compPrefIncDec(prefInc.ident, true, expectedType);
+		    compIncDec(prefInc.ident, true, expectedType);
 		    return compValExpr(node::ValExpr{node::ExprIdent{prefInc.ident}}, expectedType);
 	    }
 	    bool operator()(const node::PrefixDec &prefDec) const
@@ -185,7 +185,7 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
 			{
 				return false;
 			}
-		    compPrefIncDec(prefDec.ident, false, expectedType);
+		    compIncDec(prefDec.ident, false, expectedType);
 		    return compValExpr(node::ValExpr{node::ExprIdent{prefDec.ident}}, expectedType);
 	    }
 	    bool operator()(const node::PostfixInc &postInc) const
@@ -199,7 +199,7 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
 			{
 				return false;
 			}
-		    compPrefIncDec(postInc.ident, true, expectedType);
+		    compIncDec(postInc.ident, true, expectedType);
 		    return true;
 	    }
 	    bool operator()(const node::PostfixDec &postDec) const
@@ -213,7 +213,7 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
 		    {
 			    return false;
 		    }
-		    compPrefIncDec(postDec.ident, false, expectedType);
+		    compIncDec(postDec.ident, false, expectedType);
 		    return true;
 	    }
     };
@@ -242,7 +242,7 @@ void compiler::compBoolExpr(const std::optional<std::string> &literal, bool isRe
     m_output << "\txor rdx, rdx\n";
 }
 
-void compiler::compPrefIncDec(Token ident, bool isInc, const std::string& expectedType)
+void compiler::compIncDec(const Token& ident, bool isInc, const std::string& expectedType)
 {
 	auto *fvl = new node::Expr{new node::ValExpr{node::ExprIdent{ident}}};
 	auto *svl = new node::Expr{new node::ValExpr{node::ExprIntLit{INT_LITERAL, "1"}}};
@@ -753,6 +753,8 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
 
         void operator()(const node::StmtElIf *elIf) const
         {
+			size_t beginStackSize = m_stackSize;
+			std::unordered_map<std::string, compiler::Var> beginVars = m_vars;
             m_output << ";;\telif\n";
             std::string falseLabel = createLabel();
             if (!compExpr(*elIf->cond, INT_TYPE) && !compExpr(*elIf->cond, CHAR_TYPE) &&
@@ -768,26 +770,38 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
             {
                 compStmt(i);
             }
+			size_t newVarAmount = m_stackSize - beginStackSize;
+			for (int i = 0; i < newVarAmount; ++i)
+			{
+				pop("rdx");
+			}
+	        m_vars = beginVars;
+	        m_output << "\txor rdx, rdx\n";
 			m_output << "\tjmp " << endLabel << "\n";
             m_output << ";;\t/elif\n";
+			m_output << "\t" << falseLabel << ":\n";
             if (elIf->pred.has_value())
             {
-                m_output << "\t" << falseLabel << ":\n";
                 compIfPred(*elIf->pred.value(), endLabel);
-            }
-            else
-            {
-                m_output << falseLabel << ":\n";
             }
             m_output << "\txor rdx, rdx\n";
         }
         void operator()(const node::StmtElse *Else)
         {
+	        size_t beginStackSize = m_stackSize;
+	        std::unordered_map<std::string, compiler::Var> beginVars = m_vars;
             m_output << ";;\telse\n";
             for (auto const& i : Else->statements)
             {
                 compStmt(i);
             }
+	        size_t newVarAmount = m_stackSize - beginStackSize;
+	        for (int i = 0; i < newVarAmount; ++i)
+	        {
+		        pop("rdx");
+	        }
+	        m_vars = beginVars;
+	        m_output << "\txor rdx, rdx\n";
             m_output << ";;\t/else\n";
         }
     };
@@ -907,6 +921,8 @@ void compiler::compStmt(const node::Stmt &stmt)
         }
         void operator()(const node::StmtIf &stmtIf)
         {
+	        size_t beginStackSize = m_stackSize;
+	        std::unordered_map<std::string, compiler::Var> beginVars = m_vars;
             m_output << ";;\tif\n";
             std::string falseLabel = createLabel();
             if (!compExpr(*stmtIf.cond, INT_TYPE) && !compExpr(*stmtIf.cond, CHAR_TYPE) &&
@@ -922,6 +938,13 @@ void compiler::compStmt(const node::Stmt &stmt)
             {
                 compStmt(i);
             }
+	        size_t newVarAmount = m_stackSize - beginStackSize;
+	        for (int i = 0; i < newVarAmount; ++i)
+	        {
+		        pop("rdx");
+	        }
+			m_vars = beginVars;
+	        m_output << "\txor rdx, rdx\n";
             m_output << ";;\t/if\n";
             if (stmtIf.pred.has_value())
             {
@@ -984,6 +1007,8 @@ void compiler::compStmt(const node::Stmt &stmt)
         }
 		void operator()(const node::StmtWhileLoop &whileLoop)
 		{
+			size_t beginStackSize = m_stackSize;
+			std::unordered_map<std::string, compiler::Var> beginVars = m_vars;
 			m_output << ";;\twhile loop\n";
 			std::string startLabel = createLabel();
 			std::string endLabel = createLabel();
@@ -1001,6 +1026,13 @@ void compiler::compStmt(const node::Stmt &stmt)
 			{
 				compStmt(stmt);
 			}
+			size_t newVarAmount = m_stackSize - beginStackSize;
+			for (int i = 0; i < newVarAmount; ++i)
+			{
+				pop("rdx");
+			}
+			m_vars = beginVars;
+			m_output << "\txor rdx, rdx\n";
 			m_output << "\tjmp " << startLabel << "\n";
 			m_output << "\t" << endLabel << ":\n";
 			m_output << ";;\t/while loop\n";

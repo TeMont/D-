@@ -1,6 +1,29 @@
-int x = 10;
-int y = --x + 10 - 2 + x++ - x--;
+/*int Age = stdInput("Enter Your Age: ");
 
-stdOut(y);
+if (Age > 50)
+{
+    int x = 10;
+    stdOut(x);
+}
+elif (Age > 40)
+{
+    int x = 23;
+    stdOut(x);
+}
+else
+{
+    int x = 67;
+    stdOut(x);
+}
+//stdOut(x); ERROR
 stdOut("\n");
-stdOut(x);
+stdOut(Age);*/
+
+int x = 10;
+
+while (x > 0)
+{
+    int y = x--;
+    stdOut(y);
+}
+//stdOut(y); ERROR
