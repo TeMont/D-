@@ -32,7 +32,7 @@ namespace node
     };
 	struct NotCondition
 	{
-		ValExpr* val = nullptr;
+		ValExpr* val;
 	};
 	struct PostfixInc
 	{
@@ -57,63 +57,63 @@ namespace node
 
     struct BinExprAdd
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
     struct BinExprSub
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
     struct BinExprMul
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
     struct BinExprDiv
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
     struct EQCondition
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
     struct NotEQCondition
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
     struct LessCondition
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
     struct GreaterCondition
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
     struct EQLessCondition
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
     struct EQGreaterCondition
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
     struct AndCondition
     {
-        Expr* fvl = nullptr;
-        Expr* svl = nullptr;
+        Expr* fvl;
+        Expr* svl;
     };
 	struct OrCondition
 	{
-		Expr* fvl = nullptr;
-		Expr* svl = nullptr;
+		Expr* fvl;
+		Expr* svl;
 	};
 	struct BinExpr
     {
@@ -132,14 +132,14 @@ namespace node
 
     struct StmtIf
     {
-        Expr* cond = nullptr;
+        Expr* cond;
         std::vector<Stmt> statements;
         std::optional<IfPred*> pred;
     };
 
     struct StmtElIf
     {
-        Expr* cond = nullptr;
+        Expr* cond;
         std::vector<Stmt> statements;
         std::optional<IfPred*> pred;
     };
@@ -156,13 +156,21 @@ namespace node
 
 	struct StmtWhileLoop
 	{
-		Expr* cond = nullptr;
+		Expr* cond;
+		std::vector<Stmt> statements;
+	};
+
+	struct StmtForLoop
+	{
+		Stmt* initStmt;
+		Expr* cond;
+		Stmt* iterationStmt;
 		std::vector<Stmt> statements;
 	};
 
     struct StmtReturn
     {
-        Expr* Expr = nullptr;
+        Expr* Expr;
     };
     struct StmtIntLet
     {
@@ -191,35 +199,38 @@ namespace node
     struct StmtIntVar
     {
         Token ident;
-        Expr* Expr = nullptr;
+        Expr* Expr;
     };
     struct StmtStrVar
     {
         Token ident;
-        Expr* Expr = nullptr;
+        Expr* Expr;
     };
     struct StmtBoolVar
     {
         Token ident;
-        Expr* Expr = nullptr;
+        Expr* Expr;
     };
     struct StmtCharVar
     {
         Token ident;
-        Expr* Expr = nullptr;
+        Expr* Expr;
     };
     struct StmtOutput
     {
-        Expr* Expr = nullptr;
+        Expr* Expr;
     };
     struct StmtInput
     {
-        Expr* msg = nullptr;
+        Expr* msg;
     };
 
     struct Stmt
     {
-        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtCharLet, StmtStrVar, StmtIntVar, StmtBoolVar, StmtCharVar, StmtIf, StmtOutput, StmtInput, StmtWhileLoop> var;
+        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet,
+					 StmtCharLet, StmtStrVar, StmtIntVar, StmtBoolVar,
+					 StmtCharVar, StmtIf, StmtOutput, StmtInput, StmtWhileLoop,
+					 PrefixInc, PrefixDec, PostfixInc, PostfixDec> var;
     };
     
     struct Prog
@@ -240,6 +251,7 @@ public:
     std::optional<node::IfPred> parseIfPred();
     std::optional<node::StmtIntLet> parseLet(const std::string& expectedType);
     std::optional<node::StmtInput> parseInputStmt();
+	std::optional<node::PrefixInc> parseIncDec();
     std::optional<node::Stmt> parseStmt();
     std::optional<node::Prog> parseProg();
 

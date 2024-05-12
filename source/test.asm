@@ -17,10 +17,27 @@ section .text
 global main
 main:
 ;;	int let
+	push rdx
+;;	/int let
 	mov rdx, 10
 	push rdx
 	xor rdx, rdx
-;;	/int let
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
+	push QWORD [rsp + 0]
+	mov rdx, 1
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	sub rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
 ;;	while loop
 	label0:
 	push QWORD [rsp + 0]

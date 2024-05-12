@@ -11,7 +11,6 @@ elif (Age > 40)
     stdOut(x);
 }
 else
-{
     int x = 67;
     stdOut(x);
 }
@@ -19,7 +18,9 @@ else
 stdOut("\n");
 stdOut(Age);*/
 
-int x = 10;
+int x;
+x = 10;
+x--;
 
 while (x > 0)
 {

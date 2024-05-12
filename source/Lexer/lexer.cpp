@@ -110,39 +110,37 @@ std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedTyp
 		}
         else if (peek().value().type == Tokens::INC)
         {
-			consume();
-			if (peek().has_value() && peek().value().type != Tokens::IDENT || !peek().has_value())
-			{
-				std::cerr << "[Parse Error] ERR001 Syntax Error Expected Identifier";
-				exit(EXIT_FAILURE);
-			}
-			valExpr = {node::PrefixInc{consume()}};
+	        if (auto tempInc = parseIncDec())
+	        {
+		        valExpr = {node::PrefixInc{tempInc.value().ident}};
+	        }
         }
         else if (peek().value().type == Tokens::DEC)
         {
-	        consume();
-	        if (peek().has_value() && peek().value().type != Tokens::IDENT || !peek().has_value())
+	        if (auto tempInc = parseIncDec())
 	        {
-		        std::cerr << "[Parse Error] ERR001 Syntax Error Expected Identifier";
-		        exit(EXIT_FAILURE);
-	        }
-	        valExpr = {node::PrefixDec{consume()}};
+	            valExpr = {node::PrefixDec{tempInc.value().ident}};
+			}
         }
         else if (peek().value().type == Tokens::IDENT)
         {
-			auto ident = consume();
-			if (peek().has_value() && peek().value().type == INC)
+			if (peek(1).has_value() && peek(1).value().type == INC)
 			{
-				valExpr = {node::PostfixInc{ident}};
-				consume();
+				if (auto tempInc = parseIncDec())
+				{
+					valExpr = {node::PostfixInc{tempInc.value().ident}};
+				}
 			}
-			else if (peek().has_value() && peek().value().type == DEC)
+			else if (peek(1).has_value() && peek(1).value().type == DEC)
 			{
-				valExpr = {node::PostfixDec{ident}};
-				consume();
+				if (auto tempInc = parseIncDec())
+				{
+					valExpr = {node::PostfixDec{tempInc.value().ident}};
+				}
 			}
 			else
 			{
+				auto ident = consume();
                 valExpr = {node::ExprIdent{ident}};
 			}
         }
@@ -491,6 +489,35 @@ std::optional<node::StmtInput> parser::parseInputStmt()
     }
 }
 
+std::optional<node::PrefixInc> parser::parseIncDec()
+{
+	node::PrefixInc nodeInc;
+	if (peek().value().type == Tokens::INC || peek().value().type == Tokens::DEC)
+	{
+		consume();
+		if (peek().has_value() && peek().value().type != Tokens::IDENT || !peek().has_value())
+		{
+			std::cerr << "[Parse Error] ERR001 Syntax Error Expected Identifier";
+			exit(EXIT_FAILURE);
+		}
+		nodeInc = {consume()};
+	}
+	else if (peek().value().type == Tokens::IDENT)
+	{
+		auto ident = consume();
+		if (peek().has_value() && peek().value().type == INC || peek().has_value() && peek().value().type == DEC)
+		{
+			nodeInc = {ident};
+			consume();
+		}
+	}
+	else
+	{
+		return {};
+	}
+	return nodeInc;
+}
+
 std::optional<node::Stmt> parser::parseStmt()
 {
     std::optional<node::Stmt> stmtNode;
@@ -647,6 +674,44 @@ std::optional<node::Stmt> parser::parseStmt()
         stmtNode = {node::StmtCharLet{tempLetStmt.ident, tempLetStmt.Expr, tempLetStmt.isConst}};
         m_vars.insert({tempLetStmt.ident.value.value(), CHAR_TYPE});
     }
+	else if (peek().value().type == Tokens::INC || peek().value().type == Tokens::DEC || peek(1).value().type == Tokens::INC || peek(1).value().type == Tokens::DEC)
+    {
+		if (peek().value().type == Tokens::INC)
+		{
+			if (auto tempInc = parseIncDec())
+			{
+				stmtNode = {node::PrefixInc{tempInc.value().ident}};
+			}
+		}
+		else if (peek().value().type == Tokens::DEC)
+		{
+			if (auto tempInc = parseIncDec())
+			{
+				stmtNode = {node::PrefixDec{tempInc.value().ident}};
+			}
+		}
+		else if (peek(1).value().type == Tokens::INC)
+		{
+			if (auto tempInc = parseIncDec())
+			{
+				stmtNode = {node::PostfixInc{tempInc.value().ident}};
+			}
+		}
+		else if (peek(1).value().type == Tokens::DEC)
+		{
+			if (auto tempInc = parseIncDec())
+			{
+				stmtNode = {node::PostfixDec{tempInc.value().ident}};
+			}
+		}
+
+		if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
+		{
+			std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
+			exit(EXIT_FAILURE);
+		}
+		consume();
+	}
     else if (peek().value().type == Tokens::IDENT)
     {
         auto varIdent = consume();

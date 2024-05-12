@@ -1037,6 +1037,42 @@ void compiler::compStmt(const node::Stmt &stmt)
 			m_output << "\t" << endLabel << ":\n";
 			m_output << ";;\t/while loop\n";
 		}
+	    void operator()(const node::PrefixInc& prefInc)
+	    {
+		    if (!m_vars.count(prefInc.ident.value.value()))
+		    {
+			    std::cerr << "[Compile Error] ERR004 Identifier '" << prefInc.ident.value.value() << "' Was Not Declared";
+			    exit(EXIT_FAILURE);
+		    }
+		    compIncDec(prefInc.ident, true, m_vars[prefInc.ident.value.value()].Type);
+	    }
+	    void operator()(const node::PrefixDec& prefDec)
+	    {
+		    if (!m_vars.count(prefDec.ident.value.value()))
+		    {
+			    std::cerr << "[Compile Error] ERR004 Identifier '" << prefDec.ident.value.value() << "' Was Not Declared";
+			    exit(EXIT_FAILURE);
+		    }
+		    compIncDec(prefDec.ident, false, m_vars[prefDec.ident.value.value()].Type);
+	    }
+	    void operator()(const node::PostfixInc& postInc)
+	    {
+		    if (!m_vars.count(postInc.ident.value.value()))
+		    {
+			    std::cerr << "[Compile Error] ERR004 Identifier '" << postInc.ident.value.value() << "' Was Not Declared";
+			    exit(EXIT_FAILURE);
+		    }
+		    compIncDec(postInc.ident, true, m_vars[postInc.ident.value.value()].Type);
+	    }
+	    void operator()(const node::PostfixDec& postDec)
+	    {
+		    if (!m_vars.count(postDec.ident.value.value()))
+		    {
+			    std::cerr << "[Compile Error] ERR004 Identifier '" << postDec.ident.value.value() << "' Was Not Declared";
+			    exit(EXIT_FAILURE);
+		    }
+		    compIncDec(postDec.ident, false, m_vars[postDec.ident.value.value()].Type);
+	    }
         void operator()(const node::StmtIntLet &stmtIntLet)
         {
             m_output << ";;\tint let\n";
