@@ -162,9 +162,9 @@ namespace node
 
 	struct StmtForLoop
 	{
-		Stmt* initStmt;
-		Expr* cond;
-		Stmt* iterationStmt;
+		std::optional<Stmt*> initStmt;
+		std::optional<Expr*> cond;
+		std::optional<Stmt*> iterationStmt;
 		std::vector<Stmt> statements;
 	};
 
@@ -227,9 +227,9 @@ namespace node
 
     struct Stmt
     {
-        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet,
-					 StmtCharLet, StmtStrVar, StmtIntVar, StmtBoolVar,
-					 StmtCharVar, StmtIf, StmtOutput, StmtInput, StmtWhileLoop,
+        std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtCharLet,
+					 StmtStrVar, StmtIntVar, StmtBoolVar, StmtCharVar, StmtIf,
+					 StmtOutput, StmtInput, StmtWhileLoop, StmtForLoop,
 					 PrefixInc, PrefixDec, PostfixInc, PostfixDec> var;
     };
     
@@ -245,14 +245,14 @@ public:
     inline explicit parser(std::vector<Token> tokens)
     : m_tokens(std::move(tokens)) {}
 
-    std::optional<node::Expr> parseExpr(const std::string& expectedType, uint8_t minPriority = 1);
-    std::optional<node::ValExpr> parseValExpr(const std::string& expectedType);
+    std::optional<node::Expr> parseExpr(const std::string& expectedType, bool isRequired = true, uint8_t minPriority = 1);
+    std::optional<node::ValExpr> parseValExpr(const std::string& expectedType, bool isRequired = true);
     std::optional<node::StmtIf> parseIfStmt();
     std::optional<node::IfPred> parseIfPred();
     std::optional<node::StmtIntLet> parseLet(const std::string& expectedType);
     std::optional<node::StmtInput> parseInputStmt();
 	std::optional<node::PrefixInc> parseIncDec();
-    std::optional<node::Stmt> parseStmt();
+    std::optional<node::Stmt> parseStmt(bool expectSemi = true);
     std::optional<node::Prog> parseProg();
 
 #ifdef TEST
@@ -270,6 +270,7 @@ private:
 
     [[nodiscard]] std::optional<Token> peek(int offset = 0) const;
     Token consume();
+	void tryConsume(char charToConsume);
     static std::optional<uint8_t> op_to_prior(Tokens op);
 
     std::vector<Token> m_tokens;

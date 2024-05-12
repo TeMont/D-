@@ -17,6 +17,15 @@ Token parser::consume()
 {
     return m_tokens[m_index++];
 }
+void parser::tryConsume(char charToConsume)
+{
+	if (peek().has_value() && peek().value().type != tokensMap[std::string(1, charToConsume)] || !peek().has_value())
+	{
+		std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '" + std::string(1, charToConsume) + "'";
+		exit(EXIT_FAILURE);
+	}
+	consume();
+}
 std::optional<uint8_t> parser::op_to_prior(Tokens op)
 {
     switch (op)
@@ -51,7 +60,7 @@ std::optional<uint8_t> parser::op_to_prior(Tokens op)
     }
 }
 
-std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedType)
+std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedType, bool isRequired)
 {
     if (peek().has_value())
     {
@@ -146,8 +155,12 @@ std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedTyp
         }
         else
         {
-            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected Expression";
-            exit(EXIT_FAILURE);
+			if (isRequired)
+			{
+		        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected Expression";
+		        exit(EXIT_FAILURE);
+			}
+			return {};
         }
         return valExpr;
     }
@@ -157,7 +170,7 @@ std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedTyp
     }
 }
 
-std::optional<node::Expr> parser::parseExpr(const std::string& expectedType, uint8_t minPriority)
+std::optional<node::Expr> parser::parseExpr(const std::string& expectedType, bool isRequired, uint8_t minPriority)
 {
     if (peek().has_value() && peek().value().type == Tokens::INPUT)
     {
@@ -166,11 +179,15 @@ std::optional<node::Expr> parser::parseExpr(const std::string& expectedType, uin
     }
     else
     {
-        std::optional<node::ValExpr> valFvl = parseValExpr(expectedType);
+        std::optional<node::ValExpr> valFvl = parseValExpr(expectedType, isRequired);
         if (!valFvl.has_value())
 		{
-			std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
-			exit(EXIT_FAILURE);
+			if (isRequired)
+			{
+				std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
+				exit(EXIT_FAILURE);
+			}
+			return {};
         }
         node::Expr exprFvl = {new node::ValExpr(valFvl.value())};
 
@@ -318,40 +335,20 @@ std::optional<node::Expr> parser::parseExpr(const std::string& expectedType, uin
 std::optional<node::StmtIf> parser::parseIfStmt()
 {
     consume();
-    if (peek().has_value() && peek().value().type != Tokens::LPAREN || !peek().has_value())
-    {
-	    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
-	    exit(EXIT_FAILURE);
-	}
-    consume();
+	tryConsume('(');
     if (auto cond = parseExpr(ANY_TYPE))
     {
-        if (peek().has_value() && peek().value().type != Tokens::RPAREN || !peek().has_value())
-        {
-	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ')'";
-	        exit(EXIT_FAILURE);
-		}
-        consume(); // consume ')'
-        if (peek().has_value() && peek().value().type != Tokens::LBRACKET || !peek().has_value())
-        {
-	        std::cerr << "ERR001 Invalid Syntax Expected '{'";
-	        exit(EXIT_FAILURE);
-		}
-        consume(); // consume '{'
+	    tryConsume(')');
+	    tryConsume('{');
         std::vector<node::Stmt> stmts;
         while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
         {
-            if (auto stmt = parseStmt())
+            if (auto const &stmt = parseStmt())
             {
                 stmts.push_back(stmt.value());
             }
         }
-        if (peek().has_value() && peek().value().type != Tokens::RBRACKET || !peek().has_value())
-        {
-	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '}'";
-	        exit(EXIT_FAILURE);
-		}
-		consume(); // consume '}'
+	    tryConsume('}');
 		auto pred = parseIfPred();
 		if (pred.has_value())
 		{
@@ -388,21 +385,16 @@ std::optional<node::IfPred> parser::parseIfPred()
     else if (peek().value().type == Tokens::ELSE)
     {
         consume();
-        if (peek().has_value() && peek().value().type != Tokens::LBRACKET || !peek().has_value())
-        {
-	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '{'";
-	        exit(EXIT_FAILURE);
-		}
-        consume();
+	    tryConsume('{');
         std::vector<node::Stmt> stmts;
         while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
         {
-            if (auto stmt = parseStmt())
+            if (auto const &stmt = parseStmt())
             {
                 stmts.push_back(stmt.value());
             }
         }
-        consume();
+	    tryConsume('}');
         stmtPred = {new node::StmtElse({stmts})};
     }
     else
@@ -432,12 +424,6 @@ std::optional<node::StmtIntLet> parser::parseLet(const std::string& expectedType
         consume();
         if (auto nodeExpr = parseExpr(expectedType))
         {
-            if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
-            {
-	            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-	            exit(EXIT_FAILURE);
-			}
-            consume();
             return node::StmtIntLet{varIdent, new node::Expr(nodeExpr.value()), isConst};
         }
         else
@@ -448,12 +434,6 @@ std::optional<node::StmtIntLet> parser::parseLet(const std::string& expectedType
     }
     else
     {
-        if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
-        {
-	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-	        exit(EXIT_FAILURE);
-		}
-        consume();
         return node::StmtIntLet{varIdent, nullptr, isConst};
     }
 }
@@ -461,25 +441,10 @@ std::optional<node::StmtIntLet> parser::parseLet(const std::string& expectedType
 std::optional<node::StmtInput> parser::parseInputStmt()
 {
     consume();
-    if (peek().has_value() && peek().value().type != Tokens::LPAREN || !peek().has_value())
-    {
-	    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
-	    exit(EXIT_FAILURE);
-	}
-    consume();
+	tryConsume('(');
     if (auto nodeExpr = parseExpr(ANY_TYPE))
     {
-        if (peek().has_value() && peek().value().type != Tokens::RPAREN || !peek().has_value())
-        {
-	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ')'";
-	        exit(EXIT_FAILURE);
-		}
-        consume();
-        if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
-        {
-	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-	        exit(EXIT_FAILURE);
-        }
+	    tryConsume(')');
 		return node::StmtInput{new node::Expr(nodeExpr.value())};
     }
     else
@@ -518,7 +483,7 @@ std::optional<node::PrefixInc> parser::parseIncDec()
 	return nodeInc;
 }
 
-std::optional<node::Stmt> parser::parseStmt()
+std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 {
     std::optional<node::Stmt> stmtNode;
     if (!peek().has_value())
@@ -531,12 +496,6 @@ std::optional<node::Stmt> parser::parseStmt()
         if (auto nodeExpr = parseExpr(ANY_TYPE))
         {
             stmtNode = {{node::StmtReturn{new node::Expr(nodeExpr.value())}}};
-            if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
-            {
-	            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-	            exit(EXIT_FAILURE);
-            }
-			consume();
         }
         else
         {
@@ -550,9 +509,12 @@ std::optional<node::Stmt> parser::parseStmt()
         if (tempIfStmt.pred.has_value())
         {
             stmtNode = {node::StmtIf({tempIfStmt.cond, tempIfStmt.statements, tempIfStmt.pred})};
-			return stmtNode;
         }
-		stmtNode = {node::StmtIf({tempIfStmt.cond, tempIfStmt.statements})};
+		else
+        {
+			stmtNode = {node::StmtIf({tempIfStmt.cond, tempIfStmt.statements})};
+		}
+		expectSemi = false;
     }
     else if (peek().value().type == Tokens::ELIF)
     {
@@ -567,26 +529,10 @@ std::optional<node::Stmt> parser::parseStmt()
     else if (peek().value().type == Tokens::OUTPUT)
     {
         consume();
-        if (peek().value().type != Tokens::LPAREN)
-        {
-	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
-	        exit(EXIT_FAILURE);
-		}
-        consume();
+	    tryConsume('(');
         if (auto nodeExpr = parseExpr(ANY_TYPE))
         {
-            if (peek().value().type != Tokens::RPAREN)
-            {
-	            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ')'";
-	            exit(EXIT_FAILURE);
-			}
-            consume();
-            if (peek().value().type != Tokens::SEMICOLON)
-            {
-	            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-	            exit(EXIT_FAILURE);
-			}
-            consume();
+	        tryConsume(')');
             stmtNode = {node::StmtOutput{new node::Expr(nodeExpr.value())}};
         }
         else
@@ -598,51 +544,27 @@ std::optional<node::Stmt> parser::parseStmt()
     else if (peek().value().type == Tokens::INPUT)
     {
         auto tmpInpStmt = parseInputStmt().value();
-        if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
-        {
-            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-			exit(EXIT_FAILURE);
-        }
 		stmtNode = node::Stmt{tmpInpStmt};
     }
 	else if (peek().value().type == Tokens::WHILE)
     {
 	    consume();
-	    if (peek().has_value() && peek().value().type != Tokens::LPAREN || !peek().has_value())
-	    {
-		    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '('";
-		    exit(EXIT_FAILURE);
-	    }
-	    consume();
+	    tryConsume('(');
 	    if (auto cond = parseExpr(ANY_TYPE))
 	    {
-		    if (peek().has_value() && peek().value().type != Tokens::RPAREN || !peek().has_value())
-		    {
-			    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ')'";
-			    exit(EXIT_FAILURE);
-		    }
-		    consume(); // consume ')'
-		    if (peek().has_value() && peek().value().type != Tokens::LBRACKET || !peek().has_value())
-		    {
-			    std::cerr << "ERR001 Invalid Syntax Expected '{'";
-			    exit(EXIT_FAILURE);
-		    }
-		    consume(); // consume '{'
+		    tryConsume(')');
+		    tryConsume('{');
 		    std::vector<node::Stmt> stmts;
 		    while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
 		    {
-			    if (auto stmt = parseStmt())
+			    if (auto const &stmt = parseStmt())
 			    {
 				    stmts.push_back(stmt.value());
 			    }
 		    }
-		    if (peek().has_value() && peek().value().type != Tokens::RBRACKET || !peek().has_value())
-		    {
-			    std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '}'";
-			    exit(EXIT_FAILURE);
-		    }
-		    consume(); // consume '}'
+		    tryConsume('}');
 		    stmtNode = {node::StmtWhileLoop{new node::Expr({cond.value()}), stmts}};
+		    expectSemi = false;
 	    }
 	    else
 	    {
@@ -650,6 +572,47 @@ std::optional<node::Stmt> parser::parseStmt()
 		    exit(EXIT_FAILURE);
 	    }
 	}
+	else if (peek().value().type == Tokens::FOR)
+    {
+		node::StmtForLoop stmtForLoop;
+		consume();
+	    tryConsume('(');
+	    std::optional<node::Stmt> initStmt = parseStmt();
+		if (!initStmt.has_value())
+		{
+			tryConsume(';');
+		}
+	    std::optional<node::Expr> cond;
+		cond = parseExpr(ANY_TYPE, false);
+	    tryConsume(';');
+	    std::optional<node::Stmt> itStmt = parseStmt(false);
+	    tryConsume(')');
+	    tryConsume('{');
+	    std::vector<node::Stmt> stmts;
+	    while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
+	    {
+		    if (auto const &stmt = parseStmt())
+		    {
+			    stmts.push_back(stmt.value());
+		    }
+	    }
+	    tryConsume('}');
+	    if (initStmt.has_value())
+	    {
+		    stmtForLoop.initStmt = {new node::Stmt{initStmt.value()}};
+	    }
+	    if (cond.has_value())
+	    {
+		    stmtForLoop.cond = {new node::Expr{cond.value()}};
+	    }
+		if (itStmt.has_value())
+		{
+			stmtForLoop.iterationStmt = {new node::Stmt{itStmt.value()}};
+		}
+		stmtForLoop.statements = stmts;
+		stmtNode = {stmtForLoop};
+	    expectSemi = false;
+    }
     else if (peek().value().type == Tokens::INT_LET || peek().value().type == Tokens::CONST && peek(1).value().type == Tokens::INT_LET)
     {
         auto tempLetStmt = parseLet(INT_TYPE).value();
@@ -704,13 +667,6 @@ std::optional<node::Stmt> parser::parseStmt()
 				stmtNode = {node::PostfixDec{tempInc.value().ident}};
 			}
 		}
-
-		if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
-		{
-			std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-			exit(EXIT_FAILURE);
-		}
-		consume();
 	}
     else if (peek().value().type == Tokens::IDENT)
     {
@@ -720,12 +676,7 @@ std::optional<node::Stmt> parser::parseStmt()
 	        std::cerr << "[Parse Error] ERR005 Undeclared Identifier '" << varIdent.value.value() << "'";
 	        exit(EXIT_FAILURE);
 		}
-        if (peek().has_value() && peek().value().type != Tokens::EQ || !peek().has_value())
-        {
-	        std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '='";
-	        exit(EXIT_FAILURE);
-		}
-        consume();
+	    tryConsume('=');
         if (auto nodeExpr = parseExpr(m_vars[varIdent.value.value()]))
         {
             if (m_vars[varIdent.value.value()] == STR_TYPE)
@@ -744,13 +695,6 @@ std::optional<node::Stmt> parser::parseStmt()
             {
                 stmtNode = {{node::StmtBoolVar{varIdent, new node::Expr(nodeExpr.value())}}};
             }
-
-            if (peek().has_value() && peek().value().type != Tokens::SEMICOLON || !peek().has_value())
-            {
-	            std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected ';'";
-	            exit(EXIT_FAILURE);
-			}
-			consume();
         }
         else
         {
@@ -760,9 +704,12 @@ std::optional<node::Stmt> parser::parseStmt()
     }
     else
     {
-        std::cerr << "[Parse Error] ERR001 Syntax Error";
-        exit(EXIT_FAILURE);
+        return {};
     }
+	if (expectSemi)
+	{
+		tryConsume(';');
+	}
     return stmtNode;
 }
 

@@ -1,30 +1,6 @@
-/*int Age = stdInput("Enter Your Age: ");
-
-if (Age > 50)
+for (int i = 0; i < 10; ++i)
 {
-    int x = 10;
-    stdOut(x);
+    stdOut("i: ");
+    stdOut(i);
+    stdOut("\n");
 }
-elif (Age > 40)
-{
-    int x = 23;
-    stdOut(x);
-}
-else
-    int x = 67;
-    stdOut(x);
-}
-//stdOut(x); ERROR
-stdOut("\n");
-stdOut(Age);*/
-
-int x;
-x = 10;
-x--;
-
-while (x > 0)
-{
-    int y = x--;
-    stdOut(y);
-}
-//stdOut(y); ERROR

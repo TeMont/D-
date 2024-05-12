@@ -23,7 +23,7 @@ The compiler is made using NASM & gcc Linker.
 - [X] Const Variables
 - [X] Increment and Decrement
 - [X] While Loop
-- [ ] For Loop
+- [X] For Loop
 - [ ] Float Variables
 - [ ] Negative Integers
 - [ ] Switch-case statement

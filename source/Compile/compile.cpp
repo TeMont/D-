@@ -1037,6 +1037,62 @@ void compiler::compStmt(const node::Stmt &stmt)
 			m_output << "\t" << endLabel << ":\n";
 			m_output << ";;\t/while loop\n";
 		}
+		void operator()(const node::StmtForLoop &forLoop)
+		{
+			m_output << ";;\tfor loop\n";
+			std::string startLabel = createLabel();
+			std::string endLabel = createLabel();
+			size_t beginStackSize = m_stackSize;
+			std::unordered_map<std::string, compiler::Var> beginVars = m_vars;
+			if (forLoop.initStmt.has_value())
+			{
+				compStmt(*forLoop.initStmt.value());
+			}
+			size_t scopeBeginStackSize = m_stackSize;
+			std::unordered_map<std::string, compiler::Var> scopeBeginVars = m_vars;
+			m_output << "\t" << startLabel << ":\n";
+			if (forLoop.cond.has_value())
+			{
+				if (!compExpr(*forLoop.cond.value(), INT_TYPE) && !compExpr(*forLoop.cond.value(), BOOL_TYPE) &&
+				    !compExpr(*forLoop.cond.value(), CHAR_TYPE))
+				{
+					std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
+					exit(EXIT_FAILURE);
+				}
+				pop("rdx");
+			}
+			else
+			{
+				m_output << "\tmov rdx, 1\n";
+			}
+			m_output << "\tcmp rdx, 0\n";
+			m_output << "\tje " << endLabel << "\n";
+			for (auto const& stmt : forLoop.statements)
+			{
+				compStmt(stmt);
+			}
+			if (forLoop.iterationStmt.has_value())
+			{
+				compStmt(*forLoop.iterationStmt.value());
+			}
+			size_t newVarAmount = m_stackSize - scopeBeginStackSize;
+			for (int i = 0; i < newVarAmount; ++i)
+			{
+				pop("rdx");
+			}
+			m_vars = scopeBeginVars;
+			m_output << "\txor rdx, rdx\n";
+			m_output << "\tjmp " << startLabel << "\n";
+			m_output << "\t" << endLabel << ":\n";
+			newVarAmount = m_stackSize - beginStackSize;
+			for (int i = 0; i < newVarAmount; ++i)
+			{
+				pop("rdx");
+			}
+			m_vars = beginVars;
+			m_output << "\txor rdx, rdx\n";
+			m_output << ";;\t/for loop\n";
+		}
 	    void operator()(const node::PrefixInc& prefInc)
 	    {
 		    if (!m_vars.count(prefInc.ident.value.value()))
