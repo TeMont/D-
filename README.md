@@ -19,7 +19,6 @@ The compiler is made using NASM & gcc Linker.
 - [X] Multi-Line Comments
 - [X] Output
 - [X] Input
-- [X] ! operator
 - [X] Const Variables
 - [X] Increment and Decrement
 - [X] While Loop
@@ -27,6 +26,7 @@ The compiler is made using NASM & gcc Linker.
 - [ ] Float Variables
 - [ ] Negative Integers
 - [ ] Switch-case statement
+- [ ] += -= *= /= operators
 
 # GUIDE
 Dependencies: Nasm x86-64, gcc Linker
