@@ -23,8 +23,8 @@ The compiler is made using NASM & gcc Linker.
 - [X] Increment and Decrement
 - [X] While Loop
 - [X] For Loop
+- [X] Negative Integers
 - [ ] Float Variables
-- [ ] Negative Integers
 - [ ] Switch-case statement
 - [ ] += -= *= /= operators
 

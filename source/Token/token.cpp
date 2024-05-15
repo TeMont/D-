@@ -232,7 +232,18 @@ std::vector<Token> tokenizer::tokenize()
             auto it = tokensMap.find(buffer);
 			if (buffer == "+" || buffer == "-")
 			{
-				if (peek() == buffer[0])
+				if (std::isdigit(peek().value()))
+				{
+					buffer.push_back(consume());
+					while (peek().has_value() && std::isdigit(peek().value()))
+					{
+						buffer.push_back(consume());
+					}
+					tokens.push_back({tokensMap["intLit"], buffer});
+					buffer.clear();
+					continue;
+				}
+				else if (peek() == buffer[0])
 				{
 					buffer.push_back(consume());
 				}

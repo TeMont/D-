@@ -52,7 +52,6 @@ int main(int argc, char *argv[])
                     projName = projName.substr(0, dotPos);
                 }
 
-
                 std::ofstream assembly;
                 assembly.open(projName + ".asm");
                 assembly << asmCode.str();

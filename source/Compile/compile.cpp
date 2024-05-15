@@ -12,8 +12,6 @@ bool createObjectFile(const std::string& path)
     return true;
 }
 
-
-
 bool linkObjectFiles(const std::string& path)
 {
 
@@ -362,7 +360,8 @@ bool compiler::compBinExpr(const node::BinExpr &expr, const std::string &expecte
                 pop("rdi");
                 pop("rdx");
                 m_output << "\tmov rax, rdx\n";
-                m_output << "\tmov rdx, 0\n";
+	            m_output << "\txor rdx, rdx\n";
+	            m_output << "\tcqo\n";
                 m_output << "\tidiv rdi\n";
                 m_output << "\tmov rdx, rax\n";
                 push("rdx");
@@ -915,8 +914,7 @@ void compiler::compStmt(const node::Stmt &stmt)
 	            exit(EXIT_FAILURE);
 			}
             pop("rcx");
-            m_output << "\tcall ExitProcess"
-                     << "\n";
+	        m_output << "\tcall ExitProcess\n";
             m_output << ";;\t/return\n";
         }
         void operator()(const node::StmtIf &stmtIf)
@@ -984,7 +982,7 @@ void compiler::compStmt(const node::Stmt &stmt)
                 pop("rdx");
                 m_output << "\tmov rax, rdx\n";
                 m_output << "\tmov rsi, OutputBuffer\n";
-                m_output << "\tcall _itoa\n";
+	            m_output << "\tcall _itoa\n";
                 m_output << "\tmov rdx, rsi\n";
                 m_output << "\tcall _printf\n";
                 m_output << "\tmov rsi, OutputBuffer\n";
@@ -1257,7 +1255,16 @@ std::stringstream compiler::compile()
                 "\t; OUTPUT:\n"
                 "\t; RSI - string\n"
                 "\tpush rsi\n"
-                "\tpush rax\n"
+				"\txor r9, r9\n"
+				"\ttest rax, rax\n"
+				"\tjns .positive\n"
+				"\tneg rax\n"
+				"\tmov r9, 1\n"
+				"\tjmp .start\n"
+				"\t.positive:\n"
+				"\tmov r9, 0\n"
+				"\t.start:\n"
+				"\tpush rax\n"
                 "\tmov rdi, 1\n"
                 "\tmov rcx, 1\n"
                 "\tmov rbx, 10\n"
@@ -1270,8 +1277,13 @@ std::stringstream compiler::compile()
                 "\tinc rdi\n"
                 "\tjmp .get_divisor\n"
                 "\t._after:\n"
-                "\tpop rax\n"
+				"\tpop rax\n"
                 "\tpush rdi\n"
+				"\ttest r9, 1\n"
+				"\tjz .to_string\n"
+				"\tmov byte [rsi], '-'\n"
+				"\tinc rsi\n"
+				"\txor r9, r9\n"
                 "\t.to_string:\n"
                 "\txor rdx, rdx\n"
                 "\tdiv rcx\n"
@@ -1299,6 +1311,23 @@ std::stringstream compiler::compile()
                 "\txor rdi, rdi\n"
                 "\tmov rbx, 10\n"
                 "\txor rax, rax\n"
+				"\tmov rcx, 1\n"
+				"\tmovzx rdx, byte[rsi]\n"
+				"\tcmp rdx, '-'\n"
+				"\tje negative\n"
+				"\tcmp rdx, '+'\n"
+				"\tje positive\n"
+				"\tcmp rdx, '0'\n"
+				"\tjl error\n"
+				"\tcmp rdx, '9'\n"
+				"\tjg error\n"
+				"\tjmp next_digit\n"
+				"\tpositive:\n"
+				"\tinc rsi\n"
+				"\tjmp next_digit\n"
+				"\tnegative:\n"
+				"\tinc rsi\n"
+				"\tmov rcx, 0\n"
                 "\tnext_digit:\n"
                 "\tmovzx rdx, byte[rsi]\n"
                 "\ttest rdx, rdx\n"
@@ -1317,10 +1346,14 @@ std::stringstream compiler::compile()
                 "\terror:\n"
                 "\tmov rdx, WAR1\n"
                 "\tcall _printf\n"
-                "\tmov rdx, 0\n"
+                "\tmov rdi, 0\n"
                 "\tdone:\n"
-                "\tmov rsi, rdx\n"
-                "\tret\n"
+				"\tcmp rcx, 0\n"
+				"\tje apply_negative\n"
+				"\tret\n"
+				"\tapply_negative:\n"
+				"\tneg rdi\n"
+				"\tret\n"
                 "\n"
                 "_clearBuffer:\n"
                 "\t; INPUT:\n"
@@ -1361,4 +1394,3 @@ void compiler::pop(const std::string &reg)
     m_output << "\tpop " << reg << "\n";
     --m_stackSize;
 }
-
