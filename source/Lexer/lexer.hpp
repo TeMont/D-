@@ -34,25 +34,15 @@ namespace node
 	{
 		ValExpr* val;
 	};
-	struct PostfixInc
+	struct IncDec
 	{
 		Token ident;
-	};
-	struct PrefixInc
-	{
-		Token ident;
-	};
-	struct PostfixDec
-	{
-		Token ident;
-	};
-	struct PrefixDec
-	{
-		Token ident;
+		bool isInc;
+		bool isPref;
 	};
     struct ValExpr
     {
-        std::variant<ExprIntLit, ExprStrLit, ExprBoolLit, ExprCharLit, ExprIdent, NotCondition, PostfixInc, PrefixInc, PostfixDec, PrefixDec> var;
+        std::variant<ExprIntLit, ExprStrLit, ExprBoolLit, ExprCharLit, ExprIdent, NotCondition, IncDec> var;
     };
 	struct BinExpr
 	{
@@ -167,7 +157,7 @@ namespace node
         std::variant<StmtReturn, StmtIntLet, StmtStrLet, StmtBoolLet, StmtCharLet,
 					 StmtStrVar, StmtIntVar, StmtBoolVar, StmtCharVar, StmtIf,
 					 StmtOutput, StmtInput, StmtWhileLoop, StmtForLoop,
-					 PrefixInc, PrefixDec, PostfixInc, PostfixDec> var;
+					 IncDec> var;
     };
     
     struct Prog
@@ -188,7 +178,7 @@ public:
     std::optional<node::IfPred> parseIfPred();
     std::optional<node::StmtIntLet> parseLet(const std::string& expectedType);
     std::optional<node::StmtInput> parseInputStmt();
-	std::optional<node::PrefixInc> parseIncDec();
+	std::optional<node::IncDec> parseIncDec();
     std::optional<node::Stmt> parseStmt(bool expectSemi = true);
     std::optional<node::Prog> parseProg();
 

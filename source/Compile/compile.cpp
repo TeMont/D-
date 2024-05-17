@@ -168,50 +168,24 @@ bool compiler::compValExpr(const node::ValExpr &expr, const std::string &expecte
 			compBoolExpr("rdx", true);
 			return true;
 		}
-	    bool operator()(const node::PrefixInc &prefInc) const
-	    {
-			if (expectedType != INT_TYPE)
-			{
-				return false;
-			}
-		    compIncDec(prefInc.ident, true, expectedType);
-		    return compValExpr(node::ValExpr{node::ExprIdent{prefInc.ident}}, expectedType);
-	    }
-	    bool operator()(const node::PrefixDec &prefDec) const
-	    {
-			if (expectedType != INT_TYPE)
-			{
-				return false;
-			}
-		    compIncDec(prefDec.ident, false, expectedType);
-		    return compValExpr(node::ValExpr{node::ExprIdent{prefDec.ident}}, expectedType);
-	    }
-	    bool operator()(const node::PostfixInc &postInc) const
-	    {
-			if (expectedType != INT_TYPE)
-			{
-				return false;
-			}
-		    bool isSuccess = compValExpr(node::ValExpr{node::ExprIdent{postInc.ident}}, expectedType);
-			if (!isSuccess)
-			{
-				return false;
-			}
-		    compIncDec(postInc.ident, true, expectedType);
-		    return true;
-	    }
-	    bool operator()(const node::PostfixDec &postDec) const
+	    bool operator()(const node::IncDec &incDec) const
 	    {
 		    if (expectedType != INT_TYPE)
-			{
-				return false;
-			}
-		    bool isSuccess = compValExpr(node::ValExpr{node::ExprIdent{postDec.ident}}, expectedType);
-		    if (!isSuccess)
 		    {
 			    return false;
 		    }
-		    compIncDec(postDec.ident, false, expectedType);
+		    if (!incDec.isPref)
+		    {
+			    if (!compValExpr(node::ValExpr{node::ExprIdent{incDec.ident}}, expectedType))
+			    {
+				    return false;
+			    }
+		    }
+		    compIncDec(incDec.ident, incDec.isInc, expectedType);
+		    if (incDec.isPref)
+		    {
+			    return compValExpr(node::ValExpr{node::ExprIdent{incDec.ident}}, expectedType);
+		    }
 		    return true;
 	    }
     };
@@ -246,11 +220,11 @@ void compiler::compIncDec(const Token& ident, bool isInc, const std::string& exp
 	auto *svl = new node::Expr{new node::ValExpr{node::ExprIntLit{INT_LITERAL, "1"}}};
 	if (isInc)
 	{
-		compVar(ident, new node::Expr{new node::BinExpr{fvl, svl}}, expectedType);
+		compVar(ident, new node::Expr{new node::BinExpr{fvl, svl, Tokens::PLUS}}, expectedType);
 	}
 	else
 	{
-		compVar(ident, new node::Expr{new node::BinExpr{fvl, svl}}, expectedType);
+		compVar(ident, new node::Expr{new node::BinExpr{fvl, svl, Tokens::MINUS}}, expectedType);
 	}
 }
 
@@ -869,41 +843,14 @@ void compiler::compStmt(const node::Stmt &stmt)
 			m_output << "\txor rdx, rdx\n";
 			m_output << ";;\t/for loop\n";
 		}
-	    void operator()(const node::PrefixInc& prefInc)
+	    void operator()(const node::IncDec& incDec)
 	    {
-		    if (!m_vars.count(prefInc.ident.value.value()))
+		    if (!m_vars.count(incDec.ident.value.value()))
 		    {
-			    std::cerr << "[Compile Error] ERR004 Identifier '" << prefInc.ident.value.value() << "' Was Not Declared";
+			    std::cerr << "[Compile Error] ERR004 Identifier '" << incDec.ident.value.value() << "' Was Not Declared";
 			    exit(EXIT_FAILURE);
 		    }
-		    compIncDec(prefInc.ident, true, m_vars[prefInc.ident.value.value()].Type);
-	    }
-	    void operator()(const node::PrefixDec& prefDec)
-	    {
-		    if (!m_vars.count(prefDec.ident.value.value()))
-		    {
-			    std::cerr << "[Compile Error] ERR004 Identifier '" << prefDec.ident.value.value() << "' Was Not Declared";
-			    exit(EXIT_FAILURE);
-		    }
-		    compIncDec(prefDec.ident, false, m_vars[prefDec.ident.value.value()].Type);
-	    }
-	    void operator()(const node::PostfixInc& postInc)
-	    {
-		    if (!m_vars.count(postInc.ident.value.value()))
-		    {
-			    std::cerr << "[Compile Error] ERR004 Identifier '" << postInc.ident.value.value() << "' Was Not Declared";
-			    exit(EXIT_FAILURE);
-		    }
-		    compIncDec(postInc.ident, true, m_vars[postInc.ident.value.value()].Type);
-	    }
-	    void operator()(const node::PostfixDec& postDec)
-	    {
-		    if (!m_vars.count(postDec.ident.value.value()))
-		    {
-			    std::cerr << "[Compile Error] ERR004 Identifier '" << postDec.ident.value.value() << "' Was Not Declared";
-			    exit(EXIT_FAILURE);
-		    }
-		    compIncDec(postDec.ident, false, m_vars[postDec.ident.value.value()].Type);
+		    compIncDec(incDec.ident, incDec.isInc, m_vars[incDec.ident.value.value()].Type);
 	    }
         void operator()(const node::StmtIntLet &stmtIntLet)
         {
