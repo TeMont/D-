@@ -172,15 +172,16 @@ std::optional<node::ValExpr> parser::parseValExpr(const std::string& expectedTyp
 
 std::optional<node::Expr> parser::parseExpr(const std::string& expectedType, bool isRequired, uint8_t minPriority)
 {
-    if (peek().has_value() && peek().value().type == Tokens::INPUT)
-    {
-        auto tmpInpStmt = parseInputStmt().value();
-        return node::Expr{new node::StmtInput(tmpInpStmt)};
-    }
-    else
-    {
-        std::optional<node::ValExpr> valFvl = parseValExpr(expectedType, isRequired);
-        if (!valFvl.has_value())
+	node::Expr exprFvl;
+	if (peek().has_value() && peek().value().type == Tokens::INPUT)
+	{
+		auto tmpInpStmt = parseInputStmt().value();
+		return node::Expr{new node::StmtInput(tmpInpStmt)};
+	}
+	else
+	{
+		std::optional<node::ValExpr> valFvl = parseValExpr(expectedType, isRequired);
+		if (!valFvl.has_value())
 		{
 			if (isRequired)
 			{
@@ -188,148 +189,28 @@ std::optional<node::Expr> parser::parseExpr(const std::string& expectedType, boo
 				exit(EXIT_FAILURE);
 			}
 			return {};
-        }
-        node::Expr exprFvl = {new node::ValExpr(valFvl.value())};
+		}
+		exprFvl = {new node::ValExpr(valFvl.value())};
+	}
+	while (true)
+	{
+		if (!peek().has_value() || !op_to_prior(peek().value().type).has_value() || op_to_prior(peek().value().type) < minPriority)
+		{
+			break;
+		}
 
-        while (true)
-        {
-            std::optional<uint8_t> priority;
-            if (!peek().has_value())
-            {
-                break;
-            }
-            priority = op_to_prior(peek().value().type);
-            if (!priority.has_value() || priority < minPriority)
-            {
-                break;
-            }
-            Token opr = consume();
-            uint8_t nextMinPriority = priority.value() + 1;
-            if (auto exprSvl = parseExpr(expectedType, nextMinPriority))
-            {
-				node::BinExpr expr;
-				node::Expr exprFvl2;
-	            switch (opr.type)
-	            {
-		        case Tokens::PLUS:
-		        {
-		            node::BinExprAdd add;
-		            exprFvl2 = exprFvl;
-		            add.fvl = new node::Expr(exprFvl2);
-		            add.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::BinExprAdd(add);
-		            break;
-		        }
-		        case Tokens::MINUS:
-		        {
-		            node::BinExprSub sub;
-		            exprFvl2 = exprFvl;
-		            sub.fvl = new node::Expr(exprFvl2);
-		            sub.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::BinExprSub(sub);
-		            break;
-		        }
-		        case Tokens::MULT:
-		        {
-		            node::BinExprMul mul;
-		            exprFvl2 = exprFvl;
-		            mul.fvl = new node::Expr(exprFvl2);
-		            mul.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::BinExprMul(mul);
-		            break;
-		        }
-		        case Tokens::DIV:
-		        {
-		            node::BinExprDiv div;
-		            exprFvl2 = exprFvl;
-		            div.fvl = new node::Expr(exprFvl2);
-		            div.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::BinExprDiv(div);
-		            break;
-		        }
-		        case Tokens::EQEQ:
-		        {
-		            node::EQCondition eq;
-		            exprFvl2 = exprFvl;
-		            eq.fvl = new node::Expr(exprFvl2);
-		            eq.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::EQCondition(eq);
-		            break;
-		        }
-		        case Tokens::NOTEQ:
-		        {
-		            node::NotEQCondition notEq;
-		            exprFvl2 = exprFvl;
-		            notEq.fvl = new node::Expr(exprFvl2);
-		            notEq.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::NotEQCondition(notEq);
-		            break;
-		        }
-		        case Tokens::LESS:
-		        {
-		            node::LessCondition less;
-		            exprFvl2 = exprFvl;
-		            less.fvl = new node::Expr(exprFvl2);
-		            less.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::LessCondition(less);
-		            break;
-		        }
-		        case Tokens::LESSEQ:
-		        {
-		            node::EQLessCondition lessEq;
-		            exprFvl2 = exprFvl;
-		            lessEq.fvl = new node::Expr(exprFvl2);
-		            lessEq.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::EQLessCondition(lessEq);
-		            break;
-		        }
-		        case Tokens::GREATER:
-		        {
-		            node::GreaterCondition greater;
-		            exprFvl2 = exprFvl;
-		            greater.fvl = new node::Expr(exprFvl2);
-		            greater.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::GreaterCondition(greater);
-		            break;
-		        }
-		        case Tokens::GREATEQ:
-		        {
-		            node::EQGreaterCondition greatEq;
-		            exprFvl2 = exprFvl;
-		            greatEq.fvl = new node::Expr(exprFvl2);
-		            greatEq.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::EQGreaterCondition(greatEq);
-		            break;
-		        }
-		        case Tokens::AND:
-		        {
-		            node::AndCondition And;
-		            exprFvl2 = exprFvl;
-		            And.fvl = new node::Expr(exprFvl2);
-		            And.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::AndCondition(And);
-		            break;
-		        }
-		        case Tokens::OR:
-		        {
-		            node::OrCondition Or;
-		            exprFvl2 = exprFvl;
-		            Or.fvl = new node::Expr(exprFvl2);
-		            Or.svl = new node::Expr(exprSvl.value());
-		            expr.var = new node::OrCondition(Or);
-		            break;
-		        }
-	            }
-	            exprFvl.var = new node::BinExpr(expr);
-            }
-            else
-            {
-                std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
-                exit(EXIT_FAILURE);
-            }
-        }
-        return exprFvl;
-    }
+		std::optional<uint8_t> priority = op_to_prior(peek().value().type);
+		Token opr = consume();
+		uint8_t nextMinPriority = priority.value() + 1;
+		std::optional<node::Expr> exprSvl = parseExpr(expectedType, isRequired, nextMinPriority);
+		if (!exprSvl.has_value())
+		{
+			std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
+			exit(EXIT_FAILURE);
+		}
+		exprFvl.var = new node::BinExpr({new node::Expr(exprFvl), new node::Expr(exprSvl.value()), opr.type});
+	}
+	return exprFvl;
 }
 
 std::optional<node::StmtIf> parser::parseIfStmt()

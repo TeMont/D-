@@ -1,4 +1,4 @@
-/*int firstNum;
+int firstNum;
 int secondNum;
 int result;
 char symbol;
@@ -30,6 +30,4 @@ else
 }
 stdOut(result);
 stdOut("\n");
-return result;*/
-int x = -2 * +2;
-stdOut(x);
+return result;

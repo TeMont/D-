@@ -246,382 +246,160 @@ void compiler::compIncDec(const Token& ident, bool isInc, const std::string& exp
 	auto *svl = new node::Expr{new node::ValExpr{node::ExprIntLit{INT_LITERAL, "1"}}};
 	if (isInc)
 	{
-		compVar(ident, new node::Expr{new node::BinExpr{new node::BinExprAdd{fvl, svl}}}, expectedType);
+		compVar(ident, new node::Expr{new node::BinExpr{fvl, svl}}, expectedType);
 	}
 	else
 	{
-		compVar(ident, new node::Expr{new node::BinExpr{new node::BinExprSub{fvl, svl}}}, expectedType);
+		compVar(ident, new node::Expr{new node::BinExpr{fvl, svl}}, expectedType);
 	}
 }
 
 bool compiler::compBinExpr(const node::BinExpr &expr, const std::string &expectedType)
 {
-    struct exprVisitor
-    {
-        std::string expectedType;
-
-        explicit exprVisitor(std::string expectedType) : expectedType(std::move(expectedType)) {}
-
-        bool operator()(const node::BinExprAdd *binExprAdd) const
-        {
-            if (compExpr(*binExprAdd->fvl, STR_TYPE) || compExpr(*binExprAdd->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            else if (compExpr(*binExprAdd->fvl, CHAR_TYPE) || compExpr(*binExprAdd->svl, CHAR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Arithmetic Operations Cannot Be Used With Char Constants";
-                exit(EXIT_FAILURE);
-            }
-            if (compExpr(*binExprAdd->fvl, expectedType) && compExpr(*binExprAdd->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tadd rdx, rdi\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        bool operator()(const node::BinExprSub *binExprSub) const
-        {
-            if (compExpr(*binExprSub->fvl, STR_TYPE) || compExpr(*binExprSub->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            else if (compExpr(*binExprSub->fvl, CHAR_TYPE) || compExpr(*binExprSub->svl, CHAR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Arithmetic Operations Cannot Be Used With Char Constants";
-                exit(EXIT_FAILURE);
-            }
-            if (compExpr(*binExprSub->fvl, expectedType) && compExpr(*binExprSub->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tsub rdx, rdi\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        bool operator()(const node::BinExprMul *binExprMul) const
-        {
-            if (compExpr(*binExprMul->fvl, STR_TYPE) || compExpr(*binExprMul->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            else if (compExpr(*binExprMul->fvl, CHAR_TYPE) || compExpr(*binExprMul->svl, CHAR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Arithmetic Operations Cannot Be Used With Char Constants";
-                exit(EXIT_FAILURE);
-            }
-            if (compExpr(*binExprMul->fvl, expectedType) && compExpr(*binExprMul->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\timul rdx, rdi\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        bool operator()(const node::BinExprDiv *binExprDiv) const
-        {
-            if (compExpr(*binExprDiv->fvl, STR_TYPE) || compExpr(*binExprDiv->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            else if (compExpr(*binExprDiv->fvl, CHAR_TYPE) || compExpr(*binExprDiv->svl, CHAR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Arithmetic Operations Cannot Be Used With Char Constants";
-                exit(EXIT_FAILURE);
-            }
-            if (compExpr(*binExprDiv->fvl, expectedType) && compExpr(*binExprDiv->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tmov rax, rdx\n";
-	            m_output << "\txor rdx, rdx\n";
-	            m_output << "\tcqo\n";
-                m_output << "\tidiv rdi\n";
-                m_output << "\tmov rdx, rax\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        bool operator()(const node::EQCondition *binEqCond) const
-        {
-            if (compExpr(*binEqCond->fvl, STR_TYPE) || compExpr(*binEqCond->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            std::string trueLabel = createLabel();
-            std::string endLabel = createLabel();
-            if (compExpr(*binEqCond->fvl, expectedType) && compExpr(*binEqCond->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tcmp rdx, rdi\n";
-                m_output << "\tje " << trueLabel << "\n";
-                m_output << "\tmov rdx, 0\n";
-                m_output << "\tjmp " << endLabel << "\n";
-                m_output << "\t" << trueLabel << ":\n";
-                m_output << "\tmov rdx, 1\n";
-                m_output << "\t" << endLabel << ":\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        bool operator()(const node::NotEQCondition *binNotEqCond) const
-        {
-            if (compExpr(*binNotEqCond->fvl, STR_TYPE) || compExpr(*binNotEqCond->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            std::string trueLabel = createLabel();
-            std::string endLabel = createLabel();
-            if (compExpr(*binNotEqCond->fvl, expectedType) && compExpr(*binNotEqCond->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tcmp rdx, rdi\n";
-                m_output << "\tjne " << trueLabel << "\n";
-                m_output << "\tmov rdx, 0\n";
-                m_output << "\tjmp " << endLabel << "\n";
-                m_output << "\t" << trueLabel << ":\n";
-                m_output << "\tmov rdx, 1\n";
-                m_output << "\t" << endLabel << ":\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        bool operator()(const node::LessCondition *binLessCond) const
-        {
-            if (compExpr(*binLessCond->fvl, STR_TYPE) || compExpr(*binLessCond->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            std::string trueLabel = createLabel();
-            std::string endLabel = createLabel();
-            if (compExpr(*binLessCond->fvl, expectedType) && compExpr(*binLessCond->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tcmp rdx, rdi\n";
-                m_output << "\tjl " << trueLabel << "\n";
-                m_output << "\tmov rdx, 0\n";
-                m_output << "\tjmp " << endLabel << "\n";
-                m_output << "\t" << trueLabel << ":\n";
-                m_output << "\tmov rdx, 1\n";
-                m_output << "\t" << endLabel << ":\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        bool operator()(const node::GreaterCondition *binGreaterCond) const
-        {
-            if (compExpr(*binGreaterCond->fvl, STR_TYPE) || compExpr(*binGreaterCond->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            std::string trueLabel = createLabel();
-            std::string endLabel = createLabel();
-            if (compExpr(*binGreaterCond->fvl, expectedType) && compExpr(*binGreaterCond->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tcmp rdx, rdi\n";
-                m_output << "\tjg " << trueLabel << "\n";
-                m_output << "\tmov rdx, 0\n";
-                m_output << "\tjmp " << endLabel << "\n";
-                m_output << "\t" << trueLabel << ":\n";
-                m_output << "\tmov rdx, 1\n";
-                m_output << "\t" << endLabel << ":\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        bool operator()(const node::EQLessCondition *binLessEqCond) const
-        {
-            if (compExpr(*binLessEqCond->fvl, STR_TYPE) || compExpr(*binLessEqCond->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            std::string trueLabel = createLabel();
-            std::string endLabel = createLabel();
-            if (compExpr(*binLessEqCond->fvl, expectedType) && compExpr(*binLessEqCond->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tcmp rdx, rdi\n";
-                m_output << "\tjle " << trueLabel << "\n";
-                m_output << "\tmov rdx, 0\n";
-                m_output << "\tjmp " << endLabel << "\n";
-                m_output << "\t" << trueLabel << ":\n";
-                m_output << "\tmov rdx, 1\n";
-                m_output << "\t" << endLabel << ":\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        bool operator()(const node::EQGreaterCondition *binGreatEqCond) const
-        {
-            if (compExpr(*binGreatEqCond->fvl, STR_TYPE) || compExpr(*binGreatEqCond->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            std::string trueLabel = createLabel();
-            std::string endLabel = createLabel();
-            if (compExpr(*binGreatEqCond->fvl, expectedType) && compExpr(*binGreatEqCond->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tcmp rdx, rdi\n";
-                m_output << "\tjge " << trueLabel << "\n";
-                m_output << "\tmov rdx, 0\n";
-                m_output << "\tjmp " << endLabel << "\n";
-                m_output << "\t" << trueLabel << ":\n";
-                m_output << "\tmov rdx, 1\n";
-                m_output << "\t" << endLabel << ":\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-        bool operator()(const node::AndCondition *binAndCond) const
-        {
-            if (compExpr(*binAndCond->fvl, STR_TYPE) || compExpr(*binAndCond->svl, STR_TYPE))
-            {
-                std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-                exit(EXIT_FAILURE);
-            }
-            std::string falseLabel = createLabel();
-            std::string endLabel = createLabel();
-            if (compExpr(*binAndCond->fvl, expectedType) && compExpr(*binAndCond->svl, expectedType))
-            {
-                pop("rdi");
-                pop("rdx");
-                m_output << "\tcmp rdx, 0\n";
-                m_output << "\tjle " << falseLabel << "\n";
-                m_output << "\tcmp rdi, 0\n";
-                m_output << "\tjle " << falseLabel << "\n";
-                m_output << "\tmov rdx, 1\n";
-                m_output << "\tjmp " << endLabel << "\n";
-                m_output << "\t" << falseLabel << ":\n";
-                m_output << "\tmov rdx, 0\n";
-                m_output << "\t" << endLabel << ":\n";
-                push("rdx");
-                m_output << "\txor rdx, rdx\n";
-                m_output << "\txor rdi, rdi\n";
-                return true;
-            }
-            else
-            {
-                return false;
-            }
-        }
-	    bool operator()(const node::OrCondition *binOrCond) const
-	    {
-		    if (compExpr(*binOrCond->fvl, STR_TYPE) || compExpr(*binOrCond->svl, STR_TYPE))
-		    {
-			    std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
-			    exit(EXIT_FAILURE);
-		    }
-		    std::string trueLabel = createLabel();
-		    std::string endLabel = createLabel();
-		    if (compExpr(*binOrCond->fvl, expectedType) && compExpr(*binOrCond->svl, expectedType))
-		    {
-			    pop("rdi");
-			    pop("rdx");
-			    m_output << "\tcmp rdx, 0\n";
-			    m_output << "\tjg " << trueLabel << "\n";
-			    m_output << "\tcmp rdi, 0\n";
-			    m_output << "\tjg " << trueLabel << "\n";
-			    m_output << "\tmov rdx, 0\n";
-			    m_output << "\tjmp " << endLabel << "\n";
-			    m_output << "\t" << trueLabel << ":\n";
-			    m_output << "\tmov rdx, 1\n";
-			    m_output << "\t" << endLabel << ":\n";
-			    push("rdx");
-			    m_output << "\txor rdx, rdx\n";
-			    m_output << "\txor rdi, rdi\n";
-			    return true;
-		    }
-		    else
-		    {
-			    return false;
-		    }
-	    }
-    };
-
-    exprVisitor visitor(expectedType);
-    return std::visit(visitor, expr.var);
+	if (compExpr(*expr.fvl, STR_TYPE) || compExpr(*expr.svl, STR_TYPE))
+	{
+		std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
+		exit(EXIT_FAILURE);
+	}
+	Tokens op = expr.oper;
+	if (op == PLUS || op == MINUS || op == MULT || op == DIV)
+	{
+		if (compExpr(*expr.fvl, CHAR_TYPE) || compExpr(*expr.svl, CHAR_TYPE))
+		{
+			std::cerr << "[Compile Error] ERR009 Arithmetic Operations Cannot Be Used With Char Constants";
+			exit(EXIT_FAILURE);
+		}
+	}
+	if (!compExpr(*expr.fvl, expectedType) || !compExpr(*expr.svl, expectedType))
+	{
+		return false;
+	}
+	pop("rdi");
+	pop("rdx");
+	if (op == Tokens::PLUS)
+	{
+		m_output << "\tadd rdx, rdi\n";
+	}
+	else if (op == Tokens::MINUS)
+	{
+		m_output << "\tsub rdx, rdi\n";
+	}
+	else if (op == Tokens::MULT)
+	{
+		m_output << "\timul rdx, rdi\n";
+	}
+	else if (op == Tokens::DIV)
+	{
+		m_output << "\tmov rax, rdx\n";
+		m_output << "\txor rdx, rdx\n";
+		m_output << "\tcqo\n";
+		m_output << "\tidiv rdi\n";
+		m_output << "\tmov rdx, rax\n";
+	}
+	else if (op == Tokens::EQEQ)
+	{
+		std::string trueLabel = createLabel();
+		std::string endLabel = createLabel();
+		m_output << "\tcmp rdx, rdi\n";
+		m_output << "\tje " << trueLabel << "\n";
+		m_output << "\tmov rdx, 0\n";
+		m_output << "\tjmp " << endLabel << "\n";
+		m_output << "\t" << trueLabel << ":\n";
+		m_output << "\tmov rdx, 1\n";
+		m_output << "\t" << endLabel << ":\n";
+	}
+	else if (op == Tokens::NOTEQ)
+	{
+		std::string trueLabel = createLabel();
+		std::string endLabel = createLabel();
+		m_output << "\tcmp rdx, rdi\n";
+		m_output << "\tjne " << trueLabel << "\n";
+		m_output << "\tmov rdx, 0\n";
+		m_output << "\tjmp " << endLabel << "\n";
+		m_output << "\t" << trueLabel << ":\n";
+		m_output << "\tmov rdx, 1\n";
+		m_output << "\t" << endLabel << ":\n";
+	}
+	else if (op == Tokens::LESS)
+	{
+		std::string trueLabel = createLabel();
+		std::string endLabel = createLabel();
+		m_output << "\tcmp rdx, rdi\n";
+		m_output << "\tjl " << trueLabel << "\n";
+		m_output << "\tmov rdx, 0\n";
+		m_output << "\tjmp " << endLabel << "\n";
+		m_output << "\t" << trueLabel << ":\n";
+		m_output << "\tmov rdx, 1\n";
+		m_output << "\t" << endLabel << ":\n";
+	}
+	else if (op == Tokens::GREATER)
+	{
+		std::string trueLabel = createLabel();
+		std::string endLabel = createLabel();
+		m_output << "\tcmp rdx, rdi\n";
+		m_output << "\tjg " << trueLabel << "\n";
+		m_output << "\tmov rdx, 0\n";
+		m_output << "\tjmp " << endLabel << "\n";
+		m_output << "\t" << trueLabel << ":\n";
+		m_output << "\tmov rdx, 1\n";
+		m_output << "\t" << endLabel << ":\n";
+	}
+	else if (op == Tokens::LESSEQ)
+	{
+		std::string trueLabel = createLabel();
+		std::string endLabel = createLabel();
+		m_output << "\tcmp rdx, rdi\n";
+		m_output << "\tjle " << trueLabel << "\n";
+		m_output << "\tmov rdx, 0\n";
+		m_output << "\tjmp " << endLabel << "\n";
+		m_output << "\t" << trueLabel << ":\n";
+		m_output << "\tmov rdx, 1\n";
+		m_output << "\t" << endLabel << ":\n";
+	}
+	else if (op == Tokens::GREATEQ)
+	{
+		std::string trueLabel = createLabel();
+		std::string endLabel = createLabel();
+		m_output << "\tcmp rdx, rdi\n";
+		m_output << "\tjge " << trueLabel << "\n";
+		m_output << "\tmov rdx, 0\n";
+		m_output << "\tjmp " << endLabel << "\n";
+		m_output << "\t" << trueLabel << ":\n";
+		m_output << "\tmov rdx, 1\n";
+		m_output << "\t" << endLabel << ":\n";
+	}
+	else if (op == Tokens::AND)
+	{
+		std::string falseLabel = createLabel();
+		std::string endLabel = createLabel();
+		m_output << "\tcmp rdx, 0\n";
+		m_output << "\tjle " << falseLabel << "\n";
+		m_output << "\tcmp rdi, 0\n";
+		m_output << "\tjle " << falseLabel << "\n";
+		m_output << "\tmov rdx, 1\n";
+		m_output << "\tjmp " << endLabel << "\n";
+		m_output << "\t" << falseLabel << ":\n";
+		m_output << "\tmov rdx, 0\n";
+		m_output << "\t" << endLabel << ":\n";
+	}
+	else if (op == Tokens::OR)
+	{
+		std::string trueLabel = createLabel();
+		std::string endLabel = createLabel();
+		m_output << "\tcmp rdx, 0\n";
+		m_output << "\tjg " << trueLabel << "\n";
+		m_output << "\tcmp rdi, 0\n";
+		m_output << "\tjg " << trueLabel << "\n";
+		m_output << "\tmov rdx, 0\n";
+		m_output << "\tjmp " << endLabel << "\n";
+		m_output << "\t" << trueLabel << ":\n";
+		m_output << "\tmov rdx, 1\n";
+		m_output << "\t" << endLabel << ":\n";
+	}
+	push("rdx");
+	m_output << "\txor rdx, rdx\n";
+	m_output << "\txor rdi, rdi\n";
+	return true;
 }
 
 bool compiler::compExpr(const node::Expr &expr, const std::string &expectedType)

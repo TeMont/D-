@@ -54,75 +54,12 @@ namespace node
     {
         std::variant<ExprIntLit, ExprStrLit, ExprBoolLit, ExprCharLit, ExprIdent, NotCondition, PostfixInc, PrefixInc, PostfixDec, PrefixDec> var;
     };
-
-    struct BinExprAdd
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-    struct BinExprSub
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-    struct BinExprMul
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-    struct BinExprDiv
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-    struct EQCondition
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-    struct NotEQCondition
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-    struct LessCondition
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-    struct GreaterCondition
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-    struct EQLessCondition
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-    struct EQGreaterCondition
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-    struct AndCondition
-    {
-        Expr* fvl;
-        Expr* svl;
-    };
-	struct OrCondition
+	struct BinExpr
 	{
 		Expr* fvl;
 		Expr* svl;
+		Tokens oper;
 	};
-	struct BinExpr
-    {
-        std::variant<
-                    BinExprAdd*, BinExprSub*, BinExprMul*, BinExprDiv*,
-					EQCondition*, NotEQCondition*, LessCondition*, GreaterCondition*,
-					EQLessCondition*, EQGreaterCondition*, AndCondition*, OrCondition*> var;
-    };
-
     struct Expr
     {
         std::variant<ValExpr*, BinExpr*, StmtInput*> var;
