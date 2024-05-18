@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "../source/Compile/compile.cpp"
+#include "../source/Compile/compiler.cpp"
 
 extern std::vector<std::vector<std::string>> typeArr;
 extern std::vector<Tokens> binOpArr;

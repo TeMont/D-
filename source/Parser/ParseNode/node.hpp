@@ -1,9 +1,6 @@
 #pragma once
-
-#include "../Token/token.hpp"
+#include "../../Token/token.hpp"
 #include <variant>
-#include <unordered_map>
-
 
 namespace node
 {
@@ -123,45 +120,3 @@ namespace node
 		std::vector<Stmt> statements;
 	};
 }
-class parser
-{
-public:
-	inline explicit parser(std::vector<Token> tokens) : m_tokens(std::move(tokens))
-	{
-	}
-
-	std::optional<node::Expr>
-	parseExpr(const std::string &expectedType, bool isRequired = true, uint8_t minPriority = 1);
-	std::optional<node::ValExpr> parseValExpr(const std::string &expectedType, bool isRequired = true);
-	std::optional<node::StmtIf> parseIfStmt();
-	std::optional<node::IfPred> parseIfPred();
-	std::optional<node::StmtLet> parseLet();
-	std::optional<node::StmtInput> parseInputStmt();
-	std::optional<node::IncDec> parseIncDec();
-	std::optional<node::Stmt> parseStmt(bool expectSemi = true);
-	std::optional<node::Prog> parseProg();
-	static std::unordered_map<Tokens, std::string> letToType;
-
-#ifdef TEST
-	void setTokens(std::vector<Token> tokens)
-	{
-		m_tokens = std::move(tokens);
-	}
-	void pushToken(const Token& token)
-	{
-		m_tokens.push_back(token);
-	}
-#endif
-
-private:
-
-	[[nodiscard]] std::optional<Token> peek(int offset = 0) const;
-	Token consume();
-	void tryConsume(char charToConsume);
-	static std::optional<uint8_t> op_to_prior(Tokens op);
-	std::vector<Token> m_tokens;
-	static std::unordered_map<std::string, std::string> m_vars;
-	size_t m_index = 0;
-	node::Prog prog;
-};
-

@@ -6,8 +6,8 @@
 #include <filesystem>
 #include "../headers/filesys.hpp"
 #include "Token/token.hpp"
-#include "Lexer/lexer.hpp"
-#include "Compile/compile.hpp"
+#include "Parser/parser.hpp"
+#include "Compile/compiler.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -31,8 +31,8 @@ int main(int argc, char *argv[])
 				tokenizer tokenize(std::move(source));
 				std::vector<Token> tokenVec = tokenize.tokenize();
 
-				parser parse(std::move(tokenVec));
-				std::optional<node::Prog> prog = parse.parseProg();
+				parser parse(tokenVec);
+				std::optional<node::Prog> prog = parser::parseProg();
 
 				if (!prog.has_value())
 				{

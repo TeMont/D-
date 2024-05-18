@@ -1,6 +1,8 @@
 #pragma once
 
-#include "../Lexer/lexer.hpp"
+#include "../Parser/parser.hpp"
+#include "ExpressionCompiler/exprCompiler.hpp"
+#include "VariableCompiler/varCompiler.hpp"
 #include <thread>
 #include <chrono>
 #include <iostream>
@@ -17,14 +19,8 @@ public:
 	}
 
 	std::stringstream compile();
-	static bool compExpr(const node::Expr &expr, const std::string &expectedType);
-	static bool compBinExpr(const node::BinExpr &expr, const std::string &expectedType);
-	static void compBoolExpr(const std::optional<std::string> &literal, bool isReversed = false);
-	static bool compValExpr(const node::ValExpr &expr, const std::string &expectedType);
 	static void compIfPred(const node::IfPred &pred, const std::string &endLabel);
-	static void compVar(const node::StmtVar &stmtVar);
-	static void compIncDec(const Token &ident, bool isInc, const std::string &expectedType);
-	static void compLet(const node::StmtLet &stmtLet);
+	static void compIf(const node::StmtIf &stmtIf);
 	static void compInput(const node::StmtInput &stmtInput);
 	static void compStmt(const node::Stmt &stmt);
 	static std::string createLabel();
@@ -62,17 +58,8 @@ public:
 	}
 #endif
 
-private:
-
-	struct Var
-	{
-		size_t stackLoc;
-		std::string Type;
-		bool isConst;
-	};
 	const node::Prog m_prog;
 	static size_t m_stackSize;
-	static std::unordered_map<std::string, Var> m_vars;
 	static std::stringstream m_output;
 	static std::stringstream m_SC;
 	static std::stringstream m_bssSC;
