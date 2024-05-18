@@ -22,7 +22,7 @@ public:
 	static void compBoolExpr(const std::optional<std::string> &literal, bool isReversed = false);
 	static bool compValExpr(const node::ValExpr &expr, const std::string &expectedType);
 	static void compIfPred(const node::IfPred &pred, const std::string &endLabel);
-	static void compVar(Token ident, node::Expr *expr, const std::string &expectedType);
+	static void compVar(const node::StmtVar &stmtVar);
 	static void compIncDec(const Token &ident, bool isInc, const std::string &expectedType);
 	static void compLet(const node::StmtLet &stmtLet);
 	static void compInput(const node::StmtInput &stmtInput);

@@ -517,22 +517,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 		tryConsume('=');
 		if (auto nodeExpr = parseExpr(m_vars[varIdent.value.value()]))
 		{
-			if (m_vars[varIdent.value.value()] == STR_TYPE)
-			{
-				stmtNode = {{node::StmtStrVar{varIdent, new node::Expr(nodeExpr.value())}}};
-			}
-			else if (m_vars[varIdent.value.value()] == INT_TYPE)
-			{
-				stmtNode = {{node::StmtIntVar{varIdent, new node::Expr(nodeExpr.value())}}};
-			}
-			else if (m_vars[varIdent.value.value()] == CHAR_TYPE)
-			{
-				stmtNode = {{node::StmtCharVar{varIdent, new node::Expr(nodeExpr.value())}}};
-			}
-			else if (m_vars[varIdent.value.value()] == BOOL_TYPE)
-			{
-				stmtNode = {{node::StmtBoolVar{varIdent, new node::Expr(nodeExpr.value())}}};
-			}
+			stmtNode = {{node::StmtVar{varIdent, new node::Expr(nodeExpr.value()), m_vars[varIdent.value.value()]}}};
 		}
 		else
 		{

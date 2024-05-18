@@ -1,27 +1,29 @@
 int firstNum;
 int secondNum;
+int thirdNum;
 int result;
 char symbol;
 
 firstNum = stdInput("Enter First Num: ");
 symbol = stdInput("Enter Action Symbol: ");
 secondNum = stdInput("Enter Second Num: ");
+thirdNum = stdInput("Enter Third Num: ");
 
 if (symbol == '+')
 {
-    result = firstNum + secondNum;
+    result = firstNum + secondNum + thirdNum;
 }
 elif (symbol == '-')
 {
-    result = firstNum - secondNum;
+    result = firstNum - secondNum - thirdNum;
 }
 elif (symbol == '*')
 {
-    result = firstNum * secondNum;
+    result = firstNum * secondNum * thirdNum;
 }
 elif (symbol == '/')
 {
-    result = firstNum / secondNum;
+    result = firstNum / secondNum / thirdNum;
 }
 else
 {

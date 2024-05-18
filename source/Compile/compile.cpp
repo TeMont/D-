@@ -226,11 +226,11 @@ void compiler::compIncDec(const Token &ident, bool isInc, const std::string &exp
 	auto *svl = new node::Expr{new node::ValExpr{node::ExprIntLit{INT_LITERAL, "1"}}};
 	if (isInc)
 	{
-		compVar(ident, new node::Expr{new node::BinExpr{fvl, svl, Tokens::PLUS}}, expectedType);
+		compVar({ident, new node::Expr{new node::BinExpr{fvl, svl, Tokens::PLUS}}, expectedType});
 	}
 	else
 	{
-		compVar(ident, new node::Expr{new node::BinExpr{fvl, svl, Tokens::MINUS}}, expectedType);
+		compVar({ident, new node::Expr{new node::BinExpr{fvl, svl, Tokens::MINUS}}, expectedType});
 	}
 }
 
@@ -572,14 +572,14 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
 	std::visit(visitor, pred.var);
 }
 
-void compiler::compVar(Token ident, node::Expr *expr, const std::string &expectedType)
+void compiler::compVar(const node::StmtVar &stmtVar)
 {
-	if (!m_vars.count(ident.value.value()))
+	if (!m_vars.count(stmtVar.ident.value.value()))
 	{
-		std::cerr << "[Compile Error] ERR004 Identifier '" << ident.value.value() << "' Was Not Declared";
+		std::cerr << "[Compile Error] ERR004 Identifier '" << stmtVar.ident.value.value() << "' Was Not Declared";
 		exit(EXIT_FAILURE);
 	}
-	const auto &var = m_vars[ident.value.value()];
+	const auto &var = m_vars[stmtVar.ident.value.value()];
 	if (var.isConst)
 	{
 		std::cerr << "[Compile Error] ERR012 Cannot Change Value Of Const Variables";
@@ -587,7 +587,8 @@ void compiler::compVar(Token ident, node::Expr *expr, const std::string &expecte
 	}
 	if (var.Type == BOOL_TYPE)
 	{
-		if (!compExpr(*expr, INT_TYPE) && !compExpr(*expr, CHAR_TYPE) && !compExpr(*expr, BOOL_TYPE))
+		if (!compExpr(*stmtVar.Expr, INT_TYPE) && !compExpr(*stmtVar.Expr, CHAR_TYPE) &&
+		    !compExpr(*stmtVar.Expr, BOOL_TYPE))
 		{
 			std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 			exit(EXIT_FAILURE);
@@ -598,9 +599,9 @@ void compiler::compVar(Token ident, node::Expr *expr, const std::string &expecte
 		m_output << "\tmov [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
 		m_output << "\txor rdx, rdx\n";
 	}
-	else if (var.Type == expectedType)
+	else if (var.Type == stmtVar.type)
 	{
-		if (!compExpr(*expr, expectedType))
+		if (!compExpr(*stmtVar.Expr, stmtVar.type))
 		{
 			std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
 			exit(EXIT_FAILURE);
@@ -880,24 +881,9 @@ void compiler::compStmt(const node::Stmt &stmt)
 			m_output << ";;\t/let\n";
 		}
 
-		void operator()(const node::StmtIntVar &stmtIntVar)
+		void operator()(const node::StmtVar &stmtVar)
 		{
-			compVar(stmtIntVar.ident, stmtIntVar.Expr, INT_TYPE);
-		}
-
-		void operator()(const node::StmtStrVar &stmtStrVar)
-		{
-			compVar(stmtStrVar.ident, stmtStrVar.Expr, STR_TYPE);
-		}
-
-		void operator()(const node::StmtBoolVar &stmtBoolVar)
-		{
-			compVar(stmtBoolVar.ident, stmtBoolVar.Expr, BOOL_TYPE);
-		}
-
-		void operator()(const node::StmtCharVar &stmtCharVar)
-		{
-			compVar(stmtCharVar.ident, stmtCharVar.Expr, CHAR_TYPE);
+			compVar(stmtVar);
 		}
 	};
 	stmtVisitor visitor;

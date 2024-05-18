@@ -1,7 +1,8 @@
 SC0: db 'Enter First Num: ',00H
 SC1: db 'Enter Action Symbol: ',00H
 SC2: db 'Enter Second Num: ',00H
-SC3: db 'You Entered Incorrect Symbol',00H
+SC3: db 'Enter Third Num: ',00H
+SC4: db 'You Entered Incorrect Symbol',00H
 section .bss
 extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess
 
@@ -32,6 +33,9 @@ main:
 ;;	let
 	push rdx
 ;;	/let
+;;	let
+	push rdx
+;;	/let
 ;;	Input
 	mov rdx, SC0
 	push rdx
@@ -50,7 +54,7 @@ main:
 	call _clearBuffer
 ;;	/Input
 	pop rdx
-	mov [rsp + 24], rdx
+	mov [rsp + 32], rdx
 	xor rdx, rdx
 ;;	Input
 	mov rdx, SC1
@@ -90,6 +94,26 @@ main:
 	call _clearBuffer
 ;;	/Input
 	pop rdx
+	mov [rsp + 24], rdx
+	xor rdx, rdx
+;;	Input
+	mov rdx, SC3
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	mov rsi, InputBuffer
+	mov rax, 256
+	call _scanf
+	call _stoi
+	push rdi
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+	mov rsi, InputBuffer
+	mov rdx, 256
+	call _clearBuffer
+;;	/Input
+	pop rdx
 	mov [rsp + 16], rdx
 	xor rdx, rdx
 ;;	if
@@ -112,7 +136,14 @@ main:
 	pop rdx
 	cmp rdx, 0
 	je label0
-	push QWORD [rsp + 24]
+	push QWORD [rsp + 32]
+	push QWORD [rsp + 32]
+	pop rdi
+	pop rdx
+	add rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
 	push QWORD [rsp + 24]
 	pop rdi
 	pop rdx
@@ -147,7 +178,14 @@ main:
 	pop rdx
 	cmp rdx, 0
 	je label4
-	push QWORD [rsp + 24]
+	push QWORD [rsp + 32]
+	push QWORD [rsp + 32]
+	pop rdi
+	pop rdx
+	sub rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
 	push QWORD [rsp + 24]
 	pop rdi
 	pop rdx
@@ -182,7 +220,14 @@ main:
 	pop rdx
 	cmp rdx, 0
 	je label7
-	push QWORD [rsp + 24]
+	push QWORD [rsp + 32]
+	push QWORD [rsp + 32]
+	pop rdi
+	pop rdx
+	imul rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
 	push QWORD [rsp + 24]
 	pop rdi
 	pop rdx
@@ -217,7 +262,18 @@ main:
 	pop rdx
 	cmp rdx, 0
 	je label10
-	push QWORD [rsp + 24]
+	push QWORD [rsp + 32]
+	push QWORD [rsp + 32]
+	pop rdi
+	pop rdx
+	mov rax, rdx
+	xor rdx, rdx
+	cqo
+	idiv rdi
+	mov rdx, rax
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
 	push QWORD [rsp + 24]
 	pop rdi
 	pop rdx
@@ -238,7 +294,7 @@ main:
 	label10:
 ;;	else
 ;;	Output
-	mov rdx, SC3
+	mov rdx, SC4
 	push rdx
 	xor rdx, rdx
 	pop rdx

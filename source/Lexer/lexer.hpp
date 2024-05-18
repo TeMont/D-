@@ -99,25 +99,11 @@ namespace node
 		bool isConst = false;
 		Tokens letType;
 	};
-	struct StmtIntVar
+	struct StmtVar
 	{
 		Token ident;
 		Expr *Expr;
-	};
-	struct StmtStrVar
-	{
-		Token ident;
-		Expr *Expr;
-	};
-	struct StmtBoolVar
-	{
-		Token ident;
-		Expr *Expr;
-	};
-	struct StmtCharVar
-	{
-		Token ident;
-		Expr *Expr;
+		std::string type;
 	};
 	struct StmtOutput
 	{
@@ -129,8 +115,8 @@ namespace node
 	};
 	struct Stmt
 	{
-		std::variant<StmtReturn, StmtLet, StmtStrVar, StmtIntVar, StmtBoolVar,
-				StmtCharVar, StmtIf, StmtOutput, StmtInput, StmtWhileLoop, StmtForLoop, IncDec> var;
+		std::variant<StmtReturn, StmtLet, StmtVar, StmtIf, StmtOutput, StmtInput, StmtWhileLoop, StmtForLoop, IncDec>
+				var;
 	};
 	struct Prog
 	{
