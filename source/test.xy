@@ -1,11 +1,32 @@
-int x = 10;
-int y = --x + 10 - 2 + x++ - x--;
+int firstNum;
+int secondNum;
+int result;
+char symbol;
 
-y--;
---y;
-++x;
-x++;
+firstNum = stdInput("Enter First Num: ");
+symbol = stdInput("Enter Action Symbol: ");
+secondNum = stdInput("Enter Second Num: ");
 
-stdOut(y);
-stdOut("\n");
-stdOut(x);
+if (symbol == '+')
+{
+    result = firstNum + secondNum;
+}
+elif (symbol == '-')
+{
+    result = firstNum - secondNum;
+}
+elif (symbol == '*')
+{
+    result = firstNum * secondNum;
+}
+elif (symbol == '/')
+{
+    result = firstNum / secondNum;
+}
+else
+{
+    stdOut("You Entered Incorrect Symbol");
+    return 1;
+}
+stdOut(result);
+return 0;
