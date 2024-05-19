@@ -20,11 +20,11 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 			const auto &var = varCompiler::m_vars[exprIdent.ident.value.value()];
 			if (expectedType == var.Type)
 			{
-				compiler::push("QWORD [rsp + " + std::to_string((compiler::m_stackSize - var.stackLoc - 1) * 8) + "]");
+				varCompiler::push("QWORD [rsp + " + std::to_string((varCompiler::m_stackSize - var.stackLoc - 1) * 8) + "]");
 			}
 			else if (expectedType == BOOL_TYPE && var.Type != STR_TYPE)
 			{
-				compBoolExpr({"QWORD [rsp + " + std::to_string((compiler::m_stackSize - var.stackLoc - 1) * 8) + "]"});
+				compBoolExpr({"QWORD [rsp + " + std::to_string((varCompiler::m_stackSize - var.stackLoc - 1) * 8) + "]"});
 			}
 			else
 			{
@@ -41,7 +41,7 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 				{
 					compiler::m_output << "\tmov rdx, " << exprInt.intLit.value.value() << '\n';
 				}
-				compiler::push("rdx");
+				varCompiler::push("rdx");
 				compiler::m_output << "\txor rdx, rdx\n";
 			}
 			else if (expectedType == BOOL_TYPE)
@@ -63,7 +63,7 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 				{
 					compiler::m_output << "\tmov rdx, '" << exprChar.charLit.value.value() << "'\n";
 				}
-				compiler::push("rdx");
+				varCompiler::push("rdx");
 				compiler::m_output << "\txor rdx, rdx\n";
 			}
 			else if (expectedType == BOOL_TYPE)
@@ -89,7 +89,7 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 				compiler::m_SC << SC << ": db '" << exprStr.strLit.value.value() << "',00H\n";
 				compiler::m_output << "\tmov rdx, " << SC << '\n';
 			}
-			compiler::push("rdx");
+			varCompiler::push("rdx");
 			compiler::m_output << "\txor rdx, rdx\n";
 			return true;
 		}
@@ -111,7 +111,7 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 					compiler::m_output << "\tmov rdx, 1\n";
 				}
 			}
-			compiler::push("rdx");
+			varCompiler::push("rdx");
 			compiler::m_output << "\txor rdx, rdx\n";
 			return true;
 		}
@@ -122,7 +122,7 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 			{
 				return false;
 			}
-			compiler::pop("rdx");
+			varCompiler::pop("rdx");
 			compBoolExpr("rdx", true);
 			return true;
 		}
@@ -168,7 +168,7 @@ void expressionCompiler::compBoolExpr(const std::optional<std::string> &literal,
 	compiler::m_output << "\t" << falseLabel << ":\n";
 	compiler::m_output << "\tmov rdx, 0\n";
 	compiler::m_output << "\t" << endLabel << ":\n";
-	compiler::push("rdx");
+	varCompiler::push("rdx");
 	compiler::m_output << "\txor rdx, rdx\n";
 }
 
@@ -192,8 +192,8 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 	{
 		return false;
 	}
-	compiler::pop("rdi");
-	compiler::pop("rdx");
+	varCompiler::pop("rdi");
+	varCompiler::pop("rdx");
 	std::string trueLabel = compiler::createLabel();
 	std::string endLabel = compiler::createLabel();
 	if (op == Tokens::PLUS)
@@ -301,7 +301,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 		compiler::m_output << "\tmov rdx, 1\n";
 		compiler::m_output << "\t" << endLabel << ":\n";
 	}
-	compiler::push("rdx");
+	varCompiler::push("rdx");
 	compiler::m_output << "\txor rdx, rdx\n";
 	compiler::m_output << "\txor rdi, rdi\n";
 	return true;
@@ -358,12 +358,12 @@ bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &exp
 				compiler::m_output << "\t" << trueLabel2 << ":\n";
 				compiler::m_output << "\tmov byte [rdx+rcx-2], 00H\n";
 				compiler::m_output << "\t" << endLabel2 << ":\n";
-				compiler::push("rdx");
+				varCompiler::push("rdx");
 			}
 			else if (expectedType == CHAR_TYPE)
 			{
 				compiler::m_output << "\tmovzx rdx, byte [rsi]\n";
-				compiler::push("rdx");
+				varCompiler::push("rdx");
 			}
 			else if (expectedType == INT_TYPE || expectedType == BOOL_TYPE)
 			{
@@ -374,7 +374,7 @@ bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &exp
 				}
 				else
 				{
-					compiler::push("rdi");
+					varCompiler::push("rdi");
 				}
 			}
 			else

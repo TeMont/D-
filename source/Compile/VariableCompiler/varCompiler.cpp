@@ -1,6 +1,6 @@
 #include "varCompiler.hpp"
 
-
+size_t varCompiler::m_stackSize = 0;
 
 std::unordered_map<std::string, varCompiler::Var> varCompiler::m_vars;
 
@@ -26,10 +26,10 @@ void varCompiler::compVar(const node::StmtVar &stmtVar)
 			std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 			exit(EXIT_FAILURE);
 		}
-		compiler::pop("rdx");
+		pop("rdx");
 		expressionCompiler::compBoolExpr("rdx");
-		compiler::pop("rdx");
-		compiler::m_output << "\tmov [rsp + " + std::to_string((compiler::m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
+		pop("rdx");
+		compiler::m_output << "\tmov [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
 		compiler::m_output << "\txor rdx, rdx\n";
 	}
 	else if (var.Type == stmtVar.type)
@@ -39,8 +39,8 @@ void varCompiler::compVar(const node::StmtVar &stmtVar)
 			std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
 			exit(EXIT_FAILURE);
 		}
-		compiler::pop("rdx");
-		compiler::m_output << "\tmov [rsp + " + std::to_string((compiler::m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
+		pop("rdx");
+		compiler::m_output << "\tmov [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
 		compiler::m_output << "\txor rdx, rdx\n";
 	}
 	else
@@ -58,7 +58,7 @@ void varCompiler::compLet(const node::StmtLet &stmtLet)
 		exit(EXIT_FAILURE);
 	}
 	std::string varType = letToType[stmtLet.letType];
-	m_vars.insert({stmtLet.ident.value.value(), Var{compiler::m_stackSize, varType, stmtLet.isConst}});
+	m_vars.insert({stmtLet.ident.value.value(), Var{m_stackSize, varType, stmtLet.isConst}});
 	if (varType == BOOL_TYPE)
 	{
 		if (stmtLet.Expr != nullptr)
@@ -70,12 +70,12 @@ void varCompiler::compLet(const node::StmtLet &stmtLet)
 				std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 				exit(EXIT_FAILURE);
 			}
-			compiler::pop("rdx");
+			pop("rdx");
 			expressionCompiler::compBoolExpr("rdx");
 		}
 		else
 		{
-			compiler::push("rdx");
+			push("rdx");
 		}
 	}
 	else
@@ -95,7 +95,19 @@ void varCompiler::compLet(const node::StmtLet &stmtLet)
 				std::cerr << "[Compile Error] ERR011 Const Variables Cannot Be Declared Without Value";
 				exit(EXIT_FAILURE);
 			}
-			compiler::push("rdx");
+			push("rdx");
 		}
 	}
+}
+
+void varCompiler::push(const std::string &reg)
+{
+	compiler::m_output << "\tpush " << reg << "\n";
+	++m_stackSize;
+}
+
+void varCompiler::pop(const std::string &reg)
+{
+	compiler::m_output << "\tpop " << reg << "\n";
+	--m_stackSize;
 }

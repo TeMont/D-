@@ -3,6 +3,7 @@
 #include "../Parser/parser.hpp"
 #include "ExpressionCompiler/exprCompiler.hpp"
 #include "VariableCompiler/varCompiler.hpp"
+#include "ScopeCompiler/scopeCompiler.hpp"
 #include <thread>
 #include <chrono>
 #include <iostream>
@@ -25,8 +26,6 @@ public:
 	static void compStmt(const node::Stmt &stmt);
 	static std::string createLabel();
 	static std::string createSCLabel();
-	static void push(const std::string &reg);
-	static void pop(const std::string &reg);
 
 #ifdef TEST
 	static std::string getM_output()
@@ -59,7 +58,6 @@ public:
 #endif
 
 	const node::Prog m_prog;
-	static size_t m_stackSize;
 	static std::stringstream m_output;
 	static std::stringstream m_SC;
 	static std::stringstream m_bssSC;

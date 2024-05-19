@@ -53,21 +53,25 @@ namespace node
 		std::variant<ValExpr *, BinExpr *, StmtInput *> var;
 	};
 	struct IfPred;
+	struct Scope
+	{
+		std::vector<Stmt> statements;
+	};
 	struct StmtIf
 	{
 		Expr *cond;
-		std::vector<Stmt> statements;
+		Scope scope;
 		std::optional<IfPred *> pred;
 	};
 	struct StmtElIf
 	{
 		Expr *cond;
-		std::vector<Stmt> statements;
+		Scope scope;
 		std::optional<IfPred *> pred;
 	};
 	struct StmtElse
 	{
-		std::vector<Stmt> statements;
+		Scope scope;
 	};
 	struct IfPred
 	{
@@ -76,14 +80,14 @@ namespace node
 	struct StmtWhileLoop
 	{
 		Expr *cond;
-		std::vector<Stmt> statements;
+		Scope scope;
 	};
 	struct StmtForLoop
 	{
 		std::optional<Stmt *> initStmt;
 		std::optional<Expr *> cond;
 		std::optional<Stmt *> iterationStmt;
-		std::vector<Stmt> statements;
+		Scope scope;
 	};
 	struct StmtReturn
 	{

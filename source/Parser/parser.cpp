@@ -38,22 +38,13 @@ std::optional<node::StmtIf> parser::parseIfStmt()
 	if (auto cond = ExpressionParser::parseExpr(ANY_TYPE))
 	{
 		tryConsume(')');
-		tryConsume('{');
-		std::vector<node::Stmt> stmts;
-		while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
-		{
-			if (auto const &stmt = parseStmt())
-			{
-				stmts.push_back(stmt.value());
-			}
-		}
-		tryConsume('}');
+		node::Scope scope = scopeParser::parseScope();
 		auto pred = parseIfPred();
 		if (pred.has_value())
 		{
-			return {node::StmtIf({new node::Expr(cond.value()), stmts, {new node::IfPred(pred.value())}})};
+			return {node::StmtIf({new node::Expr(cond.value()), scope, {new node::IfPred(pred.value())}})};
 		}
-		return {node::StmtIf({new node::Expr(cond.value()), stmts})};
+		return {node::StmtIf({new node::Expr(cond.value()), scope})};
 	}
 	else
 	{
@@ -74,27 +65,18 @@ std::optional<node::IfPred> parser::parseIfPred()
 		auto tempIfStmt = parseIfStmt().value();
 		if (tempIfStmt.pred.has_value())
 		{
-			stmtPred = {new node::StmtElIf({tempIfStmt.cond, tempIfStmt.statements, tempIfStmt.pred})};
+			stmtPred = {new node::StmtElIf({tempIfStmt.cond, tempIfStmt.scope, tempIfStmt.pred})};
 		}
 		else
 		{
-			stmtPred = {new node::StmtElIf({tempIfStmt.cond, tempIfStmt.statements})};
+			stmtPred = {new node::StmtElIf({tempIfStmt.cond, tempIfStmt.scope})};
 		}
 	}
 	else if (peek().value().type == Tokens::ELSE)
 	{
 		consume();
-		tryConsume('{');
-		std::vector<node::Stmt> stmts;
-		while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
-		{
-			if (auto const &stmt = parseStmt())
-			{
-				stmts.push_back(stmt.value());
-			}
-		}
-		tryConsume('}');
-		stmtPred = {new node::StmtElse({stmts})};
+		node::Scope scope = scopeParser::parseScope();
+		stmtPred = {new node::StmtElse({scope})};
 	}
 	else
 	{
@@ -144,11 +126,11 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 		auto tempIfStmt = parseIfStmt().value();
 		if (tempIfStmt.pred.has_value())
 		{
-			stmtNode = {node::StmtIf({tempIfStmt.cond, tempIfStmt.statements, tempIfStmt.pred})};
+			stmtNode = {node::StmtIf({tempIfStmt.cond, tempIfStmt.scope, tempIfStmt.pred})};
 		}
 		else
 		{
-			stmtNode = {node::StmtIf({tempIfStmt.cond, tempIfStmt.statements})};
+			stmtNode = {node::StmtIf({tempIfStmt.cond, tempIfStmt.scope})};
 		}
 		expectSemi = false;
 	}
@@ -189,17 +171,8 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 		if (auto cond = ExpressionParser::parseExpr(ANY_TYPE))
 		{
 			tryConsume(')');
-			tryConsume('{');
-			std::vector<node::Stmt> stmts;
-			while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
-			{
-				if (auto const &stmt = parseStmt())
-				{
-					stmts.push_back(stmt.value());
-				}
-			}
-			tryConsume('}');
-			stmtNode = {node::StmtWhileLoop{new node::Expr({cond.value()}), stmts}};
+			node::Scope scope = scopeParser::parseScope();
+			stmtNode = {node::StmtWhileLoop{new node::Expr({cond.value()}), scope}};
 			expectSemi = false;
 		}
 		else
@@ -223,16 +196,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 		tryConsume(';');
 		std::optional<node::Stmt> itStmt = parseStmt(false);
 		tryConsume(')');
-		tryConsume('{');
-		std::vector<node::Stmt> stmts;
-		while (peek().has_value() && peek().value().type != Tokens::RBRACKET)
-		{
-			if (auto const &stmt = parseStmt())
-			{
-				stmts.push_back(stmt.value());
-			}
-		}
-		tryConsume('}');
+		node::Scope scope = scopeParser::parseScope();
 		if (initStmt.has_value())
 		{
 			stmtForLoop.initStmt = {new node::Stmt{initStmt.value()}};
@@ -245,7 +209,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 		{
 			stmtForLoop.iterationStmt = {new node::Stmt{itStmt.value()}};
 		}
-		stmtForLoop.statements = stmts;
+		stmtForLoop.scope = scope;
 		stmtNode = {stmtForLoop};
 		expectSemi = false;
 	}
@@ -289,6 +253,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 	}
 	else
 	{
+		auto x = peek();
 		return {};
 	}
 	if (expectSemi)

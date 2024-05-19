@@ -10,9 +10,11 @@ set(SOURCE
         source/Compile/compiler.cpp
         source/Compile/ExpressionCompiler/exprCompiler.cpp
         source/Compile/VariableCompiler/varCompiler.cpp
+        source/Compile/ScopeCompiler/scopeCompiler.cpp
         source/Parser/parser.cpp
         source/Parser/ExpressionParser/exprParser.cpp
         source/Parser/VariableParser/varParser.cpp
+        source/Parser/ScopesParser/scopeParser.cpp
         source/Token/token.cpp
         source/Token/TokenUtils/tokenUtils.cpp
 )

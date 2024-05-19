@@ -40,7 +40,6 @@ std::string compiler::createSCLabel()
 	return ss.str();
 }
 
-size_t compiler::m_stackSize;
 uint64_t compiler::m_labelCount = 0;
 uint64_t compiler::m_SCCount = 0;
 std::stringstream compiler::m_output;
@@ -51,14 +50,14 @@ void compiler::compInput(const node::StmtInput &stmtInput)
 {
 	if (expressionCompiler::compExpr(*stmtInput.msg, STR_TYPE))
 	{
-		pop("rdx");
+		varCompiler::pop("rdx");
 		m_output << "\tmov rsi, InputBuffer\n";
 		m_output << "\tmov rax, 256\n";
 		m_output << "\tcall _scanf\n";
 	}
 	else if (expressionCompiler::compExpr(*stmtInput.msg, CHAR_TYPE))
 	{
-		pop("rdx");
+		varCompiler::pop("rdx");
 		m_output << "\tmov rsi, OutputBuffer\n";
 		m_output << "\tmov [rsi], dx\n";
 		m_output << "\tmov rdx, rsi\n";
@@ -69,7 +68,7 @@ void compiler::compInput(const node::StmtInput &stmtInput)
 	else if (expressionCompiler::compExpr(*stmtInput.msg, INT_TYPE) ||
 	         expressionCompiler::compExpr(*stmtInput.msg, BOOL_TYPE))
 	{
-		pop("rdx");
+		varCompiler::pop("rdx");
 		m_output << "\tmov rax, rdx\n";
 		m_output << "\tmov rsi, OutputBuffer\n";
 		m_output << "\tcall _itoa\n";
@@ -92,8 +91,6 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
 
 		void operator()(const node::StmtElIf *elIf) const
 		{
-			size_t beginStackSize = m_stackSize;
-			std::unordered_map<std::string, varCompiler::Var> beginVars = varCompiler::m_vars;
 			m_output << ";;\telif\n";
 			std::string falseLabel = createLabel();
 			if (!expressionCompiler::compExpr(*elIf->cond, INT_TYPE) &&
@@ -103,19 +100,10 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
 				std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 				exit(EXIT_FAILURE);
 			}
-			pop("rdx");
+			varCompiler::pop("rdx");
 			m_output << "\tcmp rdx, 0\n";
 			m_output << "\tje " << falseLabel << "\n";
-			for (auto const &i: elIf->statements)
-			{
-				compStmt(i);
-			}
-			size_t newVarAmount = m_stackSize - beginStackSize;
-			for (int i = 0; i < newVarAmount; ++i)
-			{
-				pop("rdx");
-			}
-			varCompiler::m_vars = beginVars;
+			scopeCompiler::compScope(elIf->scope);
 			m_output << "\txor rdx, rdx\n";
 			m_output << "\tjmp " << endLabel << "\n";
 			m_output << ";;\t/elif\n";
@@ -129,19 +117,8 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
 
 		void operator()(const node::StmtElse *Else)
 		{
-			size_t beginStackSize = m_stackSize;
-			std::unordered_map<std::string, varCompiler::Var> beginVars = varCompiler::m_vars;
 			m_output << ";;\telse\n";
-			for (auto const &i: Else->statements)
-			{
-				compStmt(i);
-			}
-			size_t newVarAmount = m_stackSize - beginStackSize;
-			for (int i = 0; i < newVarAmount; ++i)
-			{
-				pop("rdx");
-			}
-			varCompiler::m_vars = beginVars;
+			scopeCompiler::compScope(Else->scope);
 			m_output << "\txor rdx, rdx\n";
 			m_output << ";;\t/else\n";
 		}
@@ -152,8 +129,6 @@ void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
 
 void compiler::compIf(const node::StmtIf &stmtIf)
 {
-	size_t beginStackSize = m_stackSize;
-	std::unordered_map<std::string, varCompiler::Var> beginVars = varCompiler::m_vars;
 	m_output << ";;\tif\n";
 	std::string falseLabel = createLabel();
 	if (!expressionCompiler::compExpr(*stmtIf.cond, INT_TYPE) &&
@@ -163,19 +138,10 @@ void compiler::compIf(const node::StmtIf &stmtIf)
 		std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 		exit(EXIT_FAILURE);
 	}
-	pop("rdx");
+	varCompiler::pop("rdx");
 	m_output << "\tcmp rdx, 0\n";
 	m_output << "\tje " << falseLabel << "\n";
-	for (auto const &i: stmtIf.statements)
-	{
-		compStmt(i);
-	}
-	size_t newVarAmount = m_stackSize - beginStackSize;
-	for (int i = 0; i < newVarAmount; ++i)
-	{
-		pop("rdx");
-	}
-	varCompiler::m_vars = beginVars;
+	scopeCompiler::compScope(stmtIf.scope);
 	m_output << "\txor rdx, rdx\n";
 	m_output << ";;\t/if\n";
 	if (stmtIf.pred.has_value())
@@ -207,7 +173,7 @@ void compiler::compStmt(const node::Stmt &stmt)
 				std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
 				exit(EXIT_FAILURE);
 			}
-			pop("rcx");
+			varCompiler::pop("rcx");
 			m_output << "\tcall ExitProcess\n";
 			m_output << ";;\t/return\n";
 		}
@@ -222,12 +188,12 @@ void compiler::compStmt(const node::Stmt &stmt)
 			m_output << ";;\tOutput\n";
 			if (expressionCompiler::compExpr(*stmtOutput.Expr, STR_TYPE))
 			{
-				pop("rdx");
+				varCompiler::pop("rdx");
 				m_output << "\tcall _printf\n";
 			}
 			else if (expressionCompiler::compExpr(*stmtOutput.Expr, CHAR_TYPE))
 			{
-				pop("rdx");
+				varCompiler::pop("rdx");
 				m_output << "\tmov rsi, OutputBuffer\n";
 				m_output << "\tmov [rsi], dx\n";
 				m_output << "\tmov rdx, rsi\n";
@@ -239,7 +205,7 @@ void compiler::compStmt(const node::Stmt &stmt)
 			else if (expressionCompiler::compExpr(*stmtOutput.Expr, INT_TYPE) ||
 			         expressionCompiler::compExpr(*stmtOutput.Expr, BOOL_TYPE))
 			{
-				pop("rdx");
+				varCompiler::pop("rdx");
 				m_output << "\tmov rax, rdx\n";
 				m_output << "\tmov rsi, OutputBuffer\n";
 				m_output << "\tcall _itoa\n";
@@ -267,8 +233,6 @@ void compiler::compStmt(const node::Stmt &stmt)
 
 		void operator()(const node::StmtWhileLoop &whileLoop)
 		{
-			size_t beginStackSize = m_stackSize;
-			std::unordered_map<std::string, varCompiler::Var> beginVars = varCompiler::m_vars;
 			m_output << ";;\twhile loop\n";
 			std::string startLabel = createLabel();
 			std::string endLabel = createLabel();
@@ -280,19 +244,10 @@ void compiler::compStmt(const node::Stmt &stmt)
 				std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 				exit(EXIT_FAILURE);
 			}
-			pop("rdx");
+			varCompiler::pop("rdx");
 			m_output << "\tcmp rdx, 0\n";
 			m_output << "\tje " << endLabel << "\n";
-			for (auto const &stmt: whileLoop.statements)
-			{
-				compStmt(stmt);
-			}
-			size_t newVarAmount = m_stackSize - beginStackSize;
-			for (int i = 0; i < newVarAmount; ++i)
-			{
-				pop("rdx");
-			}
-			varCompiler::m_vars = beginVars;
+			scopeCompiler::compScope(whileLoop.scope);
 			m_output << "\txor rdx, rdx\n";
 			m_output << "\tjmp " << startLabel << "\n";
 			m_output << "\t" << endLabel << ":\n";
@@ -304,14 +259,12 @@ void compiler::compStmt(const node::Stmt &stmt)
 			m_output << ";;\tfor loop\n";
 			std::string startLabel = createLabel();
 			std::string endLabel = createLabel();
-			size_t beginStackSize = m_stackSize;
-			std::unordered_map<std::string, varCompiler::Var> beginVars = varCompiler::m_vars;
+			size_t beginStackSize = varCompiler::m_stackSize;
+			auto beginVars = varCompiler::m_vars;
 			if (forLoop.initStmt.has_value())
 			{
 				compStmt(*forLoop.initStmt.value());
 			}
-			size_t scopeBeginStackSize = m_stackSize;
-			std::unordered_map<std::string, varCompiler::Var> scopeBeginVars = varCompiler::m_vars;
 			m_output << "\t" << startLabel << ":\n";
 			if (forLoop.cond.has_value())
 			{
@@ -322,7 +275,7 @@ void compiler::compStmt(const node::Stmt &stmt)
 					std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 					exit(EXIT_FAILURE);
 				}
-				pop("rdx");
+				varCompiler::pop("rdx");
 			}
 			else
 			{
@@ -330,27 +283,18 @@ void compiler::compStmt(const node::Stmt &stmt)
 			}
 			m_output << "\tcmp rdx, 0\n";
 			m_output << "\tje " << endLabel << "\n";
-			for (auto const &stmt: forLoop.statements)
-			{
-				compStmt(stmt);
-			}
+			scopeCompiler::compScope(forLoop.scope);
 			if (forLoop.iterationStmt.has_value())
 			{
 				compStmt(*forLoop.iterationStmt.value());
 			}
-			size_t newVarAmount = m_stackSize - scopeBeginStackSize;
-			for (int i = 0; i < newVarAmount; ++i)
-			{
-				pop("rdx");
-			}
-			varCompiler::m_vars = scopeBeginVars;
 			m_output << "\txor rdx, rdx\n";
 			m_output << "\tjmp " << startLabel << "\n";
 			m_output << "\t" << endLabel << ":\n";
-			newVarAmount = m_stackSize - beginStackSize;
-			for (int i = 0; i < newVarAmount; ++i)
+			size_t popCount = varCompiler::m_stackSize - beginStackSize;
+			if (popCount != 0)
 			{
-				pop("rdx");
+				m_output << "\tadd rsp, " << popCount * 8 << "\n";
 			}
 			varCompiler::m_vars = beginVars;
 			m_output << "\txor rdx, rdx\n";
@@ -593,16 +537,4 @@ std::stringstream compiler::compile()
 	output << m_output.str();
 
 	return output;
-}
-
-void compiler::push(const std::string &reg)
-{
-	m_output << "\tpush " << reg << "\n";
-	++m_stackSize;
-}
-
-void compiler::pop(const std::string &reg)
-{
-	m_output << "\tpop " << reg << "\n";
-	--m_stackSize;
 }

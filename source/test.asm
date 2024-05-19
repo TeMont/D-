@@ -196,13 +196,48 @@ WAR1: db 'Runtime Warning. Cannot Convert String To Integer. Assigned 0',7,10,00
 global main
 main:
 ;;	let
-	mov rdx, 1
+	mov rdx, 10
 	push rdx
 	xor rdx, rdx
 ;;	/let
+;;	for loop
 ;;	let
+	mov rdx, 0
+	push rdx
+	xor rdx, rdx
+;;	/let
+	label0:
 	push QWORD [rsp + 0]
-	mov rdx, 3
+	push QWORD [rsp + 16]
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	jl label2
+	mov rdx, 0
+	jmp label3
+	label2:
+	mov rdx, 1
+	label3:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	je label1
+;;	Output
+	push QWORD [rsp + 0]
+	pop rdx
+	mov rax, rdx
+	mov rsi, OutputBuffer
+	call _itoa
+	mov rdx, rsi
+	call _printf
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+;;	/Output
+	push QWORD [rsp + 0]
+	mov rdx, 1
 	push rdx
 	xor rdx, rdx
 	pop rdi
@@ -211,83 +246,19 @@ main:
 	push rdx
 	xor rdx, rdx
 	xor rdi, rdi
-;;	/let
-;;	if
-	push QWORD [rsp + 8]
-	mov rdx, 1
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
+	xor rdx, rdx
+	jmp label0
+	label1:
+	add rsp, 8
+	xor rdx, rdx
+;;	/for loop
+;;	return
+	mov rdx, 0
 	push rdx
 	xor rdx, rdx
-	pop rdi
-	pop rdx
-	sub rdx, rdi
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	cmp rdx, 0
-	je label2
-;;	Output
-	mov rdx, 1
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	mov rax, rdx
-	mov rsi, OutputBuffer
-	call _itoa
-	mov rdx, rsi
-	call _printf
-	mov rsi, OutputBuffer
-	mov rdx, 20
-	call _clearBuffer
-;;	/Output
-	xor rdx, rdx
-;;	/if
-	jmp label5
-	label2:
-;;	elif
-	push QWORD [rsp + 8]
-	mov rdx, 1
-	push rdx
-	xor rdx, rdx
-	pop rdi
-	pop rdx
-	sub rdx, rdi
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	cmp rdx, 0
-	je label6
-;;	Output
-	mov rdx, 2
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	mov rax, rdx
-	mov rsi, OutputBuffer
-	call _itoa
-	mov rdx, rsi
-	call _printf
-	mov rsi, OutputBuffer
-	mov rdx, 20
-	call _clearBuffer
-;;	/Output
-	xor rdx, rdx
-	jmp label5
-;;	/elif
-	label6:
-	xor rdx, rdx
-	label5:
-	xor rdx, rdx
-;;	Output
-	push QWORD [rsp + 0]
-	pop rdx
-	mov rax, rdx
-	mov rsi, OutputBuffer
-	call _itoa
-	mov rdx, rsi
-	call _printf
-	mov rsi, OutputBuffer
-	mov rdx, 20
-	call _clearBuffer
-;;	/Output
+	pop rcx
+	call ExitProcess
+;;	/return

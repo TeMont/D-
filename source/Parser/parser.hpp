@@ -4,6 +4,7 @@
 #include "../Token/TokenUtils/tokenUtils.hpp"
 #include "ExpressionParser/exprParser.hpp"
 #include "VariableParser/varParser.hpp"
+#include "ScopesParser/scopeParser.hpp"
 
 class parser
 {
