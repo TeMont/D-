@@ -31,7 +31,7 @@ std::optional<node::StmtLet> varParser::parseLet()
 	if (parser::peek().has_value() && parser::peek().value().type == Tokens::EQ)
 	{
 		parser::consume();
-		if (auto nodeExpr = ExpressionParser::parseExpr(letToType[letType]))
+		if (auto nodeExpr = expressionParser::parseExpr(letToType[letType]))
 		{
 			return node::StmtLet{varIdent, new node::Expr(nodeExpr.value()), isConst, letType};
 		}

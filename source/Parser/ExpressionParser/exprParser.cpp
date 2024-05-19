@@ -1,6 +1,6 @@
 #include "exprParser.hpp"
 
-std::optional<node::ValExpr> ExpressionParser::parseValExpr(const std::string &expectedType, bool isRequired)
+std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &expectedType, bool isRequired)
 {
 	if (parser::peek().has_value())
 	{
@@ -90,7 +90,7 @@ std::optional<node::ValExpr> ExpressionParser::parseValExpr(const std::string &e
 }
 
 std::optional<node::Expr>
-ExpressionParser::parseExpr(const std::string &expectedType, bool isRequired, uint8_t minPriority)
+expressionParser::parseExpr(const std::string &expectedType, bool isRequired, uint8_t minPriority)
 {
 	node::Expr exprFvl;
 	if (parser::peek().has_value() && parser::peek().value().type == Tokens::INPUT)
@@ -134,7 +134,7 @@ ExpressionParser::parseExpr(const std::string &expectedType, bool isRequired, ui
 	return exprFvl;
 }
 
-std::optional<node::IncDec> ExpressionParser::parseIncDec()
+std::optional<node::IncDec> expressionParser::parseIncDec()
 {
 	node::IncDec nodeIncDec;
 	if (parser::peek().value().type == Tokens::INC || parser::peek().value().type == Tokens::DEC)

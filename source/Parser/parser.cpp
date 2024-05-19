@@ -31,65 +31,11 @@ void parser::tryConsume(char charToConsume)
 	consume();
 }
 
-std::optional<node::StmtIf> parser::parseIfStmt()
-{
-	consume();
-	tryConsume('(');
-	if (auto cond = ExpressionParser::parseExpr(ANY_TYPE))
-	{
-		tryConsume(')');
-		node::Scope scope = scopeParser::parseScope();
-		auto pred = parseIfPred();
-		if (pred.has_value())
-		{
-			return {node::StmtIf({new node::Expr(cond.value()), scope, {new node::IfPred(pred.value())}})};
-		}
-		return {node::StmtIf({new node::Expr(cond.value()), scope})};
-	}
-	else
-	{
-		std::cerr << "[Parse Error] ERR007 Expected Condition";
-		exit(EXIT_FAILURE);
-	}
-}
-
-std::optional<node::IfPred> parser::parseIfPred()
-{
-	if (!peek().has_value())
-	{
-		return {};
-	}
-	std::optional<node::IfPred> stmtPred;
-	if (peek().value().type == Tokens::ELIF)
-	{
-		auto tempIfStmt = parseIfStmt().value();
-		if (tempIfStmt.pred.has_value())
-		{
-			stmtPred = {new node::StmtElIf({tempIfStmt.cond, tempIfStmt.scope, tempIfStmt.pred})};
-		}
-		else
-		{
-			stmtPred = {new node::StmtElIf({tempIfStmt.cond, tempIfStmt.scope})};
-		}
-	}
-	else if (peek().value().type == Tokens::ELSE)
-	{
-		consume();
-		node::Scope scope = scopeParser::parseScope();
-		stmtPred = {new node::StmtElse({scope})};
-	}
-	else
-	{
-		return {};
-	}
-	return stmtPred;
-}
-
 std::optional<node::StmtInput> parser::parseInputStmt()
 {
 	consume();
 	tryConsume('(');
-	if (auto nodeExpr = ExpressionParser::parseExpr(ANY_TYPE))
+	if (auto nodeExpr = expressionParser::parseExpr(ANY_TYPE))
 	{
 		tryConsume(')');
 		return node::StmtInput{new node::Expr(nodeExpr.value())};
@@ -111,7 +57,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 	if (peek().value().type == Tokens::RETURN)
 	{
 		consume();
-		if (auto nodeExpr = ExpressionParser::parseExpr(ANY_TYPE))
+		if (auto nodeExpr = expressionParser::parseExpr(ANY_TYPE))
 		{
 			stmtNode = {{node::StmtReturn{new node::Expr(nodeExpr.value())}}};
 		}
@@ -123,15 +69,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 	}
 	else if (peek().value().type == Tokens::IF)
 	{
-		auto tempIfStmt = parseIfStmt().value();
-		if (tempIfStmt.pred.has_value())
-		{
-			stmtNode = {node::StmtIf({tempIfStmt.cond, tempIfStmt.scope, tempIfStmt.pred})};
-		}
-		else
-		{
-			stmtNode = {node::StmtIf({tempIfStmt.cond, tempIfStmt.scope})};
-		}
+		stmtNode = {scopeParser::parseIfStmt()};
 		expectSemi = false;
 	}
 	else if (peek().value().type == Tokens::ELIF)
@@ -148,7 +86,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 	{
 		consume();
 		tryConsume('(');
-		if (auto nodeExpr = ExpressionParser::parseExpr(ANY_TYPE))
+		if (auto nodeExpr = expressionParser::parseExpr(ANY_TYPE))
 		{
 			tryConsume(')');
 			stmtNode = {node::StmtOutput{new node::Expr(nodeExpr.value())}};
@@ -166,51 +104,12 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 	}
 	else if (peek().value().type == Tokens::WHILE)
 	{
-		consume();
-		tryConsume('(');
-		if (auto cond = ExpressionParser::parseExpr(ANY_TYPE))
-		{
-			tryConsume(')');
-			node::Scope scope = scopeParser::parseScope();
-			stmtNode = {node::StmtWhileLoop{new node::Expr({cond.value()}), scope}};
-			expectSemi = false;
-		}
-		else
-		{
-			std::cerr << "[Parse Error] ERR007 Expected Condition";
-			exit(EXIT_FAILURE);
-		}
+		stmtNode = {scopeParser::parseWhileLoop()};
+		expectSemi = false;
 	}
 	else if (peek().value().type == Tokens::FOR)
 	{
-		node::StmtForLoop stmtForLoop;
-		consume();
-		tryConsume('(');
-		std::optional<node::Stmt> initStmt = parseStmt();
-		if (!initStmt.has_value())
-		{
-			tryConsume(';');
-		}
-		std::optional<node::Expr> cond;
-		cond = ExpressionParser::parseExpr(ANY_TYPE, false);
-		tryConsume(';');
-		std::optional<node::Stmt> itStmt = parseStmt(false);
-		tryConsume(')');
-		node::Scope scope = scopeParser::parseScope();
-		if (initStmt.has_value())
-		{
-			stmtForLoop.initStmt = {new node::Stmt{initStmt.value()}};
-		}
-		if (cond.has_value())
-		{
-			stmtForLoop.cond = {new node::Expr{cond.value()}};
-		}
-		if (itStmt.has_value())
-		{
-			stmtForLoop.iterationStmt = {new node::Stmt{itStmt.value()}};
-		}
-		stmtForLoop.scope = scope;
-		stmtNode = {stmtForLoop};
+		stmtNode = {scopeParser::parseForLoop()};
 		expectSemi = false;
 	}
 	else if ((peek().value().type == Tokens::INT_LET || peek().value().type == Tokens::STRING_LET ||
@@ -226,7 +125,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 	else if (peek().value().type == Tokens::INC || peek().value().type == Tokens::DEC ||
 	         peek(1).value().type == Tokens::INC || peek(1).value().type == Tokens::DEC)
 	{
-		std::optional<node::IncDec> incDecStmt = ExpressionParser::parseIncDec();
+		std::optional<node::IncDec> incDecStmt = expressionParser::parseIncDec();
 		if (incDecStmt.has_value())
 		{
 			stmtNode = {incDecStmt.value()};
@@ -241,7 +140,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 			exit(EXIT_FAILURE);
 		}
 		tryConsume('=');
-		if (auto nodeExpr = ExpressionParser::parseExpr(varParser::m_vars[varIdent.value.value()]))
+		if (auto nodeExpr = expressionParser::parseExpr(varParser::m_vars[varIdent.value.value()]))
 		{
 			stmtNode = {{node::StmtVar{varIdent, new node::Expr(nodeExpr.value()), varParser::m_vars[varIdent.value.value()]}}};
 		}

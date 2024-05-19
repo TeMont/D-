@@ -79,86 +79,6 @@ void compiler::compInput(const node::StmtInput &stmtInput)
 	}
 }
 
-void compiler::compIfPred(const node::IfPred &pred, const std::string &endLabel)
-{
-	struct predVisitor
-	{
-		std::string endLabel;
-
-		explicit predVisitor(std::string endLabel) : endLabel(std::move(endLabel))
-		{
-		}
-
-		void operator()(const node::StmtElIf *elIf) const
-		{
-			m_output << ";;\telif\n";
-			std::string falseLabel = createLabel();
-			if (!expressionCompiler::compExpr(*elIf->cond, INT_TYPE) &&
-			    !expressionCompiler::compExpr(*elIf->cond, CHAR_TYPE) &&
-			    !expressionCompiler::compExpr(*elIf->cond, BOOL_TYPE))
-			{
-				std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
-				exit(EXIT_FAILURE);
-			}
-			varCompiler::pop("rdx");
-			m_output << "\tcmp rdx, 0\n";
-			m_output << "\tje " << falseLabel << "\n";
-			scopeCompiler::compScope(elIf->scope);
-			m_output << "\txor rdx, rdx\n";
-			m_output << "\tjmp " << endLabel << "\n";
-			m_output << ";;\t/elif\n";
-			m_output << "\t" << falseLabel << ":\n";
-			if (elIf->pred.has_value())
-			{
-				compIfPred(*elIf->pred.value(), endLabel);
-			}
-			m_output << "\txor rdx, rdx\n";
-		}
-
-		void operator()(const node::StmtElse *Else)
-		{
-			m_output << ";;\telse\n";
-			scopeCompiler::compScope(Else->scope);
-			m_output << "\txor rdx, rdx\n";
-			m_output << ";;\t/else\n";
-		}
-	};
-	predVisitor visitor(endLabel);
-	std::visit(visitor, pred.var);
-}
-
-void compiler::compIf(const node::StmtIf &stmtIf)
-{
-	m_output << ";;\tif\n";
-	std::string falseLabel = createLabel();
-	if (!expressionCompiler::compExpr(*stmtIf.cond, INT_TYPE) &&
-	    !expressionCompiler::compExpr(*stmtIf.cond, CHAR_TYPE) &&
-	    !expressionCompiler::compExpr(*stmtIf.cond, BOOL_TYPE))
-	{
-		std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
-		exit(EXIT_FAILURE);
-	}
-	varCompiler::pop("rdx");
-	m_output << "\tcmp rdx, 0\n";
-	m_output << "\tje " << falseLabel << "\n";
-	scopeCompiler::compScope(stmtIf.scope);
-	m_output << "\txor rdx, rdx\n";
-	m_output << ";;\t/if\n";
-	if (stmtIf.pred.has_value())
-	{
-		std::string endLabel = createLabel();
-		m_output << "\tjmp " << endLabel << "\n";
-		m_output << "\t" << falseLabel << ":\n";
-		compIfPred(*stmtIf.pred.value(), endLabel);
-		m_output << "\t" << endLabel << ":\n";
-	}
-	else
-	{
-		m_output << "\t" << falseLabel << ":\n";
-	}
-	m_output << "\txor rdx, rdx\n";
-}
-
 void compiler::compStmt(const node::Stmt &stmt)
 {
 	struct stmtVisitor
@@ -180,7 +100,7 @@ void compiler::compStmt(const node::Stmt &stmt)
 
 		void operator()(const node::StmtIf &stmtIf)
 		{
-			compIf(stmtIf);
+			scopeCompiler::compIfStmt(stmtIf);
 		}
 
 		void operator()(const node::StmtOutput &stmtOutput)
@@ -233,72 +153,12 @@ void compiler::compStmt(const node::Stmt &stmt)
 
 		void operator()(const node::StmtWhileLoop &whileLoop)
 		{
-			m_output << ";;\twhile loop\n";
-			std::string startLabel = createLabel();
-			std::string endLabel = createLabel();
-			m_output << "\t" << startLabel << ":\n";
-			if (!expressionCompiler::compExpr(*whileLoop.cond, INT_TYPE) &&
-			    !expressionCompiler::compExpr(*whileLoop.cond, BOOL_TYPE) &&
-			    !expressionCompiler::compExpr(*whileLoop.cond, CHAR_TYPE))
-			{
-				std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
-				exit(EXIT_FAILURE);
-			}
-			varCompiler::pop("rdx");
-			m_output << "\tcmp rdx, 0\n";
-			m_output << "\tje " << endLabel << "\n";
-			scopeCompiler::compScope(whileLoop.scope);
-			m_output << "\txor rdx, rdx\n";
-			m_output << "\tjmp " << startLabel << "\n";
-			m_output << "\t" << endLabel << ":\n";
-			m_output << ";;\t/while loop\n";
+			scopeCompiler::compWhileLoop(whileLoop);
 		}
 
 		void operator()(const node::StmtForLoop &forLoop)
 		{
-			m_output << ";;\tfor loop\n";
-			std::string startLabel = createLabel();
-			std::string endLabel = createLabel();
-			size_t beginStackSize = varCompiler::m_stackSize;
-			auto beginVars = varCompiler::m_vars;
-			if (forLoop.initStmt.has_value())
-			{
-				compStmt(*forLoop.initStmt.value());
-			}
-			m_output << "\t" << startLabel << ":\n";
-			if (forLoop.cond.has_value())
-			{
-				if (!expressionCompiler::compExpr(*forLoop.cond.value(), INT_TYPE) &&
-				    !expressionCompiler::compExpr(*forLoop.cond.value(), BOOL_TYPE) &&
-				    !expressionCompiler::compExpr(*forLoop.cond.value(), CHAR_TYPE))
-				{
-					std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
-					exit(EXIT_FAILURE);
-				}
-				varCompiler::pop("rdx");
-			}
-			else
-			{
-				m_output << "\tmov rdx, 1\n";
-			}
-			m_output << "\tcmp rdx, 0\n";
-			m_output << "\tje " << endLabel << "\n";
-			scopeCompiler::compScope(forLoop.scope);
-			if (forLoop.iterationStmt.has_value())
-			{
-				compStmt(*forLoop.iterationStmt.value());
-			}
-			m_output << "\txor rdx, rdx\n";
-			m_output << "\tjmp " << startLabel << "\n";
-			m_output << "\t" << endLabel << ":\n";
-			size_t popCount = varCompiler::m_stackSize - beginStackSize;
-			if (popCount != 0)
-			{
-				m_output << "\tadd rsp, " << popCount * 8 << "\n";
-			}
-			varCompiler::m_vars = beginVars;
-			m_output << "\txor rdx, rdx\n";
-			m_output << ";;\t/for loop\n";
+			scopeCompiler::compForLoop(forLoop);
 		}
 
 		void operator()(const node::IncDec &incDec)

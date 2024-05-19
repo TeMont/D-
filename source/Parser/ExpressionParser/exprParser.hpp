@@ -1,7 +1,7 @@
 #pragma once
 #include "../parser.hpp"
 
-class ExpressionParser
+class expressionParser
 {
 public:
 	static std::optional<node::Expr> parseExpr(const std::string &expectedType, bool isRequired = true, uint8_t minPriority = 1);

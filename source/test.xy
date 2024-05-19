@@ -32,4 +32,3 @@ else
 }
 stdOut(result);
 return 0;
-

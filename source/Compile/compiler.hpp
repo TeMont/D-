@@ -20,8 +20,6 @@ public:
 	}
 
 	std::stringstream compile();
-	static void compIfPred(const node::IfPred &pred, const std::string &endLabel);
-	static void compIf(const node::StmtIf &stmtIf);
 	static void compInput(const node::StmtInput &stmtInput);
 	static void compStmt(const node::Stmt &stmt);
 	static std::string createLabel();

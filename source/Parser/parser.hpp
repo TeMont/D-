@@ -14,8 +14,6 @@ public:
 		m_tokens = tokens;
 	}
 
-	static std::optional<node::StmtIf> parseIfStmt();
-	static std::optional<node::IfPred> parseIfPred();
 	static std::optional<node::StmtInput> parseInputStmt();
 	static std::optional<node::Stmt> parseStmt(bool expectSemi = true);
 	static std::optional<node::Prog> parseProg();
