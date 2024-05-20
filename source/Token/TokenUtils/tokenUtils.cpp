@@ -31,4 +31,5 @@ std::optional<uint8_t> op_to_prior(Tokens op)
 std::unordered_map<Tokens, std::string> letToType = {{Tokens::INT_LET, INT_TYPE},
                                                      {Tokens::STRING_LET, STR_TYPE},
                                                      {Tokens::CHAR_LET, CHAR_TYPE},
-                                                     {Tokens::BOOL_LET, BOOL_TYPE},};
+                                                     {Tokens::BOOL_LET, BOOL_TYPE},
+                                                     {Tokens::FLOAT_LET, FLOAT_TYPE},};

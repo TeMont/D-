@@ -1,34 +1,66 @@
-int firstNum;
-int secondNum;
-int thirdNum;
-int result;
-char symbol;
+float a = 5.2;
+float b = 3.8;
+float c;
 
-firstNum = stdInput("Enter First Num: ");
-symbol = stdInput("Enter Action Symbol: ");
-secondNum = stdInput("Enter Second Num: ");
-thirdNum = stdInput("Enter Third Num: ");
+c = a + b;
+c = a - b;
+c = a * b;
+c = a / b;
 
-if (symbol == '+')
+
+if (a > b)
 {
-    result = firstNum + secondNum + thirdNum;
+    stdOut("a is greater than b\n");
 }
-elif (symbol == '-')
+
+if (a < b)
 {
-    result = firstNum - secondNum - thirdNum;
-}
-elif (symbol == '*')
-{
-    result = firstNum * secondNum * thirdNum;
-}
-elif (symbol == '/')
-{
-    result = firstNum / secondNum / thirdNum;
+    stdOut("a is less than b\n");
 }
 else
 {
-    stdOut("You Entered Incorrect Symbol");
-    return 1;
+    stdOut("a is not less than b\n");
 }
-stdOut(result);
+
+if (a >= b)
+{
+    stdOut("a is greater than or equal to b\n");
+}
+
+if (a <= b)
+{
+    stdOut("a is less than or equal to b\n");
+}
+
+if (a == b)
+{
+    stdOut("a is equal to b\n");
+}
+else
+{
+    stdOut("a is not equal to b\n");
+}
+
+if (a != b)
+{
+    stdOut("a is not equal to b\n");
+}
+if (a > 0.0)
+{
+    stdOut("a is positive number\n");
+}
+if (b > 0.0)
+{
+    stdOut("b is positive number\n");
+}
+
+if (a < 0.0)
+{
+    stdOut("a is a negative number\n");
+}
+else
+{
+    stdOut("a is not a negative number\n");
+}
+
 return 0;

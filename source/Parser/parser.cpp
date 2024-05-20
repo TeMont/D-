@@ -112,18 +112,21 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 		stmtNode = {scopeParser::parseForLoop()};
 		expectSemi = false;
 	}
-	else if ((peek().value().type == Tokens::INT_LET || peek().value().type == Tokens::STRING_LET ||
-	          peek().value().type == Tokens::BOOL_LET || peek().value().type == Tokens::CHAR_LET) ||
-	         peek().value().type == Tokens::CONST &&
-	         (peek(1).value().type == Tokens::INT_LET || peek(1).value().type == Tokens::STRING_LET ||
-	          peek(1).value().type == Tokens::BOOL_LET || peek(1).value().type == Tokens::CHAR_LET))
+	else if ((peek().value().type == Tokens::INT_LET || peek().value().type == Tokens::FLOAT_LET ||
+	          peek().value().type == Tokens::STRING_LET || peek().value().type == Tokens::BOOL_LET ||
+	          peek().value().type == Tokens::CHAR_LET) || peek().value().type == Tokens::CONST &&
+	                                                      (peek(1).value().type == Tokens::INT_LET ||
+	                                                       peek(1).value().type == Tokens::FLOAT_LET ||
+	                                                       peek(1).value().type == Tokens::STRING_LET ||
+	                                                       peek(1).value().type == Tokens::BOOL_LET ||
+	                                                       peek(1).value().type == Tokens::CHAR_LET))
 	{
 		auto letStmt = varParser::parseLet().value();
 		stmtNode = {letStmt};
 		varParser::m_vars.insert({letStmt.ident.value.value(), letToType[letStmt.letType]});
 	}
 	else if (peek().value().type == Tokens::INC || peek().value().type == Tokens::DEC ||
-	         peek(1).value().type == Tokens::INC || peek(1).value().type == Tokens::DEC)
+	         peek(1).has_value() && (peek(1).value().type == Tokens::INC || peek(1).value().type == Tokens::DEC))
 	{
 		std::optional<node::IncDec> incDecStmt = expressionParser::parseIncDec();
 		if (incDecStmt.has_value())
@@ -142,7 +145,9 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 		tryConsume('=');
 		if (auto nodeExpr = expressionParser::parseExpr(varParser::m_vars[varIdent.value.value()]))
 		{
-			stmtNode = {{node::StmtVar{varIdent, new node::Expr(nodeExpr.value()), varParser::m_vars[varIdent.value.value()]}}};
+			stmtNode = {{node::StmtVar{varIdent,
+			                           new node::Expr(nodeExpr.value()),
+			                           varParser::m_vars[varIdent.value.value()]}}};
 		}
 		else
 		{
@@ -152,7 +157,6 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
 	}
 	else
 	{
-		auto x = peek();
 		return {};
 	}
 	if (expectSemi)

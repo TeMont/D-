@@ -175,9 +175,7 @@ void compiler::compStmt(const node::Stmt &stmt)
 
 		void operator()(const node::StmtLet &stmtLet)
 		{
-			m_output << ";;\tlet\n";
 			varCompiler::compLet(stmtLet);
-			m_output << ";;\t/let\n";
 		}
 
 		void operator()(const node::StmtVar &stmtVar)

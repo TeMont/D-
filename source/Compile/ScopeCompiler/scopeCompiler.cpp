@@ -31,9 +31,8 @@ void scopeCompiler::compIfPred(const node::IfPred &pred, const std::string &endL
 		{
 			compiler::m_output << ";;\telif\n";
 			std::string falseLabel = compiler::createLabel();
-			if (!expressionCompiler::compExpr(*elIf->cond, INT_TYPE) &&
-			    !expressionCompiler::compExpr(*elIf->cond, CHAR_TYPE) &&
-			    !expressionCompiler::compExpr(*elIf->cond, BOOL_TYPE))
+			if (!expressionCompiler::compExpr(*elIf->cond, INT_TYPE, false) && !expressionCompiler::compExpr(*elIf->cond, FLOAT_TYPE, false) &&
+			    !expressionCompiler::compExpr(*elIf->cond, CHAR_TYPE, false) && !expressionCompiler::compExpr(*elIf->cond, BOOL_TYPE))
 			{
 				std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 				exit(EXIT_FAILURE);
@@ -69,9 +68,8 @@ void scopeCompiler::compIfStmt(const node::StmtIf &stmtIf)
 {
 	compiler::m_output << ";;\tif\n";
 	std::string falseLabel = compiler::createLabel();
-	if (!expressionCompiler::compExpr(*stmtIf.cond, INT_TYPE) &&
-	    !expressionCompiler::compExpr(*stmtIf.cond, CHAR_TYPE) &&
-	    !expressionCompiler::compExpr(*stmtIf.cond, BOOL_TYPE))
+	if (!expressionCompiler::compExpr(*stmtIf.cond, INT_TYPE, false) && !expressionCompiler::compExpr(*stmtIf.cond, FLOAT_TYPE, false) &&
+	    !expressionCompiler::compExpr(*stmtIf.cond, CHAR_TYPE, false) && !expressionCompiler::compExpr(*stmtIf.cond, BOOL_TYPE))
 	{
 		std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 		exit(EXIT_FAILURE);
@@ -111,9 +109,9 @@ void scopeCompiler::compForLoop(const node::StmtForLoop &forLoop)
 	compiler::m_output << "\t" << startLabel << ":\n";
 	if (forLoop.cond.has_value())
 	{
-		if (!expressionCompiler::compExpr(*forLoop.cond.value(), INT_TYPE) &&
-		    !expressionCompiler::compExpr(*forLoop.cond.value(), BOOL_TYPE) &&
-		    !expressionCompiler::compExpr(*forLoop.cond.value(), CHAR_TYPE))
+		if (!expressionCompiler::compExpr(*forLoop.cond.value(), INT_TYPE, false) &&
+		    !expressionCompiler::compExpr(*forLoop.cond.value(), FLOAT_TYPE, false) &&
+		    !expressionCompiler::compExpr(*forLoop.cond.value(), CHAR_TYPE, false) && !expressionCompiler::compExpr(*forLoop.cond.value(), BOOL_TYPE))
 		{
 			std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 			exit(EXIT_FAILURE);
@@ -150,9 +148,8 @@ void scopeCompiler::compWhileLoop(const node::StmtWhileLoop &whileLoop)
 	std::string startLabel = compiler::createLabel();
 	std::string endLabel = compiler::createLabel();
 	compiler::m_output << "\t" << startLabel << ":\n";
-	if (!expressionCompiler::compExpr(*whileLoop.cond, INT_TYPE) &&
-	    !expressionCompiler::compExpr(*whileLoop.cond, BOOL_TYPE) &&
-	    !expressionCompiler::compExpr(*whileLoop.cond, CHAR_TYPE))
+	if (!expressionCompiler::compExpr(*whileLoop.cond, INT_TYPE, false) && !expressionCompiler::compExpr(*whileLoop.cond, FLOAT_TYPE, false) &&
+	    !expressionCompiler::compExpr(*whileLoop.cond, CHAR_TYPE, false) && !expressionCompiler::compExpr(*whileLoop.cond, BOOL_TYPE))
 	{
 		std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 		exit(EXIT_FAILURE);

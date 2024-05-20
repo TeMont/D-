@@ -7,7 +7,7 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
 		node::ValExpr valExpr;
 		if (parser::peek().value().type == Tokens::INT_LITERAL)
 		{
-			if (expectedType != INT_TYPE && expectedType != BOOL_TYPE && expectedType != ANY_TYPE)
+			if (expectedType != INT_TYPE && expectedType != BOOL_TYPE && expectedType != FLOAT_TYPE && expectedType != ANY_TYPE)
 			{
 				return {};
 			}
@@ -40,6 +40,14 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
 				return {};
 			}
 			valExpr = {node::ExprBoolLit{parser::consume()}};
+		}
+		else if (parser::peek().value().type == Tokens::FLOAT_LITERAL)
+		{
+			if (expectedType != FLOAT_TYPE && expectedType != INT_TYPE && expectedType != ANY_TYPE)
+			{
+				return {};
+			}
+			valExpr = {node::ExprFloatLit{parser::consume()}};
 		}
 		else if (parser::peek().value().type == Tokens::NOT)//FOR EXPRESSIONS LIKE !20, !x
 		{

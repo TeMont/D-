@@ -1,12 +1,16 @@
 #include "exprCompiler.hpp"
 
-bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::string &expectedType)
+#include <utility>
+
+bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::string &expectedType, const bool &isConvertable)
 {
 	struct exprVisitor
 	{
 		std::string expectedType;
+		bool isConvertable;
 
-		explicit exprVisitor(std::string expectedType) : expectedType(std::move(expectedType))
+		explicit exprVisitor(std::string expectedType, const bool &isConvertable) : expectedType(std::move(expectedType)),
+		                                                                            isConvertable(isConvertable)
 		{
 		}
 
@@ -20,16 +24,46 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 			const auto &var = varCompiler::m_vars[exprIdent.ident.value.value()];
 			if (expectedType == var.Type)
 			{
-				varCompiler::push("QWORD [rsp + " + std::to_string((varCompiler::m_stackSize - var.stackLoc - 1) * 8) + "]");
+				compiler::m_output << "\tmov rdx, QWORD [rsp + " + std::to_string((varCompiler::m_stackSize - var.stackLoc - 1) * 8) + "]\n";
 			}
-			else if (expectedType == BOOL_TYPE && var.Type != STR_TYPE)
+			else if (isConvertable)
 			{
-				compBoolExpr({"QWORD [rsp + " + std::to_string((varCompiler::m_stackSize - var.stackLoc - 1) * 8) + "]"});
+				if (var.Type == FLOAT_TYPE && expectedType == INT_TYPE)
+				{
+					floatToInt("QWORD [rsp + " + std::to_string((varCompiler::m_stackSize - var.stackLoc - 1) * 8) + "]");
+				}
+				else if (var.Type == INT_TYPE && expectedType == FLOAT_TYPE)
+				{
+					intToFloat("QWORD [rsp + " + std::to_string((varCompiler::m_stackSize - var.stackLoc - 1) * 8) + "]");
+				}
+				else if (expectedType == BOOL_TYPE)
+				{
+					if (var.Type == FLOAT_TYPE)
+					{
+						compiler::m_output << "\tmovq xmm0, "
+						                   << "QWORD [rsp + " + std::to_string((varCompiler::m_stackSize - var.stackLoc - 1) * 8) + "]" << "rax\n";
+						compBoolExprFloat32({"xmm0"}, false, true);
+					}
+					else if (var.Type == CHAR_TYPE || var.Type == BOOL_TYPE || var.Type == INT_TYPE)
+					{
+						compBoolExpr({"QWORD [rsp + " + std::to_string((varCompiler::m_stackSize - var.stackLoc - 1) * 8) + "]"});
+					}
+					else
+					{
+						return false;
+					}
+					return true;
+				}
+				else
+				{
+					return false;
+				}
 			}
 			else
 			{
 				return false;
 			}
+			varCompiler::push("rdx");
 			return true;
 		}
 
@@ -41,17 +75,30 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 				{
 					compiler::m_output << "\tmov rdx, " << exprInt.intLit.value.value() << '\n';
 				}
-				varCompiler::push("rdx");
-				compiler::m_output << "\txor rdx, rdx\n";
 			}
-			else if (expectedType == BOOL_TYPE)
+			else if (isConvertable)
 			{
-				compBoolExpr(exprInt.intLit.value);
+				if (expectedType == FLOAT_TYPE)
+				{
+					compiler::m_output << ((exprInt.intLit.value.has_value()) ? "\tmov rdx, " + exprInt.intLit.value.value() + "\n" : "");
+					intToFloat("rdx");
+				}
+				else if (expectedType == BOOL_TYPE)
+				{
+					compBoolExpr(exprInt.intLit.value);
+					return true;
+				}
+				else
+				{
+					return false;
+				}
 			}
 			else
 			{
 				return false;
 			}
+			varCompiler::push("rdx");
+			compiler::m_output << "\txor rdx, rdx\n";
 			return true;
 		}
 
@@ -66,9 +113,16 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 				varCompiler::push("rdx");
 				compiler::m_output << "\txor rdx, rdx\n";
 			}
-			else if (expectedType == BOOL_TYPE)
+			else if (isConvertable)
 			{
-				compBoolExpr({'\'' + exprChar.charLit.value.value() + '\''});
+				if (expectedType == BOOL_TYPE)
+				{
+					compBoolExpr({'\'' + exprChar.charLit.value.value() + '\''});
+				}
+				else
+				{
+					return false;
+				}
 			}
 			else
 			{
@@ -102,14 +156,43 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 			}
 			if ((exprBool.boolLit.value.has_value()))
 			{
-				if (exprBool.boolLit.value.value() == "false")
+				compiler::m_output << "\tmov rdx, " + std::to_string(exprBool.boolLit.value.value() == "true") + "\n";
+			}
+			varCompiler::push("rdx");
+			compiler::m_output << "\txor rdx, rdx\n";
+			return true;
+		}
+
+		bool operator()(const node::ExprFloatLit &exprFloat) const
+		{
+			if (expectedType == FLOAT_TYPE)
+			{
+				if (exprFloat.floatLit.value.has_value())
 				{
-					compiler::m_output << "\tmov rdx, 0\n";
+					compiler::m_output << "\tmov rdx,__?float32?__(" + exprFloat.floatLit.value.value() + ")\n";
 				}
-				else if (exprBool.boolLit.value.value() == "true")
+			}
+			else if (isConvertable)
+			{
+				if (expectedType == INT_TYPE)
 				{
-					compiler::m_output << "\tmov rdx, 1\n";
+					compiler::m_output
+							<< ((exprFloat.floatLit.value.has_value()) ? "\tmov rdx, __?float32?__(" + exprFloat.floatLit.value.value() + ")\n" : "");
+					floatToInt("rdx");
 				}
+				else if (expectedType == BOOL_TYPE)
+				{
+					compBoolExprFloat32(exprFloat.floatLit.value);
+					return true;
+				}
+				else
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
 			}
 			varCompiler::push("rdx");
 			compiler::m_output << "\txor rdx, rdx\n";
@@ -118,7 +201,11 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 
 		bool operator()(const node::NotCondition &exprNotCond) const
 		{
-			if (!compValExpr(*exprNotCond.val, expectedType))
+			if (expectedType == STR_TYPE)
+			{
+				return false;
+			}
+			if (!compValExpr(*exprNotCond.val, expectedType, isConvertable))
 			{
 				return false;
 			}
@@ -135,7 +222,7 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 			}
 			if (!incDec.isPref)
 			{
-				if (!compValExpr(node::ValExpr{node::ExprIdent{incDec.ident}}, expectedType))
+				if (!compValExpr(node::ValExpr{node::ExprIdent{incDec.ident}}, expectedType, isConvertable))
 				{
 					return false;
 				}
@@ -143,12 +230,12 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
 			compIncDec(incDec.ident, incDec.isInc, expectedType);
 			if (incDec.isPref)
 			{
-				return compValExpr(node::ValExpr{node::ExprIdent{incDec.ident}}, expectedType);
+				return compValExpr(node::ValExpr{node::ExprIdent{incDec.ident}}, expectedType, isConvertable);
 			}
 			return true;
 		}
 	};
-	exprVisitor visitor(expectedType);
+	exprVisitor visitor(expectedType, isConvertable);
 	return std::visit(visitor, expr.var);
 }
 
@@ -172,7 +259,36 @@ void expressionCompiler::compBoolExpr(const std::optional<std::string> &literal,
 	compiler::m_output << "\txor rdx, rdx\n";
 }
 
-bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::string &expectedType)
+void expressionCompiler::compBoolExprFloat32(const std::optional<std::string> &literal, bool isReversed, bool isRegister)
+{
+	std::string endLabel = compiler::createLabel();
+	std::string falseLabel = compiler::createLabel();
+	if (literal.has_value())
+	{
+		if (isRegister)
+		{
+			compiler::m_output << "\tmovq rdx, " << literal.value() << "\n";
+		}
+		else
+		{
+			compiler::m_output << "\tmov rdx,__?float32?__(" << literal.value() << ")\n";
+		}
+	}
+	compiler::m_output << "\tmovq xmm0, rdx\n";
+	compiler::m_output << "\tmov rdx, 0\n";
+	compiler::m_output << "\tcvtsi2ss xmm1, rdx\n";
+	compiler::m_output << "\tcomiss xmm1, xmm0\n";
+	compiler::m_output << "\tje " << falseLabel << "\n";
+	compiler::m_output << "\tmov rdx, 1\n";
+	compiler::m_output << "\tjmp " << endLabel << "\n";
+	compiler::m_output << "\t" << falseLabel << ":\n";
+	compiler::m_output << "\tmov rdx, 0\n";
+	compiler::m_output << "\t" << endLabel << ":\n";
+	varCompiler::push("rdx");
+	compiler::m_output << "\txor rdx, rdx\n";
+}
+
+bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::string &expectedType, const bool &isConvertable)
 {
 	if (compExpr(*expr.fvl, STR_TYPE) || compExpr(*expr.svl, STR_TYPE))
 	{
@@ -188,37 +304,68 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 			exit(EXIT_FAILURE);
 		}
 	}
-	if (!compExpr(*expr.fvl, expectedType) || !compExpr(*expr.svl, expectedType))
+
+	if (!isConvertable)
+	{
+		if (!compExpr(*expr.fvl, expectedType, isConvertable) || !compExpr(*expr.svl, expectedType, isConvertable))
+		{
+			if (expectedType == FLOAT_TYPE)
+			{
+				if (!compExpr(*expr.svl, expectedType, !isConvertable) || !compExpr(*expr.fvl, expectedType, !isConvertable) && compExpr(*expr
+						.svl, expectedType, isConvertable))
+				{
+					return false;
+				}
+			}
+			else
+			{
+				return false;
+			}
+		}
+	}
+	else if (!compExpr(*expr.fvl, expectedType) || !compExpr(*expr.svl, expectedType))
 	{
 		return false;
 	}
 	varCompiler::pop("rdi");
 	varCompiler::pop("rdx");
+	if (expectedType == FLOAT_TYPE)
+	{
+		compiler::m_output << "\tmovq xmm0, rdx\n";
+		compiler::m_output << "\tmovq xmm1, rdi\n";
+	}
 	std::string trueLabel = compiler::createLabel();
 	std::string endLabel = compiler::createLabel();
 	if (op == Tokens::PLUS)
 	{
-		compiler::m_output << "\tadd rdx, rdi\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\taddss xmm0, xmm1\n" : "\tadd rdx, rdi\n");
 	}
 	else if (op == Tokens::MINUS)
 	{
-		compiler::m_output << "\tsub rdx, rdi\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tsubss xmm0, xmm1\n" : "\tsub rdx, rdi\n");
 	}
 	else if (op == Tokens::MULT)
 	{
-		compiler::m_output << "\timul rdx, rdi\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tmulss xmm0, xmm1\n" : "\timul rdx, rdi\n");
 	}
 	else if (op == Tokens::DIV)
 	{
-		compiler::m_output << "\tmov rax, rdx\n";
-		compiler::m_output << "\txor rdx, rdx\n";
-		compiler::m_output << "\tcqo\n";
-		compiler::m_output << "\tidiv rdi\n";
-		compiler::m_output << "\tmov rdx, rax\n";
+		if (expectedType == FLOAT_TYPE)
+		{
+			compiler::m_output << "\tdivss xmm0, xmm1\n";
+		}
+		else
+		{
+			compiler::m_output << "\tmov rax, rdx\n";
+			compiler::m_output << "\txor rdx, rdx\n";
+			compiler::m_output << "\tcqo\n";
+			compiler::m_output << "\tidiv rdi\n";
+			compiler::m_output << "\tmov rdx, rax\n";
+		}
 	}
 	else if (op == Tokens::EQEQ)
 	{
-		compiler::m_output << "\tcmp rdx, rdi\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
 		compiler::m_output << "\tje " << trueLabel << "\n";
 		compiler::m_output << "\tmov rdx, 0\n";
 		compiler::m_output << "\tjmp " << endLabel << "\n";
@@ -228,7 +375,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 	}
 	else if (op == Tokens::NOTEQ)
 	{
-		compiler::m_output << "\tcmp rdx, rdi\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
 		compiler::m_output << "\tjne " << trueLabel << "\n";
 		compiler::m_output << "\tmov rdx, 0\n";
 		compiler::m_output << "\tjmp " << endLabel << "\n";
@@ -238,8 +385,8 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 	}
 	else if (op == Tokens::LESS)
 	{
-		compiler::m_output << "\tcmp rdx, rdi\n";
-		compiler::m_output << "\tjl " << trueLabel << "\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
+		compiler::m_output << "\tjb " << trueLabel << "\n";
 		compiler::m_output << "\tmov rdx, 0\n";
 		compiler::m_output << "\tjmp " << endLabel << "\n";
 		compiler::m_output << "\t" << trueLabel << ":\n";
@@ -248,8 +395,8 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 	}
 	else if (op == Tokens::GREATER)
 	{
-		compiler::m_output << "\tcmp rdx, rdi\n";
-		compiler::m_output << "\tjg " << trueLabel << "\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
+		compiler::m_output << "\tja " << trueLabel << "\n";
 		compiler::m_output << "\tmov rdx, 0\n";
 		compiler::m_output << "\tjmp " << endLabel << "\n";
 		compiler::m_output << "\t" << trueLabel << ":\n";
@@ -258,8 +405,8 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 	}
 	else if (op == Tokens::LESSEQ)
 	{
-		compiler::m_output << "\tcmp rdx, rdi\n";
-		compiler::m_output << "\tjle " << trueLabel << "\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
+		compiler::m_output << "\tjbe " << trueLabel << "\n";
 		compiler::m_output << "\tmov rdx, 0\n";
 		compiler::m_output << "\tjmp " << endLabel << "\n";
 		compiler::m_output << "\t" << trueLabel << ":\n";
@@ -268,8 +415,8 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 	}
 	else if (op == Tokens::GREATEQ)
 	{
-		compiler::m_output << "\tcmp rdx, rdi\n";
-		compiler::m_output << "\tjge " << trueLabel << "\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
+		compiler::m_output << "\tjae " << trueLabel << "\n";
 		compiler::m_output << "\tmov rdx, 0\n";
 		compiler::m_output << "\tjmp " << endLabel << "\n";
 		compiler::m_output << "\t" << trueLabel << ":\n";
@@ -278,10 +425,11 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 	}
 	else if (op == Tokens::AND)
 	{
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tmov rdx,__?float32?__(0.0)\n\tmovq xmm2, rdx\n" : "");
 		std::string falseLabel = compiler::createLabel();
-		compiler::m_output << "\tcmp rdx, 0\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm0, xmm2\n" : "\tcmp rdx, 0\n");
 		compiler::m_output << "\tje " << falseLabel << "\n";
-		compiler::m_output << "\tcmp rdi, 0\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm1, xmm2\n" : "\tcmp rdi, 0\n");
 		compiler::m_output << "\tje " << falseLabel << "\n";
 		compiler::m_output << "\tmov rdx, 1\n";
 		compiler::m_output << "\tjmp " << endLabel << "\n";
@@ -291,9 +439,10 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 	}
 	else if (op == Tokens::OR)
 	{
-		compiler::m_output << "\tcmp rdx, 0\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tmov rdx,__?float32?__(0.0)\n\tmovq xmm2, rdx\n" : "");
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm0, xmm2\n" : "\tcmp rdx, 0\n");
 		compiler::m_output << "\tjne " << trueLabel << "\n";
-		compiler::m_output << "\tcmp rdi, 0\n";
+		compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm1, xmm2\n" : "\tcmp rdi, 0\n");
 		compiler::m_output << "\tjne " << trueLabel << "\n";
 		compiler::m_output << "\tmov rdx, 0\n";
 		compiler::m_output << "\tjmp " << endLabel << "\n";
@@ -301,30 +450,36 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 		compiler::m_output << "\tmov rdx, 1\n";
 		compiler::m_output << "\t" << endLabel << ":\n";
 	}
+	if (expectedType == FLOAT_TYPE && (op == Tokens::PLUS || op == Tokens::MINUS || op == Tokens::MULT || op == Tokens::DIV))
+	{
+		compiler::m_output << "\tmovq rdx, xmm0\n";
+	}
 	varCompiler::push("rdx");
 	compiler::m_output << "\txor rdx, rdx\n";
 	compiler::m_output << "\txor rdi, rdi\n";
 	return true;
 }
 
-bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &expectedType)
+bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &expectedType, const bool &isConvertable)
 {
 	struct exprVisitor
 	{
 		std::string expectedType;
+		bool isConvertable;
 
-		explicit exprVisitor(std::string expectedType) : expectedType(std::move(expectedType))
+		explicit exprVisitor(std::string expectedType, const bool &isConvertable) : expectedType(std::move(expectedType)),
+		                                                                            isConvertable(isConvertable)
 		{
 		}
 
 		bool operator()(const node::BinExpr *binExpr) const
 		{
-			return compBinExpr(*binExpr, expectedType);
+			return compBinExpr(*binExpr, expectedType, isConvertable);
 		}
 
 		bool operator()(const node::ValExpr *valExpr) const
 		{
-			return compValExpr(*valExpr, expectedType);
+			return compValExpr(*valExpr, expectedType, isConvertable);
 		}
 
 		bool operator()(const node::StmtInput *inputExpr) const
@@ -392,7 +547,7 @@ bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &exp
 			return true;
 		}
 	};
-	exprVisitor visitor(expectedType);
+	exprVisitor visitor(expectedType, isConvertable);
 	return std::visit(visitor, expr.var);
 }
 
@@ -408,4 +563,18 @@ void expressionCompiler::compIncDec(const Token &ident, bool isInc, const std::s
 	{
 		varCompiler::compVar({ident, new node::Expr{new node::BinExpr{fvl, svl, Tokens::MINUS}}, expectedType});
 	}
+}
+
+void expressionCompiler::intToFloat(const std::string &reg)
+{
+	compiler::m_output << "\tmov rdx, " << reg << '\n';
+	compiler::m_output << "\tcvtsi2ss xmm0, rdx\n";
+	compiler::m_output << "\tmovq rdx, xmm0\n";
+}
+
+void expressionCompiler::floatToInt(const std::string &reg)
+{
+	compiler::m_output << "\tmov rdx, " << reg << '\n';
+	compiler::m_output << "\tmovq xmm0, rdx\n";
+	compiler::m_output << "\tcvttss2si rdx, xmm0\n";
 }

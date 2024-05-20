@@ -11,6 +11,7 @@
 #define STR_TYPE "string"
 #define BOOL_TYPE "bool"
 #define CHAR_TYPE "char"
+#define FLOAT_TYPE "float"
 #define ANY_TYPE "any"
 
 enum Tokens
@@ -23,6 +24,8 @@ enum Tokens
 	BOOL_LET,
 	CHAR_LITERAL,
 	CHAR_LET,
+	FLOAT_LET,
+	FLOAT_LITERAL,
 	IDENT,
 	EQ,
 	PLUS,

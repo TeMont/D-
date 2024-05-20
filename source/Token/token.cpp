@@ -8,6 +8,8 @@ std::map<std::string, Tokens> tokensMap = //CONVERT STRING TO TOKEN
 		 {"stringLit", STRING_LITERAL},
 		 {"bool", BOOL_LET},
 		 {"boolLit", BOOL_LITERAL},
+		 {"float", FLOAT_LET},
+		 {"floatLit", FLOAT_LITERAL},
 		 {"char", CHAR_LET},
 		 {"charLit", CHAR_LITERAL},
 		 {"stdOut", OUTPUT},
@@ -85,7 +87,19 @@ std::vector<Token> tokenizer::tokenize()
 			{
 				buffer.push_back(consume());
 			}
-			tokens.push_back({tokensMap["intLit"], buffer});
+			if (peek().has_value() && peek().value() == '.')
+			{
+				buffer.push_back(consume());
+				while (peek().has_value() && std::isdigit(peek().value()))
+				{
+					buffer.push_back(consume());
+				}
+				tokens.push_back({tokensMap["floatLit"], buffer});
+			}
+			else
+			{
+				tokens.push_back({tokensMap["intLit"], buffer});
+			}
 			buffer.clear();
 		}
 		else if (std::isspace(ch))
@@ -237,7 +251,19 @@ std::vector<Token> tokenizer::tokenize()
 					{
 						buffer.push_back(consume());
 					}
-					tokens.push_back({tokensMap["intLit"], buffer});
+					if (peek().has_value() && peek().value() == '.')
+					{
+						buffer.push_back(consume());
+						while (peek().has_value() && std::isdigit(peek().value()))
+						{
+							buffer.push_back(consume());
+						}
+						tokens.push_back({tokensMap["floatLit"], buffer});
+					}
+					else
+					{
+						tokens.push_back({tokensMap["intLit"], buffer});
+					}
 					buffer.clear();
 					continue;
 				}

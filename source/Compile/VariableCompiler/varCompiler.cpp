@@ -43,6 +43,17 @@ void varCompiler::compVar(const node::StmtVar &stmtVar)
 		compiler::m_output << "\tmov [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
 		compiler::m_output << "\txor rdx, rdx\n";
 	}
+	else if (var.Type == FLOAT_TYPE && stmtVar.type == INT_TYPE || var.Type == INT_TYPE && stmtVar.type == FLOAT_TYPE)
+	{
+		if (!expressionCompiler::compExpr(*stmtVar.Expr, var.Type))
+		{
+			std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
+			exit(EXIT_FAILURE);
+		}
+		pop("rdx");
+		compiler::m_output << "\tmov [rsp + " + std::to_string((m_stackSize - var.stackLoc - 1) * 8) + "], rdx\n";
+		compiler::m_output << "\txor rdx, rdx\n";
+	}
 	else
 	{
 		std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
@@ -52,6 +63,7 @@ void varCompiler::compVar(const node::StmtVar &stmtVar)
 
 void varCompiler::compLet(const node::StmtLet &stmtLet)
 {
+	compiler::m_output << ";;\tlet\n";
 	if (m_vars.count(stmtLet.ident.value.value()))
 	{
 		std::cerr << "[Compile Error] ERR004 Identifier '" << stmtLet.ident.value.value() << "' Is Already Declared";
@@ -65,7 +77,8 @@ void varCompiler::compLet(const node::StmtLet &stmtLet)
 		{
 			if (!expressionCompiler::compExpr(*stmtLet.Expr, INT_TYPE) &&
 			    !expressionCompiler::compExpr(*stmtLet.Expr, CHAR_TYPE) &&
-			    !expressionCompiler::compExpr(*stmtLet.Expr, BOOL_TYPE))
+			    !expressionCompiler::compExpr(*stmtLet.Expr, BOOL_TYPE) &&
+				!expressionCompiler::compExpr(*stmtLet.Expr, FLOAT_TYPE))
 			{
 				std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 				exit(EXIT_FAILURE);
@@ -98,6 +111,7 @@ void varCompiler::compLet(const node::StmtLet &stmtLet)
 			push("rdx");
 		}
 	}
+	compiler::m_output << ";;\t/let\n";
 }
 
 void varCompiler::push(const std::string &reg)

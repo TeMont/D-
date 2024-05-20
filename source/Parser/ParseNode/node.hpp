@@ -24,6 +24,10 @@ namespace node
 	{
 		Token charLit;
 	};
+	struct ExprFloatLit
+	{
+		Token floatLit;
+	};
 	struct ExprIdent
 	{
 		Token ident;
@@ -40,7 +44,7 @@ namespace node
 	};
 	struct ValExpr
 	{
-		std::variant<ExprIntLit, ExprStrLit, ExprBoolLit, ExprCharLit, ExprIdent, NotCondition, IncDec> var;
+		std::variant<ExprIntLit, ExprStrLit, ExprBoolLit, ExprCharLit, ExprFloatLit, ExprIdent, NotCondition, IncDec> var;
 	};
 	struct BinExpr
 	{
