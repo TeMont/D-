@@ -110,6 +110,8 @@ void compiler::compStmt(const node::Stmt &stmt)
 			{
 				varCompiler::pop("rdx");
 				m_output << "\tcall _printf\n";
+				m_output << ";;\t/Output\n";
+				return;
 			}
 			else if (expressionCompiler::compExpr(*stmtOutput.Expr, CHAR_TYPE))
 			{
@@ -118,9 +120,15 @@ void compiler::compStmt(const node::Stmt &stmt)
 				m_output << "\tmov [rsi], dx\n";
 				m_output << "\tmov rdx, rsi\n";
 				m_output << "\tcall _printf\n";
+			}
+			else if (expressionCompiler::compExpr(*stmtOutput.Expr, FLOAT_TYPE, false))
+			{
+				varCompiler::pop("rdx");
+				m_output << "\tmovq xmm0, rdx\n";
 				m_output << "\tmov rsi, OutputBuffer\n";
-				m_output << "\tmov rdx, 20\n";
-				m_output << "\tcall _clearBuffer\n";
+				m_output << "\tcall _ftoa\n";
+				m_output << "\tmov rdx, rsi\n";
+				m_output << "\tcall _printf\n";
 			}
 			else if (expressionCompiler::compExpr(*stmtOutput.Expr, INT_TYPE) ||
 			         expressionCompiler::compExpr(*stmtOutput.Expr, BOOL_TYPE))
@@ -131,10 +139,10 @@ void compiler::compStmt(const node::Stmt &stmt)
 				m_output << "\tcall _itoa\n";
 				m_output << "\tmov rdx, rsi\n";
 				m_output << "\tcall _printf\n";
-				m_output << "\tmov rsi, OutputBuffer\n";
-				m_output << "\tmov rdx, 20\n";
-				m_output << "\tcall _clearBuffer\n";
 			}
+			m_output << "\tmov rsi, OutputBuffer\n";
+			m_output << "\tmov rdx, 20\n";
+			m_output << "\tcall _clearBuffer\n";
 			m_output << ";;\t/Output\n";
 		}
 
@@ -261,6 +269,7 @@ std::stringstream compiler::compile()
 	            "\t; RAX - integer\n"
 	            "\t; OUTPUT:\n"
 	            "\t; RSI - string\n"
+				"\tpush rax\n"
 	            "\tpush rsi\n"
 	            "\txor r9, r9\n"
 	            "\ttest rax, rax\n"
@@ -308,8 +317,49 @@ std::stringstream compiler::compile()
 	            "\tjg .to_string\n"
 	            "\tpop rdx\n"
 	            "\tpop rsi\n"
+				"\tpop rax\n"
 	            "\tret\n"
 	            "\n"
+				"_ftoa:\t"
+				"\n; INPUT:\t"
+				"\n; RSI - output string\t"
+				"\n; XMM0 - float value\t"
+				"\n; OUTPUT:\t"
+				"\n; RSI - updated string pointer\t"
+				"\npush rsi\t"
+				"\ncvttss2si rax, xmm0\t"
+				"\ncall _itoa\t"
+				"\nincreaseBuffer:\t"
+				"\ncmp byte [rsi], 00h\t"
+				"\nje endIncreasing\t"
+				"\ninc rsi\t"
+				"\njmp increaseBuffer\t"
+				"\nendIncreasing:\t"
+				"\nmov byte [rsi], '.'\t"
+				"\ninc rsi\t"
+				"\ncvtsi2ss xmm1, rax\t"
+				"\nsubss xmm0, xmm1\t"
+				"\nmov r15, 5\t"
+				"\nconvert_fraction:\t"
+				"\nmov rdx, __?float32?__(10.0)\t"
+				"\n            movq xmm1, rdx\t"
+				"\nmulss xmm0, xmm1\t"
+				"\ncvttss2si rax, xmm0\t"
+				"\ncall _itoa\t"
+				"\ncvtsi2ss xmm1, rax\t"
+				"\nsubss xmm0, xmm1\t"
+				"\ninc rsi\t"
+				"\ndec r15\t"
+				"\ncmp r15, 0\t"
+				"\njl end_convert\t"
+				"\njmp convert_fraction\t"
+				"\nend_convert:\t"
+				"\nadd rsi, 5\t"
+				"\nmov rax, rdi\t"
+				"\ncall _itoa\t"
+				"\npop rsi\t"
+				"\nret\t"
+				"\n"
 	            "_stoi:\n"
 	            "\t; INPUT:\n"
 	            "\t; RSI - buffer to convert\n"

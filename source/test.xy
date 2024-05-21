@@ -1,66 +1,16 @@
-float a = 5.2;
-float b = 3.8;
-float c;
+float a = 3.14;
+float b = 2.87;
 
-c = a + b;
-c = a - b;
-c = a * b;
-c = a / b;
+stdOut("a: ");
+stdOut(a);
+stdOut("\nb: ");
+stdOut(b);
 
-
-if (a > b)
-{
-    stdOut("a is greater than b\n");
-}
-
-if (a < b)
-{
-    stdOut("a is less than b\n");
-}
-else
-{
-    stdOut("a is not less than b\n");
-}
-
-if (a >= b)
-{
-    stdOut("a is greater than or equal to b\n");
-}
-
-if (a <= b)
-{
-    stdOut("a is less than or equal to b\n");
-}
-
-if (a == b)
-{
-    stdOut("a is equal to b\n");
-}
-else
-{
-    stdOut("a is not equal to b\n");
-}
-
-if (a != b)
-{
-    stdOut("a is not equal to b\n");
-}
-if (a > 0.0)
-{
-    stdOut("a is positive number\n");
-}
-if (b > 0.0)
-{
-    stdOut("b is positive number\n");
-}
-
-if (a < 0.0)
-{
-    stdOut("a is a negative number\n");
-}
-else
-{
-    stdOut("a is not a negative number\n");
-}
-
-return 0;
+stdOut("\na + b = ");
+stdOut(a + b);
+stdOut("\na - b = ");
+stdOut(a - b);
+stdOut("\na * b = ");
+stdOut(a * b);
+stdOut("\na / b = ");
+stdOut(a / b);
