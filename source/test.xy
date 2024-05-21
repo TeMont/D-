@@ -1,5 +1,5 @@
 float a = 3.14;
-float b = 2.87;
+float b = -2.87;
 
 stdOut("a: ");
 stdOut(a);

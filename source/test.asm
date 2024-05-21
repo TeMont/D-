@@ -131,45 +131,67 @@ _itoa:
 	pop rax
 	ret
 
-_ftoa:	
-; INPUT:	
-; RSI - output string	
-; XMM0 - float value	
-; OUTPUT:	
-; RSI - updated string pointer	
-push rsi	
-cvttss2si rax, xmm0	
-call _itoa	
-increaseBuffer:	
-cmp byte [rsi], 00h	
-je endIncreasing	
-inc rsi	
-jmp increaseBuffer	
-endIncreasing:	
-mov byte [rsi], '.'	
-inc rsi	
-cvtsi2ss xmm1, rax	
-subss xmm0, xmm1	
-mov r15, 5	
-convert_fraction:	
-mov rdx, __?float32?__(10.0)	
-            movq xmm1, rdx	
-mulss xmm0, xmm1	
-cvttss2si rax, xmm0	
-call _itoa	
-cvtsi2ss xmm1, rax	
-subss xmm0, xmm1	
-inc rsi	
-dec r15	
-cmp r15, 0	
-jl end_convert	
-jmp convert_fraction	
-end_convert:	
-add rsi, 5	
-mov rax, rdi	
-call _itoa	
-pop rsi	
-ret	
+_ftoa:
+	; INPUT:
+	; RSI - output string
+	; XMM0 - float value
+	; OUTPUT:
+	; RSI - updated string pointer
+	push rsi
+	mov rdx,__?float32?__(100000.0)
+	movq xmm1, rdx
+	mulss xmm0, xmm1
+	roundss xmm0, xmm0, 0
+	cvttss2si rdx, xmm0
+	cvtsi2ss xmm0, rdx
+	divss xmm0, xmm1
+	cvttss2si rax, xmm0
+	call _itoa
+	increaseBuffer:
+	cmp byte [rsi], 00h
+	je endIncreasing
+	inc rsi
+	jmp increaseBuffer
+	endIncreasing:
+	mov byte [rsi], '.'
+	inc rsi
+	cvtsi2ss xmm1, rax
+	subss xmm0, xmm1
+	mov r10, 4
+	mov rdx, __?float32?__(0.0)
+	movq xmm1, rdx
+	comiss xmm0, xmm1
+	jb negative_float
+	jmp convert_fraction
+	negative_float:
+	mov rdx, __?float32?__(-1.0)
+	movq xmm1, rdx
+	mulss xmm0, xmm1
+	convert_fraction:
+	mov rdx, __?float32?__(10.0)
+	movq xmm1, rdx
+	mulss xmm0, xmm1
+	cvttss2si rax, xmm0
+	call _itoa
+	cvtsi2ss xmm1, rax
+	subss xmm0, xmm1
+	inc rsi
+	dec r10
+	cmp r10, 0
+	jl end_convert
+	jmp convert_fraction
+	end_convert:
+	clear_zeroes:
+	dec rsi
+	mov al, byte [rsi]
+	cmp al, '0'
+	jne finish_clearing
+	mov byte [rsi], 00h
+	jmp clear_zeroes
+	finish_clearing:
+	pop rsi
+	ret
+
 _stoi:
 	; INPUT:
 	; RSI - buffer to convert
@@ -248,7 +270,7 @@ main:
 	xor rdx, rdx
 ;;	/let
 ;;	let
-	mov rdx,__?float32?__(2.87)
+	mov rdx,__?float32?__(-2.87)
 	push rdx
 	xor rdx, rdx
 ;;	/let
