@@ -491,57 +491,61 @@ bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &exp
 		{
 			compiler::m_output << ";;\tInput\n";
 			compiler::compInput(*inputExpr);
+			std::string falseLabel1 = compiler::createLabel();
+			std::string trueLabel1 = compiler::createLabel();
+			std::string endLabel1 = compiler::createLabel();
+			std::string falseLabel2 = compiler::createLabel();
+			std::string trueLabel2 = compiler::createLabel();
+			std::string endLabel2 = compiler::createLabel();
+			compiler::m_output << "\tmov rdx, rsi\n";
+			compiler::m_output << "\tcall _countStrLen\n";
+			compiler::m_output << "\tcmp byte [rdx+rcx-1], 10\n";
+			compiler::m_output << "\tje " << trueLabel1 << "\n";
+			compiler::m_output << "\tjmp " << endLabel1 << "\n";
+			compiler::m_output << "\t" << trueLabel1 << ":\n";
+			compiler::m_output << "\tmov byte [rdx+rcx-1], 00H\n";
+			compiler::m_output << "\t" << endLabel1 << ":\n";
+			compiler::m_output << "\tcmp byte [rdx+rcx-2], 13\n";
+			compiler::m_output << "\tje " << trueLabel2 << "\n";
+			compiler::m_output << "\tjmp " << endLabel2 << "\n";
+			compiler::m_output << "\t" << trueLabel2 << ":\n";
+			compiler::m_output << "\tmov byte [rdx+rcx-2], 00H\n";
+			compiler::m_output << "\t" << endLabel2 << ":\n";
 			if (expectedType == STR_TYPE)
 			{
-				std::string falseLabel1 = compiler::createLabel();
-				std::string trueLabel1 = compiler::createLabel();
-				std::string endLabel1 = compiler::createLabel();
-				std::string falseLabel2 = compiler::createLabel();
-				std::string trueLabel2 = compiler::createLabel();
-				std::string endLabel2 = compiler::createLabel();
 				std::string SC = compiler::createSCLabel();
 				compiler::m_bssSC << "\t" << SC << " resb 256\n";
 				compiler::m_output << "\tmov rdi, " << SC << "\n";
 				compiler::m_output << "\tmov rcx, 256\n";
 				compiler::m_output << "\trep movsb\n";
 				compiler::m_output << "\tmov rdx, " << SC << "\n";
-				compiler::m_output << "\tcall _countStrLen\n";
-				compiler::m_output << "\tcmp byte [rdx+rcx-1], 10\n";
-				compiler::m_output << "\tje " << trueLabel1 << "\n";
-				compiler::m_output << "\tjmp " << endLabel1 << "\n";
-				compiler::m_output << "\t" << trueLabel1 << ":\n";
-				compiler::m_output << "\tmov byte [rdx+rcx-1], 00H\n";
-				compiler::m_output << "\t" << endLabel1 << ":\n";
-				compiler::m_output << "\tcmp byte [rdx+rcx-2], 13\n";
-				compiler::m_output << "\tje " << trueLabel2 << "\n";
-				compiler::m_output << "\tjmp " << endLabel2 << "\n";
-				compiler::m_output << "\t" << trueLabel2 << ":\n";
-				compiler::m_output << "\tmov byte [rdx+rcx-2], 00H\n";
-				compiler::m_output << "\t" << endLabel2 << ":\n";
-				varCompiler::push("rdx");
 			}
 			else if (expectedType == CHAR_TYPE)
 			{
 				compiler::m_output << "\tmovzx rdx, byte [rsi]\n";
-				varCompiler::push("rdx");
 			}
-			else if (expectedType == INT_TYPE || expectedType == BOOL_TYPE)
+			else if (expectedType == INT_TYPE)
 			{
 				compiler::m_output << "\tcall _stoi\n";
+				compiler::m_output << "\tmov rdx, rdi\n";
+			}
+			else if (expectedType == FLOAT_TYPE || expectedType == BOOL_TYPE)
+			{
+				compiler::m_output << "\tcall _stof\n";
 				if (expectedType == BOOL_TYPE)
 				{
-					compBoolExpr("rdi");
+					compBoolExprFloat32("xmm0", false, true);
 				}
 				else
 				{
-					varCompiler::push("rdi");
+					compiler::m_output << "\tmovq rdx, xmm0\n";
 				}
 			}
 			else
 			{
 				return false;
 			}
-
+			varCompiler::push("rdx");
 			compiler::m_output << "\tmov rsi, OutputBuffer\n";
 			compiler::m_output << "\tmov rdx, 20\n";
 			compiler::m_output << "\tcall _clearBuffer\n";

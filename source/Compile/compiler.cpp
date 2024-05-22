@@ -51,9 +51,6 @@ void compiler::compInput(const node::StmtInput &stmtInput)
 	if (expressionCompiler::compExpr(*stmtInput.msg, STR_TYPE))
 	{
 		varCompiler::pop("rdx");
-		m_output << "\tmov rsi, InputBuffer\n";
-		m_output << "\tmov rax, 256\n";
-		m_output << "\tcall _scanf\n";
 	}
 	else if (expressionCompiler::compExpr(*stmtInput.msg, CHAR_TYPE))
 	{
@@ -61,9 +58,14 @@ void compiler::compInput(const node::StmtInput &stmtInput)
 		m_output << "\tmov rsi, OutputBuffer\n";
 		m_output << "\tmov [rsi], dx\n";
 		m_output << "\tmov rdx, rsi\n";
-		m_output << "\tmov rsi, InputBuffer\n";
-		m_output << "\tmov rax, 256\n";
-		m_output << "\tcall _scanf\n";
+	}
+	else if (expressionCompiler::compExpr(*stmtInput.msg, FLOAT_TYPE, false))
+	{
+		varCompiler::pop("rdx");
+		m_output << "\tmovq xmm0, rdx\n";
+		m_output << "\tmov rsi, OutputBuffer\n";
+		m_output << "\tcall _ftoa\n";
+		m_output << "\tmov rdx, rsi\n";
 	}
 	else if (expressionCompiler::compExpr(*stmtInput.msg, INT_TYPE) ||
 	         expressionCompiler::compExpr(*stmtInput.msg, BOOL_TYPE))
@@ -73,10 +75,10 @@ void compiler::compInput(const node::StmtInput &stmtInput)
 		m_output << "\tmov rsi, OutputBuffer\n";
 		m_output << "\tcall _itoa\n";
 		m_output << "\tmov rdx, rsi\n";
-		m_output << "\tmov rsi, InputBuffer\n";
-		m_output << "\tmov rax, 256\n";
-		m_output << "\tcall _scanf\n";
 	}
+	m_output << "\tmov rsi, InputBuffer\n";
+	m_output << "\tmov rax, 256\n";
+	m_output << "\tcall _scanf\n";
 }
 
 void compiler::compStmt(const node::Stmt &stmt)
@@ -455,6 +457,34 @@ std::stringstream compiler::compile()
 	            "\tend:\n"
 	            "\tret\n"
 	            "\n"
+				"\t_stof:\n"
+				"\t; INPUT:\n"
+				"\t; RSI - buffer to convert\n"
+				"\t; OUTPUT:\n"
+				"\t; XMM0 - integer\n"
+				"\tcall _stoi\n"
+				"\tcmp byte [rsi], '.'\n"
+				"\tjne finish\n"
+				"\tinc rsi\n"
+				"\tpush rdi\n"
+				"\tmov rdx, rsi\n"
+				"\tcall _countStrLen\n"
+				"\tpush rcx\n"
+				"\tcall _stoi\n"
+				"\tcvtsi2ss xmm0, rdi\n"
+				"\tpop rcx\n"
+				"\tmov rdx,__?float32?__(0.1)\n"
+				"\tmovq xmm1, rdx\n"
+				"\tdivide:\n"
+				"\tmulss xmm0, xmm1\n"
+				"\tloop divide\n"
+				"\tpop rdx\n"
+				"\tcvtsi2ss xmm1, rdx\n"
+				"\taddss xmm0, xmm1\n"
+				"\tret\n"
+				"\tfinish:\n"
+	            "\tcvtsi2ss xmm0, rdi\n"
+				"\tret\n"
 	            "global main\n"
 	            "main:\n";
 
