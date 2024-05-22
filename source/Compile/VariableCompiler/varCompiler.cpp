@@ -19,7 +19,8 @@ void varCompiler::compVar(const node::StmtVar &stmtVar)
 	}
 	if (var.Type == BOOL_TYPE)
 	{
-		if (!expressionCompiler::compExpr(*stmtVar.Expr, INT_TYPE) &&
+		if (!expressionCompiler::compExpr(*stmtVar.Expr, FLOAT_TYPE, false) &&
+			!expressionCompiler::compExpr(*stmtVar.Expr, INT_TYPE) &&
 		    !expressionCompiler::compExpr(*stmtVar.Expr, CHAR_TYPE) &&
 		    !expressionCompiler::compExpr(*stmtVar.Expr, BOOL_TYPE))
 		{
@@ -75,10 +76,10 @@ void varCompiler::compLet(const node::StmtLet &stmtLet)
 	{
 		if (stmtLet.Expr != nullptr)
 		{
-			if (!expressionCompiler::compExpr(*stmtLet.Expr, INT_TYPE) &&
+			if (!expressionCompiler::compExpr(*stmtLet.Expr, FLOAT_TYPE, false) &&
+				!expressionCompiler::compExpr(*stmtLet.Expr, INT_TYPE) &&
 			    !expressionCompiler::compExpr(*stmtLet.Expr, CHAR_TYPE) &&
-			    !expressionCompiler::compExpr(*stmtLet.Expr, BOOL_TYPE) &&
-				!expressionCompiler::compExpr(*stmtLet.Expr, FLOAT_TYPE))
+			    !expressionCompiler::compExpr(*stmtLet.Expr, BOOL_TYPE))
 			{
 				std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
 				exit(EXIT_FAILURE);

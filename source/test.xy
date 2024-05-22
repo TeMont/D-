@@ -1,16 +1,6 @@
-float a = 3.14;
-float b = -2.87;
-
-stdOut("a: ");
-stdOut(a);
-stdOut("\nb: ");
-stdOut(b);
-
-stdOut("\na + b = ");
-stdOut(a + b);
-stdOut("\na - b = ");
-stdOut(a - b);
-stdOut("\na * b = ");
-stdOut(a * b);
-stdOut("\na / b = ");
-stdOut(a / b);
+float a = 0.3;
+float b = 0.6;
+bool x;
+x = a+b == 0.9;
+stdOut(x);
+return 2;

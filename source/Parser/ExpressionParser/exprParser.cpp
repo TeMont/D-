@@ -43,7 +43,7 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
 		}
 		else if (parser::peek().value().type == Tokens::FLOAT_LITERAL)
 		{
-			if (expectedType != FLOAT_TYPE && expectedType != INT_TYPE && expectedType != ANY_TYPE)
+			if (expectedType != FLOAT_TYPE && expectedType != INT_TYPE && expectedType != BOOL_TYPE && expectedType != ANY_TYPE)
 			{
 				return {};
 			}
