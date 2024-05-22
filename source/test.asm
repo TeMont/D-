@@ -136,15 +136,23 @@ _ftoa:
 	; RSI - output string
 	; XMM0 - float value
 	; OUTPUT:
-	; RSI - updated string pointer
+	; RSI - updated string
 	push rsi
-	mov rdx,__?float32?__(100000.0)
+	mov rdx,__?float32?__(10.0)
 	movq xmm1, rdx
+	mov rcx, 4
+	float_mul:
 	mulss xmm0, xmm1
+	loop float_mul
 	roundss xmm0, xmm0, 0
 	cvttss2si rdx, xmm0
 	cvtsi2ss xmm0, rdx
-	divss xmm0, xmm1
+	mov rcx, 4
+	float_div:
+	mov rdx,__?float32?__(0.1)
+	movq xmm1, rdx
+	mulss xmm0, xmm1
+	loop float_div
 	cvttss2si rax, xmm0
 	call _itoa
 	increaseBuffer:
