@@ -1,6 +1,12 @@
-float a = 0.3;
-float b = 0.6;
-bool x;
-x = a+b == 0.9;
+float x = 3.14;
+float y = 2;
+int z = x + y;
+float o = z * y;
+
 stdOut(x);
-return 2;
+stdOut("\n");
+stdOut(y);
+stdOut("\n");
+stdOut(z);
+stdOut("\n");
+stdOut(o);

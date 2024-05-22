@@ -1,3 +1,6 @@
+SC0: db '',10,'',00H
+SC1: db '',10,'',00H
+SC2: db '',10,'',00H
 section .bss
 extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess
 
@@ -183,13 +186,14 @@ _ftoa:
 	jl end_convert
 	jmp convert_fraction
 	end_convert:
+	mov rcx, 4
 	clear_zeroes:
 	dec rsi
 	mov al, byte [rsi]
 	cmp al, '0'
 	jne finish_clearing
 	mov byte [rsi], 00h
-	jmp clear_zeroes
+	loop clear_zeroes
 	finish_clearing:
 	pop rsi
 	ret
@@ -209,9 +213,9 @@ _stoi:
 	cmp rdx, '+'
 	je positive
 	cmp rdx, '0'
-	jl error
+	jl done
 	cmp rdx, '9'
-	jg error
+	jg done
 	jmp next_digit
 	positive:
 	inc rsi
@@ -226,18 +230,14 @@ _stoi:
 	cmp rdx, 13
 	je done
 	cmp rdx, '0'
-	jl error
+	jl done
 	cmp rdx, '9'
-	jg error
+	jg done
 	imul rdi, rbx
 	sub rdx, '0'
 	add rdi, rdx
 	inc rsi
 	jmp next_digit
-	error:
-	mov rdx, WAR1
-	call _printf
-	mov rdi, 0
 	done:
 	cmp rcx, 0
 	je apply_negative
@@ -263,11 +263,10 @@ _clearBuffer:
 	end:
 	ret
 
-WAR1: db 'Runtime Warning. Cannot Convert String To Integer. Assigned 0',7,10,00H
 global main
 main:
 ;;	let
-	mov rdx,__?float32?__(2.1)
+	mov rdx,__?float32?__(3.14)
 	push rdx
 	xor rdx, rdx
 ;;	/let
@@ -280,68 +279,78 @@ main:
 	xor rdx, rdx
 ;;	/let
 ;;	let
+	mov rdx, QWORD [rsp + 8]
+	movq xmm0, rdx
+	cvttss2si rdx, xmm0
 	push rdx
-;;	/let
-	mov rdx, QWORD [rsp + 16]
-	push rdx
-	mov rdx, QWORD [rsp + 16]
+	mov rdx, QWORD [rsp + 8]
+	movq xmm0, rdx
+	cvttss2si rdx, xmm0
 	push rdx
 	pop rdi
 	pop rdx
-	movq xmm0, rdx
-	movq xmm1, rdi
-	addss xmm0, xmm1
-	movq rdx, xmm0
+	add rdx, rdi
 	push rdx
 	xor rdx, rdx
 	xor rdi, rdi
-	mov rdx, 4
-	mov rdx, rdx
+;;	/let
+;;	let
+	mov rdx, QWORD [rsp + 0]
 	cvtsi2ss xmm0, rdx
 	movq rdx, xmm0
 	push rdx
-	xor rdx, rdx
-	mov rdx, QWORD [rsp + 32]
-	push rdx
-	mov rdx, QWORD [rsp + 32]
+	mov rdx, QWORD [rsp + 16]
 	push rdx
 	pop rdi
 	pop rdx
 	movq xmm0, rdx
 	movq xmm1, rdi
-	addss xmm0, xmm1
+	mulss xmm0, xmm1
 	movq rdx, xmm0
 	push rdx
 	xor rdx, rdx
 	xor rdi, rdi
-	pop rdi
+;;	/let
+;;	Output
+	mov rdx, QWORD [rsp + 24]
+	push rdx
 	pop rdx
 	movq xmm0, rdx
-	movq xmm1, rdi
-	comiss xmm0, xmm1
-	je label4
-	mov rdx, 0
-	jmp label5
-	label4:
-	mov rdx, 1
-	label5:
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	mov rdx, rdx
-	cmp rdx, 0
-	je label7
-	mov rdx, 1
-	jmp label6
-	label7:
-	mov rdx, 0
-	label6:
+	mov rsi, OutputBuffer
+	call _ftoa
+	mov rdx, rsi
+	call _printf
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+;;	/Output
+;;	Output
+	mov rdx, SC0
 	push rdx
 	xor rdx, rdx
 	pop rdx
-	mov [rsp + 8], rdx
+	call _printf
+;;	/Output
+;;	Output
+	mov rdx, QWORD [rsp + 16]
+	push rdx
+	pop rdx
+	movq xmm0, rdx
+	mov rsi, OutputBuffer
+	call _ftoa
+	mov rdx, rsi
+	call _printf
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+;;	/Output
+;;	Output
+	mov rdx, SC1
+	push rdx
 	xor rdx, rdx
+	pop rdx
+	call _printf
+;;	/Output
 ;;	Output
 	mov rdx, QWORD [rsp + 8]
 	push rdx
@@ -355,10 +364,23 @@ main:
 	mov rdx, 20
 	call _clearBuffer
 ;;	/Output
-;;	return
-	mov rdx, 2
+;;	Output
+	mov rdx, SC2
 	push rdx
 	xor rdx, rdx
-	pop rcx
-	call ExitProcess
-;;	/return
+	pop rdx
+	call _printf
+;;	/Output
+;;	Output
+	mov rdx, QWORD [rsp + 0]
+	push rdx
+	pop rdx
+	movq xmm0, rdx
+	mov rsi, OutputBuffer
+	call _ftoa
+	mov rdx, rsi
+	call _printf
+	mov rsi, OutputBuffer
+	mov rdx, 20
+	call _clearBuffer
+;;	/Output

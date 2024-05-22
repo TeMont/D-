@@ -307,20 +307,25 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
 
 	if (!isConvertable)
 	{
-		if (!compExpr(*expr.fvl, expectedType, isConvertable) || !compExpr(*expr.svl, expectedType, isConvertable))
+		if (!compExpr(*expr.fvl, expectedType, isConvertable))
 		{
-			if (expectedType == FLOAT_TYPE)
-			{
-				if (!compExpr(*expr.svl, expectedType, !isConvertable) || !compExpr(*expr.fvl, expectedType, !isConvertable) && compExpr(*expr
-						.svl, expectedType, isConvertable))
-				{
-					return false;
-				}
-			}
-			else
+			if (!compExpr(*expr.svl, expectedType, isConvertable))
 			{
 				return false;
 			}
+			compExpr(*expr.fvl, expectedType);
+			varCompiler::pop("rdi");
+			varCompiler::pop("rdx");
+			varCompiler::push("rdi");
+			varCompiler::push("rdx");
+		}
+		else if (!compExpr(*expr.svl, expectedType, isConvertable))
+		{
+			if (!compExpr(*expr.fvl, expectedType, isConvertable))
+			{
+				return false;
+			}
+			compExpr(*expr.svl, expectedType);
 		}
 	}
 	else if (!compExpr(*expr.fvl, expectedType) || !compExpr(*expr.svl, expectedType))
