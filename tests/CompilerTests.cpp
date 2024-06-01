@@ -14,7 +14,7 @@ std::vector<node::ValExpr> valExprArr =
 };
 struct valExprVisitor
 {
-	Token operator()(const node::ExprIdent &exprIdent)
+	Token operator()(const node::ExprIdent &exprIdent) const
 	{
 		return exprIdent.ident;
 	}

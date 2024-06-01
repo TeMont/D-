@@ -317,17 +317,17 @@ main:
 	mov rdx, rsi
 	call _countStrLen
 	cmp byte [rdx+rcx-1], 10
-	je label1
-	jmp label2
-	label1:
+	je label0
+	jmp label1
+	label0:
 	mov byte [rdx+rcx-1], 00H
-	label2:
+	label1:
 	cmp byte [rdx+rcx-2], 13
-	je label4
-	jmp label5
-	label4:
+	je label2
+	jmp label3
+	label2:
 	mov byte [rdx+rcx-2], 00H
-	label5:
+	label3:
 	call _stof
 	movq rdx, xmm0
 	push rdx
@@ -352,17 +352,17 @@ main:
 	mov rdx, rsi
 	call _countStrLen
 	cmp byte [rdx+rcx-1], 10
-	je label7
-	jmp label8
-	label7:
+	je label4
+	jmp label5
+	label4:
 	mov byte [rdx+rcx-1], 00H
-	label8:
+	label5:
 	cmp byte [rdx+rcx-2], 13
-	je label10
-	jmp label11
-	label10:
+	je label6
+	jmp label7
+	label6:
 	mov byte [rdx+rcx-2], 00H
-	label11:
+	label7:
 	movzx rdx, byte [rsi]
 	push rdx
 	mov rsi, OutputBuffer
@@ -386,17 +386,17 @@ main:
 	mov rdx, rsi
 	call _countStrLen
 	cmp byte [rdx+rcx-1], 10
-	je label13
-	jmp label14
-	label13:
+	je label8
+	jmp label9
+	label8:
 	mov byte [rdx+rcx-1], 00H
-	label14:
+	label9:
 	cmp byte [rdx+rcx-2], 13
-	je label16
-	jmp label17
-	label16:
+	je label10
+	jmp label11
+	label10:
 	mov byte [rdx+rcx-2], 00H
-	label17:
+	label11:
 	call _stof
 	movq rdx, xmm0
 	push rdx
@@ -414,6 +414,47 @@ main:
 	mov rdx, QWORD [rsp + 0]
 	push rdx
 	mov rdx, '+'
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	je label13
+	mov rdx, 0
+	jmp label14
+	label13:
+	mov rdx, 1
+	label14:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	je label12
+	mov rdx, QWORD [rsp + 24]
+	push rdx
+	mov rdx, QWORD [rsp + 24]
+	push rdx
+	pop rdi
+	pop rdx
+	movq xmm0, rdx
+	movq xmm1, rdi
+	addss xmm0, xmm1
+	movq rdx, xmm0
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 8], rdx
+	xor rdx, rdx
+	xor rdx, rdx
+;;	/if
+	jmp label17
+	label12:
+;;	elif
+	mov rdx, QWORD [rsp + 0]
+	push rdx
+	mov rdx, '-'
 	push rdx
 	xor rdx, rdx
 	pop rdi
@@ -439,47 +480,6 @@ main:
 	pop rdx
 	movq xmm0, rdx
 	movq xmm1, rdi
-	addss xmm0, xmm1
-	movq rdx, xmm0
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	mov [rsp + 8], rdx
-	xor rdx, rdx
-	xor rdx, rdx
-;;	/if
-	jmp label23
-	label18:
-;;	elif
-	mov rdx, QWORD [rsp + 0]
-	push rdx
-	mov rdx, '-'
-	push rdx
-	xor rdx, rdx
-	pop rdi
-	pop rdx
-	cmp rdx, rdi
-	je label25
-	mov rdx, 0
-	jmp label26
-	label25:
-	mov rdx, 1
-	label26:
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	cmp rdx, 0
-	je label24
-	mov rdx, QWORD [rsp + 24]
-	push rdx
-	mov rdx, QWORD [rsp + 24]
-	push rdx
-	pop rdi
-	pop rdx
-	movq xmm0, rdx
-	movq xmm1, rdi
 	subss xmm0, xmm1
 	movq rdx, xmm0
 	push rdx
@@ -489,9 +489,9 @@ main:
 	mov [rsp + 8], rdx
 	xor rdx, rdx
 	xor rdx, rdx
-	jmp label23
+	jmp label17
 ;;	/elif
-	label24:
+	label18:
 ;;	elif
 	mov rdx, QWORD [rsp + 0]
 	push rdx
@@ -501,18 +501,18 @@ main:
 	pop rdi
 	pop rdx
 	cmp rdx, rdi
-	je label30
+	je label24
 	mov rdx, 0
-	jmp label31
-	label30:
+	jmp label25
+	label24:
 	mov rdx, 1
-	label31:
+	label25:
 	push rdx
 	xor rdx, rdx
 	xor rdi, rdi
 	pop rdx
 	cmp rdx, 0
-	je label29
+	je label23
 	mov rdx, QWORD [rsp + 24]
 	push rdx
 	mov rdx, QWORD [rsp + 24]
@@ -530,9 +530,9 @@ main:
 	mov [rsp + 8], rdx
 	xor rdx, rdx
 	xor rdx, rdx
-	jmp label23
+	jmp label17
 ;;	/elif
-	label29:
+	label23:
 ;;	elif
 	mov rdx, QWORD [rsp + 0]
 	push rdx
@@ -542,18 +542,18 @@ main:
 	pop rdi
 	pop rdx
 	cmp rdx, rdi
-	je label35
+	je label29
 	mov rdx, 0
-	jmp label36
-	label35:
+	jmp label30
+	label29:
 	mov rdx, 1
-	label36:
+	label30:
 	push rdx
 	xor rdx, rdx
 	xor rdi, rdi
 	pop rdx
 	cmp rdx, 0
-	je label34
+	je label28
 	mov rdx, QWORD [rsp + 24]
 	push rdx
 	mov rdx, QWORD [rsp + 24]
@@ -571,9 +571,9 @@ main:
 	mov [rsp + 8], rdx
 	xor rdx, rdx
 	xor rdx, rdx
-	jmp label23
+	jmp label17
 ;;	/elif
-	label34:
+	label28:
 ;;	else
 ;;	Output
 	mov rdx, SC3
@@ -594,7 +594,7 @@ main:
 	xor rdx, rdx
 	xor rdx, rdx
 	xor rdx, rdx
-	label23:
+	label17:
 	xor rdx, rdx
 ;;	Output
 	mov rdx, QWORD [rsp + 8]

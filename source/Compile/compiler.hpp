@@ -15,15 +15,15 @@ bool linkObjectFiles(const std::string &path);
 class compiler
 {
 public:
-	explicit compiler(node::Prog prog) : m_prog(std::move(prog))
-	{
-	}
+    explicit compiler(node::Prog prog) : m_prog(std::move(prog))
+    {
+    }
 
-	std::stringstream compile();
-	static void compInput(const node::StmtInput &stmtInput);
-	static void compStmt(const node::Stmt &stmt);
-	static std::string createLabel();
-	static std::string createSCLabel();
+    std::stringstream compile();
+    static void compInput(const node::StmtInput &stmtInput);
+    static void compStmt(const node::Stmt &stmt);
+    static std::string createLabel();
+    static std::string createSCLabel();
 
 #ifdef TEST
 	static std::string getM_output()
@@ -55,10 +55,10 @@ public:
 	}
 #endif
 
-	const node::Prog m_prog;
-	static std::stringstream m_output;
-	static std::stringstream m_SC;
-	static std::stringstream m_bssSC;
-	static uint64_t m_labelCount;
-	static uint64_t m_SCCount;
+    const node::Prog m_prog;
+    static std::stringstream m_output;
+    static std::stringstream m_SC;
+    static std::stringstream m_bssSC;
+    static uint64_t m_labelCount;
+    static uint64_t m_SCCount;
 };

@@ -219,7 +219,7 @@ struct exprVisitor
 		std::visit(exprVisit, sValExpr.var);
 	}
 
-	void operator()([[maybe_unused]] node::StmtInput *input)
+	void operator()([[maybe_unused]] node::StmtInput *input) const
 	{
 		FAIL() << "ERROR Unexpected input statement\n";
 	}
