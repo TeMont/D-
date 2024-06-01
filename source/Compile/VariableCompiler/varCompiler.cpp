@@ -70,7 +70,7 @@ void varCompiler::compLet(const node::StmtLet &stmtLet)
         std::cerr << "[Compile Error] ERR004 Identifier '" << stmtLet.ident.value.value() << "' Is Already Declared";
         exit(EXIT_FAILURE);
     }
-    const std::string varType = letToType[stmtLet.letType];
+    const std::string &varType = letToType[stmtLet.letType];
     m_vars.insert({stmtLet.ident.value.value(), Var{m_stackSize, varType, stmtLet.isConst}});
     if (varType == BOOL_TYPE)
     {

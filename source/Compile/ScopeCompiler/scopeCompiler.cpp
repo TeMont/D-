@@ -2,13 +2,13 @@
 
 void scopeCompiler::compScope(const node::Scope &scope)
 {
-    const auto beginVars = varCompiler::m_vars;
-    const size_t beginStackSize = varCompiler::m_stackSize;
+    const auto &beginVars = varCompiler::m_vars;
+    const size_t &beginStackSize = varCompiler::m_stackSize;
     for (const auto &stmt : scope.statements)
     {
         compiler::compStmt(stmt);
     }
-    const size_t popCount = varCompiler::m_stackSize - beginStackSize;
+    const size_t &popCount = varCompiler::m_stackSize - beginStackSize;
     if (popCount != 0)
     {
         compiler::m_output << "\tadd rsp, " << popCount * 8 << "\n";
@@ -30,7 +30,7 @@ void scopeCompiler::compIfPred(const node::IfPred &pred, const std::string &endL
         void operator()(const node::StmtElIf *elIf) const
         {
             compiler::m_output << ";;\telif\n";
-            const std::string falseLabel = compiler::createLabel();
+            const std::string &falseLabel = compiler::createLabel();
             if (!expressionCompiler::compExpr(*elIf->cond, INT_TYPE, false) && !expressionCompiler::compExpr(*elIf->cond, FLOAT_TYPE, false)
                 &&
                 !expressionCompiler::compExpr(*elIf->cond, CHAR_TYPE, false) && !expressionCompiler::compExpr(*elIf->cond, BOOL_TYPE))
@@ -41,7 +41,7 @@ void scopeCompiler::compIfPred(const node::IfPred &pred, const std::string &endL
             varCompiler::pop("rdx");
             compiler::m_output << "\tcmp rdx, 0\n";
             compiler::m_output << "\tje " << falseLabel << "\n";
-            scopeCompiler::compScope(elIf->scope);
+            compScope(elIf->scope);
             compiler::m_output << "\txor rdx, rdx\n";
             compiler::m_output << "\tjmp " << endLabel << "\n";
             compiler::m_output << ";;\t/elif\n";
@@ -56,7 +56,7 @@ void scopeCompiler::compIfPred(const node::IfPred &pred, const std::string &endL
         void operator()(const node::StmtElse *Else) const
         {
             compiler::m_output << ";;\telse\n";
-            scopeCompiler::compScope(Else->scope);
+            compScope(Else->scope);
             compiler::m_output << "\txor rdx, rdx\n";
             compiler::m_output << ";;\t/else\n";
         }
@@ -68,7 +68,7 @@ void scopeCompiler::compIfPred(const node::IfPred &pred, const std::string &endL
 void scopeCompiler::compIfStmt(const node::StmtIf &stmtIf)
 {
     compiler::m_output << ";;\tif\n";
-    const std::string falseLabel = compiler::createLabel();
+    const std::string &falseLabel = compiler::createLabel();
     if (!expressionCompiler::compExpr(*stmtIf.cond, INT_TYPE, false) && !expressionCompiler::compExpr(*stmtIf.cond, FLOAT_TYPE, false) &&
         !expressionCompiler::compExpr(*stmtIf.cond, CHAR_TYPE, false) && !expressionCompiler::compExpr(*stmtIf.cond, BOOL_TYPE))
     {
@@ -83,7 +83,7 @@ void scopeCompiler::compIfStmt(const node::StmtIf &stmtIf)
     compiler::m_output << ";;\t/if\n";
     if (stmtIf.pred.has_value())
     {
-        const std::string endLabel = compiler::createLabel();
+        const std::string &endLabel = compiler::createLabel();
         compiler::m_output << "\tjmp " << endLabel << "\n";
         compiler::m_output << "\t" << falseLabel << ":\n";
         compIfPred(*stmtIf.pred.value(), endLabel);
@@ -99,10 +99,10 @@ void scopeCompiler::compIfStmt(const node::StmtIf &stmtIf)
 void scopeCompiler::compForLoop(const node::StmtForLoop &forLoop)
 {
     compiler::m_output << ";;\tfor loop\n";
-    const std::string startLabel = compiler::createLabel();
-    const std::string endLabel = compiler::createLabel();
-    const size_t beginStackSize = varCompiler::m_stackSize;
-    const auto beginVars = varCompiler::m_vars;
+    const std::string &startLabel = compiler::createLabel();
+    const std::string &endLabel = compiler::createLabel();
+    const size_t &beginStackSize = varCompiler::m_stackSize;
+    const auto &beginVars = varCompiler::m_vars;
     if (forLoop.initStmt.has_value())
     {
         compiler::compStmt(*forLoop.initStmt.value());
@@ -134,7 +134,7 @@ void scopeCompiler::compForLoop(const node::StmtForLoop &forLoop)
     compiler::m_output << "\txor rdx, rdx\n";
     compiler::m_output << "\tjmp " << startLabel << "\n";
     compiler::m_output << "\t" << endLabel << ":\n";
-    if (const size_t popCount = varCompiler::m_stackSize - beginStackSize; popCount != 0)
+    if (const size_t &popCount = varCompiler::m_stackSize - beginStackSize; popCount != 0)
     {
         compiler::m_output << "\tadd rsp, " << popCount * 8 << "\n";
     }
@@ -146,8 +146,8 @@ void scopeCompiler::compForLoop(const node::StmtForLoop &forLoop)
 void scopeCompiler::compWhileLoop(const node::StmtWhileLoop &whileLoop)
 {
     compiler::m_output << ";;\twhile loop\n";
-    const std::string startLabel = compiler::createLabel();
-    const std::string endLabel = compiler::createLabel();
+    const std::string &startLabel = compiler::createLabel();
+    const std::string &endLabel = compiler::createLabel();
     compiler::m_output << "\t" << startLabel << ":\n";
     if (!expressionCompiler::compExpr(*whileLoop.cond, INT_TYPE, false) && !expressionCompiler::compExpr(*whileLoop.cond, FLOAT_TYPE, false)
         &&

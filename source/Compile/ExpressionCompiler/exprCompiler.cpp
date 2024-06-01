@@ -2,7 +2,7 @@
 
 #include <utility>
 
-bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::string &expectedType, const bool isConvertable)
+bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::string &expectedType, const bool &isConvertable)
 {
     struct exprVisitor
     {
@@ -241,10 +241,10 @@ bool expressionCompiler::compValExpr(const node::ValExpr &expr, const std::strin
     return std::visit(visitor, expr.var);
 }
 
-void expressionCompiler::compBoolExpr(const std::optional<std::string> &literal, const bool isReversed)
+void expressionCompiler::compBoolExpr(const std::optional<std::string> &literal, const bool &isReversed)
 {
-    const std::string endLabel = compiler::createLabel();
-    const std::string falseLabel = compiler::createLabel();
+    const std::string &endLabel = compiler::createLabel();
+    const std::string &falseLabel = compiler::createLabel();
     if (literal.has_value())
     {
         compiler::m_output << "\tmov rdx, " << literal.value() << '\n';
@@ -261,10 +261,10 @@ void expressionCompiler::compBoolExpr(const std::optional<std::string> &literal,
     compiler::m_output << "\txor rdx, rdx\n";
 }
 
-void expressionCompiler::compBoolExprFloat32(const std::optional<std::string> &literal, const bool isReversed, const bool isRegister)
+void expressionCompiler::compBoolExprFloat32(const std::optional<std::string> &literal, const bool &isReversed, const bool &isRegister)
 {
-    const std::string endLabel = compiler::createLabel();
-    const std::string falseLabel = compiler::createLabel();
+    const std::string &endLabel = compiler::createLabel();
+    const std::string &falseLabel = compiler::createLabel();
     if (literal.has_value())
     {
         if (isRegister)
@@ -290,14 +290,14 @@ void expressionCompiler::compBoolExprFloat32(const std::optional<std::string> &l
     compiler::m_output << "\txor rdx, rdx\n";
 }
 
-bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::string &expectedType, const bool isConvertable)
+bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::string &expectedType, const bool &isConvertable)
 {
     if (compExpr(*expr.fvl, STR_TYPE) || compExpr(*expr.svl, STR_TYPE))
     {
         std::cerr << "[Compile Error] ERR009 Binary Operations Cannot Be Used With Strings";
         exit(EXIT_FAILURE);
     }
-    const Tokens op = expr.oper;
+    const Tokens &op = expr.oper;
     if (op == PLUS || op == MINUS || op == MULT || op == DIV)
     {
         if (compExpr(*expr.fvl, CHAR_TYPE) || compExpr(*expr.svl, CHAR_TYPE))
@@ -341,8 +341,8 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
         compiler::m_output << "\tmovq xmm0, rdx\n";
         compiler::m_output << "\tmovq xmm1, rdi\n";
     }
-    const std::string trueLabel = compiler::createLabel();
-    const std::string endLabel = compiler::createLabel();
+    const std::string &trueLabel = compiler::createLabel();
+    const std::string &endLabel = compiler::createLabel();
     if (op == Tokens::PLUS)
     {
         compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\taddss xmm0, xmm1\n" : "\tadd rdx, rdi\n");
@@ -432,9 +432,9 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
     }
     else if (op == Tokens::AND)
     {
-        compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tmov rdx,__?float32?__(0.0)\n\tmovq xmm2, rdx\n" : "");
-        const std::string falseLabel = compiler::createLabel();
-        compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm0, xmm2\n" : "\tcmp rdx, 0\n");
+        compiler::m_output << (expectedType == FLOAT_TYPE ? "\tmov rdx,__?float32?__(0.0)\n\tmovq xmm2, rdx\n" : "");
+        const std::string &falseLabel = compiler::createLabel();
+        compiler::m_output << (expectedType == FLOAT_TYPE ? "\tcomiss xmm0, xmm2\n" : "\tcmp rdx, 0\n");
         compiler::m_output << "\tje " << falseLabel << "\n";
         compiler::m_output << ((expectedType == FLOAT_TYPE) ? "\tcomiss xmm1, xmm2\n" : "\tcmp rdi, 0\n");
         compiler::m_output << "\tje " << falseLabel << "\n";
@@ -467,7 +467,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
     return true;
 }
 
-bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &expectedType, const bool isConvertable)
+bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &expectedType, const bool &isConvertable)
 {
     struct exprVisitor
     {
@@ -493,10 +493,10 @@ bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &exp
         {
             compiler::m_output << ";;\tInput\n";
             compiler::compInput(*inputExpr);
-            const std::string trueLabel1 = compiler::createLabel();
-            const std::string endLabel1 = compiler::createLabel();
-            const std::string trueLabel2 = compiler::createLabel();
-            const std::string endLabel2 = compiler::createLabel();
+            const std::string &trueLabel1 = compiler::createLabel();
+            const std::string &endLabel1 = compiler::createLabel();
+            const std::string &trueLabel2 = compiler::createLabel();
+            const std::string &endLabel2 = compiler::createLabel();
             compiler::m_output << "\tmov rdx, rsi\n";
             compiler::m_output << "\tcall _countStrLen\n";
             compiler::m_output << "\tcmp byte [rdx+rcx-1], 10\n";
@@ -513,7 +513,7 @@ bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &exp
             compiler::m_output << "\t" << endLabel2 << ":\n";
             if (expectedType == STR_TYPE)
             {
-                const std::string SC = compiler::createSCLabel();
+                const std::string &SC = compiler::createSCLabel();
                 compiler::m_bssSC << "\t" << SC << " resb 256\n";
                 compiler::m_output << "\tmov rdi, " << SC << "\n";
                 compiler::m_output << "\tmov rcx, 256\n";
@@ -560,7 +560,7 @@ bool expressionCompiler::compExpr(const node::Expr &expr, const std::string &exp
     return std::visit(visitor, expr.var);
 }
 
-void expressionCompiler::compIncDec(const Token &ident, const bool isInc, const std::string &expectedType)
+void expressionCompiler::compIncDec(const Token &ident, const bool &isInc, const std::string &expectedType)
 {
     auto *fvl = new node::Expr{new node::ValExpr{node::ExprIdent{ident}}};
     auto *svl = new node::Expr{new node::ValExpr{node::ExprIntLit{INT_LITERAL, "1"}}};
