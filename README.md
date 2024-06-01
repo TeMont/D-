@@ -25,6 +25,7 @@ The compiler is made using NASM & gcc Linker.
 - [X] For Loop
 - [X] Negative Integers
 - [X] Float Variables
+- [ ] Break / Continue keyword
 - [ ] Switch-case statement
 - [ ] += -= *= /= operators
 
