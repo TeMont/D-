@@ -72,7 +72,7 @@ struct Token
 class tokenizer
 {
 public:
-	inline explicit tokenizer(std::string source) : m_src(std::move(source))
+	explicit tokenizer(std::string source) : m_src(std::move(source))
 	{
 	}
 
@@ -80,7 +80,7 @@ public:
 
 private:
 
-	[[nodiscard]] std::optional<char> peek(int offset = 0) const;
+	[[nodiscard]] std::optional<char> peek(const int &offset = 0) const;
 
 	char consume();
 

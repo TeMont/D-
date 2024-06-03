@@ -52,7 +52,7 @@ std::vector<Token> tokenizer::tokenize()
 
 	while (peek().has_value())
 	{
-		char ch = peek().value();
+		const char &ch = peek().value();
 		if (std::isalpha(ch))
 		{
 			buffer.push_back(consume());
@@ -60,9 +60,7 @@ std::vector<Token> tokenizer::tokenize()
 			{
 				buffer.push_back(consume());
 			}
-
-			auto it = tokensMap.find(buffer);
-			if (it != tokensMap.end())
+			if (auto const &it = tokensMap.find(buffer); it != tokensMap.end())
 			{
 				tokens.push_back({tokensMap[buffer]});
 				buffer.clear();
@@ -116,7 +114,7 @@ std::vector<Token> tokenizer::tokenize()
 				if (peek().value() == '\\')
 				{
 					consume();
-					char symbol = consume();
+					const char &symbol = consume();
 					buffer.push_back('\'');
 					buffer.push_back(',');
 					switch (symbol)
@@ -267,7 +265,7 @@ std::vector<Token> tokenizer::tokenize()
 					buffer.clear();
 					continue;
 				}
-				else if (peek() == buffer[0])
+				if (peek() == buffer[0])
 				{
 					buffer.push_back(consume());
 				}
@@ -281,8 +279,7 @@ std::vector<Token> tokenizer::tokenize()
 						buffer.push_back(consume());
 					}
 				}
-				auto it2 = tokensMap.find(buffer);
-				if (it2 == tokensMap.end())
+				if (auto const &it2 = tokensMap.find(buffer); it2 == tokensMap.end())
 				{
 					buffer.pop_back();//IF IS NOT IN TOKENS MAP POP '=' SYMBOL
 				}
@@ -299,16 +296,13 @@ std::vector<Token> tokenizer::tokenize()
 	return tokens;
 }
 
-[[nodiscard]] std::optional<char> tokenizer::peek(int offset) const
+[[nodiscard]] std::optional<char> tokenizer::peek(const int &offset) const
 {
 	if (m_index + offset >= m_src.length())
 	{
 		return {};
 	}
-	else
-	{
-		return m_src[m_index + offset];
-	}
+	return m_src[m_index + offset];
 }
 
 char tokenizer::consume()
