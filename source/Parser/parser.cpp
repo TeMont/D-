@@ -135,23 +135,50 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
             std::cerr << "[Parse Error] ERR005 Undeclared Identifier '" << varIdent.value.value() << "'";
             exit(EXIT_FAILURE);
         }
-        tryConsume('=');
-        if (auto const &nodeExpr = expressionParser::parseExpr(varParser::m_vars[varIdent.value.value()]))
+        if (peek().has_value())
         {
-            stmtNode = {
-                {
+            auto const &oper = consume();
+            auto const &nodeExpr = expressionParser::parseExpr(varParser::m_vars[varIdent.value.value()]);
+            if (!nodeExpr.has_value())
+            {
+                std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
+                exit(EXIT_FAILURE);
+            }
+            std::unordered_map<Tokens, Tokens> assingOprToOpr =
+            {
+                {PLUSEQ, PLUS},
+                {MINUSEQ, MINUS},
+                {MULTEQ, MULT},
+                {DIVEQ, DIV},
+            };
+            if (oper.type == Tokens::PLUSEQ || oper.type == Tokens::MINUSEQ || oper.type == Tokens::MULTEQ || oper.type == Tokens::DIVEQ)
+            {
+                stmtNode = {
                     node::StmtVar{
                         varIdent,
-                        new node::Expr(nodeExpr.value()),
+                        new node::Expr(new node::BinExpr(new node::Expr(new node::ValExpr(node::ExprIdent{varIdent})),
+                                                         new node::Expr(nodeExpr.value()), assingOprToOpr[oper.type])),
                         varParser::m_vars[varIdent.value.value()]
                     }
-                }
-            };
-        }
-        else
-        {
-            std::cerr << "[Parse Error] ERR006 Value Doesn't Matches Type";
-            exit(EXIT_FAILURE);
+                };
+            }
+            else if (oper.type == Tokens::EQ)
+            {
+                stmtNode = {
+                    {
+                        node::StmtVar{
+                            varIdent,
+                            new node::Expr(nodeExpr.value()),
+                            varParser::m_vars[varIdent.value.value()]
+                        }
+                    }
+                };
+            }
+            else
+            {
+                std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '='";
+                exit(EXIT_FAILURE);
+            }
         }
     }
     else
