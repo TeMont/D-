@@ -189,11 +189,21 @@ void compiler::compStmt(const node::Stmt &stmt)
         {
             varCompiler::compVar(stmtVar);
         }
+
+        void operator()(const node::StmtCont &stmtCont) const
+        {
+            scopeCompiler::compContinueStmt();
+        }
+
+        void operator()(const node::StmtBreak &stmtBreak) const
+        {
+            scopeCompiler::compBreakStmt();
+        }
     };
     stmtVisitor visitor;
     std::visit(visitor, stmt.var);
-}
-
+}\
+\
 std::stringstream compiler::compile()
 {
     m_output << "extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess\n\n"

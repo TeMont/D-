@@ -1,5 +1,8 @@
 #include "scopeCompiler.hpp"
 
+std::vector<std::string> scopeCompiler::lastLoopBegin;
+std::vector<std::string> scopeCompiler::lastLoopEnd;
+
 void scopeCompiler::compScope(const node::Scope &scope)
 {
     const auto &beginVars = varCompiler::m_vars;
@@ -78,7 +81,7 @@ void scopeCompiler::compIfStmt(const node::StmtIf &stmtIf)
     varCompiler::pop("rdx");
     compiler::m_output << "\tcmp rdx, 0\n";
     compiler::m_output << "\tje " << falseLabel << "\n";
-    scopeCompiler::compScope(stmtIf.scope);
+    compScope(stmtIf.scope);
     compiler::m_output << "\txor rdx, rdx\n";
     compiler::m_output << ";;\t/if\n";
     if (stmtIf.pred.has_value())
@@ -100,7 +103,10 @@ void scopeCompiler::compForLoop(const node::StmtForLoop &forLoop)
 {
     compiler::m_output << ";;\tfor loop\n";
     const std::string &startLabel = compiler::createLabel();
+    const std::string &iterLabel = compiler::createLabel();
     const std::string &endLabel = compiler::createLabel();
+    lastLoopBegin.push_back(iterLabel);
+    lastLoopEnd.push_back(endLabel);
     const size_t &beginStackSize = varCompiler::m_stackSize;
     const auto &beginVars = varCompiler::m_vars;
     if (forLoop.initStmt.has_value())
@@ -126,7 +132,8 @@ void scopeCompiler::compForLoop(const node::StmtForLoop &forLoop)
     }
     compiler::m_output << "\tcmp rdx, 0\n";
     compiler::m_output << "\tje " << endLabel << "\n";
-    scopeCompiler::compScope(forLoop.scope);
+    compScope(forLoop.scope);
+    compiler::m_output << "\t" << iterLabel << ":\n";
     if (forLoop.iterationStmt.has_value())
     {
         compiler::compStmt(*forLoop.iterationStmt.value());
@@ -140,6 +147,8 @@ void scopeCompiler::compForLoop(const node::StmtForLoop &forLoop)
     }
     varCompiler::m_vars = beginVars;
     compiler::m_output << "\txor rdx, rdx\n";
+    lastLoopBegin.pop_back();
+    lastLoopEnd.pop_back();
     compiler::m_output << ";;\t/for loop\n";
 }
 
@@ -148,6 +157,8 @@ void scopeCompiler::compWhileLoop(const node::StmtWhileLoop &whileLoop)
     compiler::m_output << ";;\twhile loop\n";
     const std::string &startLabel = compiler::createLabel();
     const std::string &endLabel = compiler::createLabel();
+    lastLoopBegin.push_back(startLabel);
+    lastLoopEnd.push_back(endLabel);
     compiler::m_output << "\t" << startLabel << ":\n";
     if (!expressionCompiler::compExpr(*whileLoop.cond, INT_TYPE, false) && !expressionCompiler::compExpr(*whileLoop.cond, FLOAT_TYPE, false)
         &&
@@ -159,9 +170,21 @@ void scopeCompiler::compWhileLoop(const node::StmtWhileLoop &whileLoop)
     varCompiler::pop("rdx");
     compiler::m_output << "\tcmp rdx, 0\n";
     compiler::m_output << "\tje " << endLabel << "\n";
-    scopeCompiler::compScope(whileLoop.scope);
+    compScope(whileLoop.scope);
     compiler::m_output << "\txor rdx, rdx\n";
     compiler::m_output << "\tjmp " << startLabel << "\n";
     compiler::m_output << "\t" << endLabel << ":\n";
+    lastLoopBegin.pop_back();
+    lastLoopEnd.pop_back();
     compiler::m_output << ";;\t/while loop\n";
+}
+
+void scopeCompiler::compBreakStmt()
+{
+    compiler::m_output << "\tjmp " << lastLoopEnd[lastLoopEnd.size()-1] << "\n";
+}
+
+void scopeCompiler::compContinueStmt()
+{
+    compiler::m_output << "\tjmp " << lastLoopBegin[lastLoopBegin.size()-1] << "\n";
 }

@@ -143,9 +143,12 @@ namespace node
         Expr *msg;
     };
 
+    struct StmtCont {};
+    struct StmtBreak {};
+
     struct Stmt
     {
-        std::variant<StmtReturn, StmtLet, StmtVar, StmtIf, StmtOutput, StmtInput, StmtWhileLoop, StmtForLoop, IncDec>
+        std::variant<StmtReturn, StmtLet, StmtVar, StmtIf, StmtOutput, StmtInput, StmtWhileLoop, StmtForLoop, IncDec, StmtCont, StmtBreak>
         var;
     };
 

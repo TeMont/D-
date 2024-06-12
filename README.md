@@ -27,7 +27,7 @@ The compiler is made using NASM & gcc Linker.
 - [X] Float Variables
 - [X] Float Increment and Decrement
 - [X] += -= *= /= operators
-- [ ] Break / Continue keyword
+- [X] Break / Continue keyword
 - [ ] Switch-case statement
 
 # GUIDE

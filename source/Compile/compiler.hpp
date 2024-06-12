@@ -59,6 +59,6 @@ public:
     static std::stringstream m_output;
     static std::stringstream m_SC;
     static std::stringstream m_bssSC;
-    static uint64_t m_labelCount;
-    static uint64_t m_SCCount;
+    static size_t m_labelCount;
+    static size_t m_SCCount;
 };

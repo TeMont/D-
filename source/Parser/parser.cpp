@@ -22,6 +22,7 @@ void parser::tryConsume(const char &charToConsume)
 {
     if (peek().has_value() && peek().value().type != tokensMap[std::string(1, charToConsume)] || !peek().has_value())
     {
+        auto x = peek().value();
         std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '" + std::string(1, charToConsume) + "'";
         exit(EXIT_FAILURE);
     }
@@ -180,6 +181,16 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
                 exit(EXIT_FAILURE);
             }
         }
+    }
+    else if (peek().value().type == CONTINUE)
+    {
+        stmtNode = {node::StmtCont{}};
+        consume();
+    }
+    else if (peek().value().type == BREAK)
+    {
+        stmtNode = {node::StmtBreak{}};
+        consume();
     }
     else
     {

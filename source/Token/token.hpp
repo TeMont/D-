@@ -62,7 +62,9 @@ enum Tokens
 	WHILE,
 	CONST,
 	INC,
-	DEC,
+    DEC,
+    CONTINUE,
+    BREAK,
 };
 
 extern std::map<std::string, Tokens> tokensMap;

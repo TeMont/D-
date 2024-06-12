@@ -295,9 +295,52 @@ main:
 	push rdx
 	xor rdx, rdx
 ;;	/let
+;;	while loop
+	label0:
 	mov rdx, QWORD [rsp + 0]
 	push rdx
-	mov rdx, 3
+	mov rdx, 10
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	jb label2
+	mov rdx, 0
+	jmp label3
+	label2:
+	mov rdx, 1
+	label3:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	je label1
+;;	if
+	mov rdx, QWORD [rsp + 0]
+	push rdx
+	mov rdx, 5
+	push rdx
+	xor rdx, rdx
+	pop rdi
+	pop rdx
+	cmp rdx, rdi
+	je label5
+	mov rdx, 0
+	jmp label6
+	label5:
+	mov rdx, 1
+	label6:
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	cmp rdx, 0
+	je label4
+	mov rdx, QWORD [rsp + 0]
+	push rdx
+	mov rdx, 1
 	push rdx
 	xor rdx, rdx
 	pop rdi
@@ -309,81 +352,39 @@ main:
 	pop rdx
 	mov [rsp + 0], rdx
 	xor rdx, rdx
-	mov rdx, QWORD [rsp + 0]
-	push rdx
-	mov rdx, 6
-	push rdx
+	jmp label0
 	xor rdx, rdx
-	pop rdi
-	pop rdx
-	sub rdx, rdi
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	mov [rsp + 0], rdx
-	xor rdx, rdx
-;;	let
-	mov rdx, 9
-	push rdx
-	xor rdx, rdx
-;;	/let
-	mov rdx, QWORD [rsp + 0]
-	push rdx
-	mov rdx, QWORD [rsp + 16]
-	push rdx
-	pop rdi
-	pop rdx
-	imul rdx, rdi
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	mov [rsp + 0], rdx
-	xor rdx, rdx
-;;	let
-	mov rdx, 10
-	mov rdx, rdx
-	cvtsi2ss xmm0, rdx
-	movq rdx, xmm0
-	push rdx
-	xor rdx, rdx
-;;	/let
-	mov rdx, QWORD [rsp + 0]
-	push rdx
-	mov rdx, QWORD [rsp + 16]
-	cvtsi2ss xmm0, rdx
-	movq rdx, xmm0
-	push rdx
-	pop rdi
-	pop rdx
-	movq xmm0, rdx
-	movq xmm1, rdi
-	divss xmm0, xmm1
-	movq rdx, xmm0
-	push rdx
-	xor rdx, rdx
-	xor rdi, rdi
-	pop rdx
-	mov [rsp + 0], rdx
+;;	/if
+	label4:
 	xor rdx, rdx
 ;;	Output
 	mov rdx, QWORD [rsp + 0]
 	push rdx
 	pop rdx
-	movq xmm0, rdx
+	mov rax, rdx
 	mov rsi, OutputBuffer
-	call _ftoa
+	call _itoa
 	mov rdx, rsi
 	call _printf
 	mov rsi, OutputBuffer
 	mov rdx, 20
 	call _clearBuffer
 ;;	/Output
-;;	return
-	mov rdx, 2
+	mov rdx, QWORD [rsp + 0]
+	push rdx
+	mov rdx, 1
 	push rdx
 	xor rdx, rdx
-	pop rcx
-	call ExitProcess
-;;	/return
+	pop rdi
+	pop rdx
+	add rdx, rdi
+	push rdx
+	xor rdx, rdx
+	xor rdi, rdi
+	pop rdx
+	mov [rsp + 0], rdx
+	xor rdx, rdx
+	xor rdx, rdx
+	jmp label0
+	label1:
+;;	/while loop

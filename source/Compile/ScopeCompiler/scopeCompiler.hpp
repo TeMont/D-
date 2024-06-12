@@ -10,4 +10,9 @@ public:
     static void compIfStmt(const node::StmtIf &stmtIf);
     static void compForLoop(const node::StmtForLoop &forLoop);
     static void compWhileLoop(const node::StmtWhileLoop &whileLoop);
+    static void compBreakStmt();
+    static void compContinueStmt();
+
+    static std::vector<std::string> lastLoopBegin;
+    static std::vector<std::string> lastLoopEnd;
 };
