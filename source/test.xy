@@ -1,8 +1,6 @@
 int x = 7;
 switch (x)
 {
-    case 6:
-    case 7:
     case 5:
         stdOut("X = 5\n");
         break;
@@ -12,4 +10,7 @@ switch (x)
     case 2:
          stdOut("X = 2\n");
          break;
+    default:
+        stdOut("Default\n");
+        break;
 }

@@ -53,6 +53,7 @@ std::map<std::string, Tokens> tokensMap = //CONVERT STRING TO TOKEN
     {"break", BREAK},
     {"switch", SWITCH},
     {"case", CASE},
+    {"default", DEFAULT},
     {":", COLON},
 };
 

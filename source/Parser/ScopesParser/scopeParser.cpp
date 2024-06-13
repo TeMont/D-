@@ -106,8 +106,28 @@ std::optional<node::StmtSwitch> scopeParser::parseSwitchStmt()
         {
             cases.push_back(Case.value());
         }
+        node::Default Default;
+        if (parser::peek().has_value() && parser::peek().value().type == DEFAULT)
+        {
+            parser::consume();
+            parser::tryConsume(':');
+            if (parser::peek().has_value() && parser::peek().value().type == LBRACKET)
+            {
+                auto const &scope = parseScope();
+                Default = {{scope}};
+            }
+            else
+            {
+                std::vector<node::Stmt> stmts;
+                while (const auto &stmt = parser::parseStmt())
+                {
+                    stmts.push_back(stmt.value());
+                }
+                Default = {{}, stmts};
+            }
+        }
         parser::tryConsume('}');
-        return {node::StmtSwitch{new node::Expr(constant.value()), new std::vector<node::Case>(cases)}};
+        return {node::StmtSwitch{new node::Expr(constant.value()), new std::vector<node::Case>(cases), {Default}}};
     }
     std::cerr << "[Parse Error] ERR014 Expected Constant For Switch-Case";
     exit(EXIT_FAILURE);

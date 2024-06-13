@@ -203,6 +203,7 @@ void scopeCompiler::compContinueStmt()
 void scopeCompiler::compSwitchStmt(const node::StmtSwitch &stmtSwitch)
 {
     std::string endLabel = compiler::createLabel();
+    std::string defaultLabel = compiler::createLabel();
     lastLoopEnd.push_back(endLabel);
     std::string constType;
     if (expressionCompiler::compExpr(*stmtSwitch.constant, INT_TYPE, false))
@@ -243,13 +244,28 @@ void scopeCompiler::compSwitchStmt(const node::StmtSwitch &stmtSwitch)
         varCompiler::push("rdi");
         if (i == stmtSwitch.cases->size()-1)
         {
-            compiler::m_output << "\tjmp " << endLabel << "\n";
+            compiler::m_output << "\tjmp " << ((stmtSwitch.Default.has_value()) ? defaultLabel : endLabel) << "\n";
         }
     }
     for (int i = 0; i < stmtSwitch.cases->size(); ++i)
     {
         compiler::m_output << "\t" << labels[i] << ":\n";
         compCase(stmtSwitch.cases->at(i));
+    }
+    if (stmtSwitch.Default.has_value())
+    {
+        compiler::m_output << "\t" << defaultLabel << ":\n";
+        if (stmtSwitch.Default.value().scope.has_value())
+        {
+            compScope(stmtSwitch.Default.value().scope.value());
+        }
+        else
+        {
+            for (const auto &stmt : stmtSwitch.Default.value().statements)
+            {
+                compiler::compStmt(stmt);
+            }
+        }
     }
     compiler::m_output << "\t" << endLabel << ":\n";
     lastLoopEnd.pop_back();

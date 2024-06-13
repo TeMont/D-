@@ -150,10 +150,17 @@ namespace node
         std::vector<Stmt> statements;
     };
 
+    struct Default
+    {
+        std::optional<Scope> scope;
+        std::vector<Stmt> statements;
+    };
+
     struct StmtSwitch
     {
         Expr *constant;
         std::vector<Case> *cases;
+        std::optional<Default> Default;
     };
 
     struct StmtCont {};

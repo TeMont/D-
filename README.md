@@ -29,7 +29,7 @@ The compiler is made using NASM & gcc Linker.
 - [X] += -= *= /= operators
 - [X] Break / Continue keyword
 - [X] Switch-case statement
-- [ ] 'default' in switch-case
+- [X] 'default' in switch-case
 
 # GUIDE
 Dependencies: Nasm x86-64, gcc Linker

@@ -1,6 +1,7 @@
 SC0: db 'X = 5',10,'',00H
 SC1: db 'X = 10',10,'',00H
 SC2: db 'X = 2',10,'',00H
+SC3: db 'Default',10,'',00H
 section .bss
 extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess
 
@@ -300,15 +301,7 @@ main:
 ;;	/let
 	mov rdx, QWORD [rsp + 0]
 	push rdx
-	mov rdx, 6
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	pop rdi
-	cmp rdx, rdi
-	je label1
-	push rdi
-	mov rdx, 7
+	mov rdx, 5
 	push rdx
 	xor rdx, rdx
 	pop rdx
@@ -316,7 +309,7 @@ main:
 	cmp rdx, rdi
 	je label2
 	push rdi
-	mov rdx, 5
+	mov rdx, 10
 	push rdx
 	xor rdx, rdx
 	pop rdx
@@ -324,7 +317,7 @@ main:
 	cmp rdx, rdi
 	je label3
 	push rdi
-	mov rdx, 10
+	mov rdx, 2
 	push rdx
 	xor rdx, rdx
 	pop rdx
@@ -332,18 +325,8 @@ main:
 	cmp rdx, rdi
 	je label4
 	push rdi
-	mov rdx, 2
-	push rdx
-	xor rdx, rdx
-	pop rdx
-	pop rdi
-	cmp rdx, rdi
-	je label5
-	push rdi
-	jmp label0
-	label1:
+	jmp label1
 	label2:
-	label3:
 ;;	Output
 	mov rdx, SC0
 	push rdx
@@ -352,7 +335,7 @@ main:
 	call _printf
 ;;	/Output
 	jmp label0
-	label4:
+	label3:
 ;;	Output
 	mov rdx, SC1
 	push rdx
@@ -361,9 +344,18 @@ main:
 	call _printf
 ;;	/Output
 	jmp label0
-	label5:
+	label4:
 ;;	Output
 	mov rdx, SC2
+	push rdx
+	xor rdx, rdx
+	pop rdx
+	call _printf
+;;	/Output
+	jmp label0
+	label1:
+;;	Output
+	mov rdx, SC3
 	push rdx
 	xor rdx, rdx
 	pop rdx

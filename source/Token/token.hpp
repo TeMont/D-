@@ -67,6 +67,7 @@ enum Tokens
     BREAK,
     SWITCH,
     CASE,
+    DEFAULT,
     COLON,
 };
 
