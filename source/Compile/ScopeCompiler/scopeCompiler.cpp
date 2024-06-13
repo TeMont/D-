@@ -182,10 +182,20 @@ void scopeCompiler::compWhileLoop(const node::StmtWhileLoop &whileLoop)
 
 void scopeCompiler::compBreakStmt()
 {
+    if (lastLoopEnd.empty())
+    {
+        std::cerr << "[Compile Error] ERR13 You Can Use 'break' Only Within Loops Or Switch-Case Statements";
+        exit(EXIT_FAILURE);
+    }
     compiler::m_output << "\tjmp " << lastLoopEnd[lastLoopEnd.size()-1] << "\n";
 }
 
 void scopeCompiler::compContinueStmt()
 {
+    if (lastLoopBegin.empty())
+    {
+        std::cerr << "[Compile Error] ERR13 You Can Use 'continue' Only Within Loops";
+        exit(EXIT_FAILURE);
+    }
     compiler::m_output << "\tjmp " << lastLoopBegin[lastLoopBegin.size()-1] << "\n";
 }
