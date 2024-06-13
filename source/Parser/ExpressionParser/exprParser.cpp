@@ -5,7 +5,7 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
     if (parser::peek().has_value())
     {
         node::ValExpr valExpr;
-        if (parser::peek().value().type == Tokens::INT_LITERAL)
+        if (parser::peek().value().type == INT_LITERAL)
         {
             if (expectedType != INT_TYPE && expectedType != BOOL_TYPE && expectedType != FLOAT_TYPE && expectedType != ANY_TYPE)
             {
@@ -13,7 +13,7 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
             }
             valExpr = {node::ExprIntLit{parser::consume()}};
         }
-        else if (parser::peek().value().type == Tokens::QOUTE)
+        else if (parser::peek().value().type == QOUTE)
         {
             if (expectedType != STR_TYPE && expectedType != ANY_TYPE)
             {
@@ -23,7 +23,7 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
             valExpr = {node::ExprStrLit{parser::consume()}};
             parser::consume(); // consume '"'
         }
-        else if (parser::peek().value().type == Tokens::APOST)
+        else if (parser::peek().value().type == APOST)
         {
             if (expectedType != CHAR_TYPE && expectedType != BOOL_TYPE && expectedType != ANY_TYPE)
             {
@@ -33,7 +33,7 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
             valExpr = {node::ExprCharLit{parser::consume()}};
             parser::consume(); // consume '
         }
-        else if (parser::peek().value().type == Tokens::BOOL_LITERAL)
+        else if (parser::peek().value().type == BOOL_LITERAL)
         {
             if (expectedType != BOOL_TYPE && expectedType != ANY_TYPE)
             {
@@ -41,7 +41,7 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
             }
             valExpr = {node::ExprBoolLit{parser::consume()}};
         }
-        else if (parser::peek().value().type == Tokens::FLOAT_LITERAL)
+        else if (parser::peek().value().type == FLOAT_LITERAL)
         {
             if (expectedType != FLOAT_TYPE && expectedType != INT_TYPE && expectedType != BOOL_TYPE && expectedType != ANY_TYPE)
             {
@@ -49,7 +49,7 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
             }
             valExpr = {node::ExprFloatLit{parser::consume()}};
         }
-        else if (parser::peek().value().type == Tokens::NOT) //FOR EXPRESSIONS LIKE !20, !x
+        else if (parser::peek().value().type == NOT) //FOR EXPRESSIONS LIKE !20, !x
         {
             parser::consume();
             if (expectedType != BOOL_TYPE && expectedType != ANY_TYPE)
@@ -65,8 +65,8 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
                 return {};
             }
         }
-        else if (parser::peek().value().type == Tokens::INC || parser::peek().value().type == Tokens::DEC ||
-            parser::peek().value().type == Tokens::IDENT && parser::peek(1).has_value() &&
+        else if (parser::peek().value().type == INC || parser::peek().value().type == DEC ||
+            parser::peek().value().type == IDENT && parser::peek(1).has_value() &&
             (parser::peek(1).value().type == INC || parser::peek(1).value().type == DEC))
         {
             if (auto const &incDecExpr = parseIncDec(); incDecExpr.has_value())
@@ -74,7 +74,7 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
                 valExpr = {incDecExpr.value()};
             }
         }
-        else if (parser::peek().value().type == Tokens::IDENT)
+        else if (parser::peek().value().type == IDENT)
         {
             auto ident = parser::consume();
             valExpr = {node::ExprIdent{ident}};
@@ -95,7 +95,7 @@ std::optional<node::ValExpr> expressionParser::parseValExpr(const std::string &e
 
 std::optional<node::Expr> expressionParser::parseExpr(const std::string &expectedType, const bool &isRequired, const uint8_t &minPriority)
 {
-    if (parser::peek().has_value() && parser::peek().value().type == Tokens::INPUT)
+    if (parser::peek().has_value() && parser::peek().value().type == INPUT)
     {
         auto const &tmpInpStmt = parser::parseInputStmt().value();
         return node::Expr{new node::StmtInput(tmpInpStmt)};
@@ -136,17 +136,17 @@ std::optional<node::Expr> expressionParser::parseExpr(const std::string &expecte
 std::optional<node::IncDec> expressionParser::parseIncDec()
 {
     node::IncDec nodeIncDec = {};
-    if (parser::peek().value().type == Tokens::INC || parser::peek().value().type == Tokens::DEC)
+    if (parser::peek().value().type == INC || parser::peek().value().type == DEC)
     {
         const Tokens &incDec = parser::consume().type;
-        if (parser::peek().has_value() && parser::peek().value().type != Tokens::IDENT || !parser::peek().has_value())
+        if (parser::peek().has_value() && parser::peek().value().type != IDENT || !parser::peek().has_value())
         {
             std::cerr << "[Parse Error] ERR001 Syntax Error Expected Identifier";
             exit(EXIT_FAILURE);
         }
-        nodeIncDec = {parser::consume(), (incDec == Tokens::INC), true};
+        nodeIncDec = {parser::consume(), (incDec == INC), true};
     }
-    else if (parser::peek().value().type == Tokens::IDENT)
+    else if (parser::peek().value().type == IDENT)
     {
         auto const &ident = parser::consume();
         if (parser::peek().has_value() && parser::peek().value().type == INC ||

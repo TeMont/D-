@@ -22,13 +22,13 @@ std::optional<node::StmtLet> varParser::parseLet()
     {
         letType = parser::consume().type;
     }
-    if (parser::peek().has_value() && parser::peek().value().type != Tokens::IDENT || !parser::peek().has_value())
+    if (parser::peek().has_value() && parser::peek().value().type != IDENT || !parser::peek().has_value())
     {
         std::cerr << "[Parse Error] ERR002 Expected An Identifier";
         exit(EXIT_FAILURE);
     }
     auto const &varIdent = parser::consume();
-    if (parser::peek().has_value() && parser::peek().value().type == Tokens::EQ)
+    if (parser::peek().has_value() && parser::peek().value().type == EQ)
     {
         parser::consume();
         if (auto const &nodeExpr = expressionParser::parseExpr(letToType[letType]))

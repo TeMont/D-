@@ -28,7 +28,8 @@ The compiler is made using NASM & gcc Linker.
 - [X] Float Increment and Decrement
 - [X] += -= *= /= operators
 - [X] Break / Continue keyword
-- [ ] Switch-case statement
+- [X] Switch-case statement
+- [ ] 'default' in switch-case
 
 # GUIDE
 Dependencies: Nasm x86-64, gcc Linker

@@ -143,12 +143,25 @@ namespace node
         Expr *msg;
     };
 
+    struct Case
+    {
+        Expr *cond;
+        std::optional<Scope> scope;
+        std::vector<Stmt> statements;
+    };
+
+    struct StmtSwitch
+    {
+        Expr *constant;
+        std::vector<Case> *cases;
+    };
+
     struct StmtCont {};
     struct StmtBreak {};
 
     struct Stmt
     {
-        std::variant<StmtReturn, StmtLet, StmtVar, StmtIf, StmtOutput, StmtInput, StmtWhileLoop, StmtForLoop, IncDec, StmtCont, StmtBreak>
+        std::variant<StmtReturn, StmtLet, StmtVar, StmtIf, StmtOutput, StmtInput, StmtWhileLoop, StmtForLoop, IncDec, StmtCont, StmtBreak, StmtSwitch>
         var;
     };
 

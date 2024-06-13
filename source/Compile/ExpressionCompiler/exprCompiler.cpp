@@ -343,19 +343,19 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
     }
     const std::string &trueLabel = compiler::createLabel();
     const std::string &endLabel = compiler::createLabel();
-    if (op == Tokens::PLUS)
+    if (op == PLUS)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\taddss xmm0, xmm1\n" : "\tadd rdx, rdi\n");
     }
-    else if (op == Tokens::MINUS)
+    else if (op == MINUS)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tsubss xmm0, xmm1\n" : "\tsub rdx, rdi\n");
     }
-    else if (op == Tokens::MULT)
+    else if (op == MULT)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tmulss xmm0, xmm1\n" : "\timul rdx, rdi\n");
     }
-    else if (op == Tokens::DIV)
+    else if (op == DIV)
     {
         if (expectedType == FLOAT_TYPE)
         {
@@ -370,7 +370,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
             compiler::m_output << "\tmov rdx, rax\n";
         }
     }
-    else if (op == Tokens::EQEQ)
+    else if (op == EQEQ)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
         compiler::m_output << "\tje " << trueLabel << "\n";
@@ -380,7 +380,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
         compiler::m_output << "\tmov rdx, 1\n";
         compiler::m_output << "\t" << endLabel << ":\n";
     }
-    else if (op == Tokens::NOTEQ)
+    else if (op == NOTEQ)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
         compiler::m_output << "\tjne " << trueLabel << "\n";
@@ -390,7 +390,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
         compiler::m_output << "\tmov rdx, 1\n";
         compiler::m_output << "\t" << endLabel << ":\n";
     }
-    else if (op == Tokens::LESS)
+    else if (op == LESS)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
         compiler::m_output << "\tjb " << trueLabel << "\n";
@@ -400,7 +400,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
         compiler::m_output << "\tmov rdx, 1\n";
         compiler::m_output << "\t" << endLabel << ":\n";
     }
-    else if (op == Tokens::GREATER)
+    else if (op == GREATER)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
         compiler::m_output << "\tja " << trueLabel << "\n";
@@ -410,7 +410,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
         compiler::m_output << "\tmov rdx, 1\n";
         compiler::m_output << "\t" << endLabel << ":\n";
     }
-    else if (op == Tokens::LESSEQ)
+    else if (op == LESSEQ)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
         compiler::m_output << "\tjbe " << trueLabel << "\n";
@@ -420,7 +420,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
         compiler::m_output << "\tmov rdx, 1\n";
         compiler::m_output << "\t" << endLabel << ":\n";
     }
-    else if (op == Tokens::GREATEQ)
+    else if (op == GREATEQ)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tcomiss xmm0, xmm1\n" : "\tcmp rdx, rdi\n");
         compiler::m_output << "\tjae " << trueLabel << "\n";
@@ -430,7 +430,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
         compiler::m_output << "\tmov rdx, 1\n";
         compiler::m_output << "\t" << endLabel << ":\n";
     }
-    else if (op == Tokens::AND)
+    else if (op == AND)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tmov rdx,__?float32?__(0.0)\n\tmovq xmm2, rdx\n" : "");
         const std::string &falseLabel = compiler::createLabel();
@@ -444,7 +444,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
         compiler::m_output << "\tmov rdx, 0\n";
         compiler::m_output << "\t" << endLabel << ":\n";
     }
-    else if (op == Tokens::OR)
+    else if (op == OR)
     {
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tmov rdx,__?float32?__(0.0)\n\tmovq xmm2, rdx\n" : "");
         compiler::m_output << (expectedType == FLOAT_TYPE ? "\tcomiss xmm0, xmm2\n" : "\tcmp rdx, 0\n");
@@ -457,7 +457,7 @@ bool expressionCompiler::compBinExpr(const node::BinExpr &expr, const std::strin
         compiler::m_output << "\tmov rdx, 1\n";
         compiler::m_output << "\t" << endLabel << ":\n";
     }
-    if (expectedType == FLOAT_TYPE && (op == Tokens::PLUS || op == Tokens::MINUS || op == Tokens::MULT || op == Tokens::DIV))
+    if (expectedType == FLOAT_TYPE && (op == PLUS || op == MINUS || op == MULT || op == DIV))
     {
         compiler::m_output << "\tmovq rdx, xmm0\n";
     }
@@ -566,11 +566,11 @@ void expressionCompiler::compIncDec(const Token &ident, const bool &isInc, const
     auto *svl = new node::Expr{new node::ValExpr{node::ExprIntLit{INT_LITERAL, "1"}}};
     if (isInc)
     {
-        varCompiler::compVar({ident, new node::Expr{new node::BinExpr{fvl, svl, Tokens::PLUS}}, expectedType});
+        varCompiler::compVar({ident, new node::Expr{new node::BinExpr{fvl, svl, PLUS}}, expectedType});
     }
     else
     {
-        varCompiler::compVar({ident, new node::Expr{new node::BinExpr{fvl, svl, Tokens::MINUS}}, expectedType});
+        varCompiler::compVar({ident, new node::Expr{new node::BinExpr{fvl, svl, MINUS}}, expectedType});
     }
 }
 

@@ -4,23 +4,23 @@ std::optional<uint8_t> op_to_prior(Tokens op)
 {
 	switch (op)
 	{
-		case Tokens::OR:
+		case OR:
 			return 1;
-		case Tokens::AND:
+		case AND:
 			return 2;
-		case Tokens::EQEQ:
-		case Tokens::NOTEQ:
+		case EQEQ:
+		case NOTEQ:
 			return 3;
-		case Tokens::LESS:
-		case Tokens::LESSEQ:
-		case Tokens::GREATER:
-		case Tokens::GREATEQ:
+		case LESS:
+		case LESSEQ:
+		case GREATER:
+		case GREATEQ:
 			return 4;
-		case Tokens::PLUS:
-		case Tokens::MINUS:
+		case PLUS:
+		case MINUS:
 			return 5;
-		case Tokens::MULT:
-		case Tokens::DIV:
+		case MULT:
+		case DIV:
 			return 6;
 
 		default:
@@ -28,8 +28,8 @@ std::optional<uint8_t> op_to_prior(Tokens op)
 	}
 }
 
-std::unordered_map<Tokens, std::string> letToType = {{Tokens::INT_LET, INT_TYPE},
-                                                     {Tokens::STRING_LET, STR_TYPE},
-                                                     {Tokens::CHAR_LET, CHAR_TYPE},
-                                                     {Tokens::BOOL_LET, BOOL_TYPE},
-                                                     {Tokens::FLOAT_LET, FLOAT_TYPE},};
+std::unordered_map<Tokens, std::string> letToType = {{INT_LET, INT_TYPE},
+                                                     {STRING_LET, STR_TYPE},
+                                                     {CHAR_LET, CHAR_TYPE},
+                                                     {BOOL_LET, BOOL_TYPE},
+                                                     {FLOAT_LET, FLOAT_TYPE},};

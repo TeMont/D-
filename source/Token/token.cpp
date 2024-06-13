@@ -51,6 +51,9 @@ std::map<std::string, Tokens> tokensMap = //CONVERT STRING TO TOKEN
     {"const", CONST},
     {"continue", CONTINUE},
     {"break", BREAK},
+    {"switch", SWITCH},
+    {"case", CASE},
+    {":", COLON},
 };
 
 std::vector<Token> tokenizer::tokenize()

@@ -12,6 +12,8 @@ public:
     static void compWhileLoop(const node::StmtWhileLoop &whileLoop);
     static void compBreakStmt();
     static void compContinueStmt();
+    static void compSwitchStmt(const node::StmtSwitch &stmtSwitch);
+    static void compCase(const node::Case &Case);
 
     static std::vector<std::string> lastLoopBegin;
     static std::vector<std::string> lastLoopEnd;

@@ -199,6 +199,11 @@ void compiler::compStmt(const node::Stmt &stmt)
         {
             scopeCompiler::compBreakStmt();
         }
+
+        void operator()(const node::StmtSwitch &stmtSwitch) const
+        {
+            scopeCompiler::compSwitchStmt(stmtSwitch);
+        }
     };
     stmtVisitor visitor;
     std::visit(visitor, stmt.var);

@@ -199,3 +199,73 @@ void scopeCompiler::compContinueStmt()
     }
     compiler::m_output << "\tjmp " << lastLoopBegin[lastLoopBegin.size()-1] << "\n";
 }
+
+void scopeCompiler::compSwitchStmt(const node::StmtSwitch &stmtSwitch)
+{
+    std::string endLabel = compiler::createLabel();
+    lastLoopEnd.push_back(endLabel);
+    std::string constType;
+    if (expressionCompiler::compExpr(*stmtSwitch.constant, INT_TYPE, false))
+    {
+        constType = INT_TYPE;
+    }
+    else if (expressionCompiler::compExpr(*stmtSwitch.constant, FLOAT_TYPE, false))
+    {
+        constType = FLOAT_TYPE;
+    }
+    else if (expressionCompiler::compExpr(*stmtSwitch.constant, CHAR_TYPE, false))
+    {
+        constType = CHAR_TYPE;
+    }
+    else if (expressionCompiler::compExpr(*stmtSwitch.constant, BOOL_TYPE, false))
+    {
+        constType = BOOL_TYPE;
+    }
+    else
+    {
+        std::cerr << "[Compile Error] ERR010 Expression Must Have Bool Type (Or Convertable To It)";
+        exit(EXIT_FAILURE);
+    }
+    std::vector<std::string> labels;
+    for (int i = 0; i < stmtSwitch.cases->size(); ++i)
+    {
+        std::string label = compiler::createLabel();
+        labels.push_back(label);
+        if (!expressionCompiler::compExpr(*stmtSwitch.cases->at(i).cond, constType))
+        {
+            std::cerr << "[Compile Error] ERR006 Value Doesnt Matches Type";
+            exit(EXIT_FAILURE);
+        }
+        varCompiler::pop("rdx");
+        varCompiler::pop("rdi");
+        compiler::m_output << "\tcmp rdx, rdi\n";
+        compiler::m_output << "\tje " << label << "\n";
+        varCompiler::push("rdi");
+        if (i == stmtSwitch.cases->size()-1)
+        {
+            compiler::m_output << "\tjmp " << endLabel << "\n";
+        }
+    }
+    for (int i = 0; i < stmtSwitch.cases->size(); ++i)
+    {
+        compiler::m_output << "\t" << labels[i] << ":\n";
+        compCase(stmtSwitch.cases->at(i));
+    }
+    compiler::m_output << "\t" << endLabel << ":\n";
+    lastLoopEnd.pop_back();
+}
+
+void scopeCompiler::compCase(const node::Case &Case)
+{
+    if (Case.scope.has_value())
+    {
+        compScope(Case.scope.value());
+    }
+    else
+    {
+        for (const auto &stmt : Case.statements)
+        {
+            compiler::compStmt(stmt);
+        }
+    }
+}

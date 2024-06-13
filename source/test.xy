@@ -1,4 +1,15 @@
-if (10 == 10)
+int x = 7;
+switch (x)
 {
-    continue;
+    case 6:
+    case 7:
+    case 5:
+        stdOut("X = 5\n");
+        break;
+    case 10:
+        stdOut("X = 10\n");
+        break;
+    case 2:
+         stdOut("X = 2\n");
+         break;
 }

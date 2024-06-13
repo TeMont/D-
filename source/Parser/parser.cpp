@@ -48,7 +48,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
     {
         return {};
     }
-    if (peek().value().type == Tokens::RETURN)
+    if (peek().value().type == RETURN)
     {
         consume();
         if (auto const &nodeExpr = expressionParser::parseExpr(ANY_TYPE))
@@ -61,22 +61,22 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
             exit(EXIT_FAILURE);
         }
     }
-    else if (peek().value().type == Tokens::IF)
+    else if (peek().value().type == IF)
     {
         stmtNode = {scopeParser::parseIfStmt()};
         expectSemi = false;
     }
-    else if (peek().value().type == Tokens::ELIF)
+    else if (peek().value().type == ELIF)
     {
         std::cerr << "[Parse Error] ERR008 Illegal 'elif' without matching if";
         exit(EXIT_FAILURE);
     }
-    else if (peek().value().type == Tokens::ELSE)
+    else if (peek().value().type == ELSE)
     {
         std::cerr << "[Parse Error] ERR008 Illegal 'else' without matching if";
         exit(EXIT_FAILURE);
     }
-    else if (peek().value().type == Tokens::OUTPUT)
+    else if (peek().value().type == OUTPUT)
     {
         consume();
         tryConsume('(');
@@ -91,44 +91,44 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
             exit(EXIT_FAILURE);
         }
     }
-    else if (peek().value().type == Tokens::INPUT)
+    else if (peek().value().type == INPUT)
     {
         auto tmpInpStmt = parseInputStmt().value();
         stmtNode = node::Stmt{tmpInpStmt};
     }
-    else if (peek().value().type == Tokens::WHILE)
+    else if (peek().value().type == WHILE)
     {
         stmtNode = {scopeParser::parseWhileLoop()};
         expectSemi = false;
     }
-    else if (peek().value().type == Tokens::FOR)
+    else if (peek().value().type == FOR)
     {
         stmtNode = {scopeParser::parseForLoop()};
         expectSemi = false;
     }
-    else if ((peek().value().type == Tokens::INT_LET || peek().value().type == Tokens::FLOAT_LET ||
-            peek().value().type == Tokens::STRING_LET || peek().value().type == Tokens::BOOL_LET ||
-            peek().value().type == Tokens::CHAR_LET) || peek().value().type == Tokens::CONST &&
-        (peek(1).value().type == Tokens::INT_LET ||
-            peek(1).value().type == Tokens::FLOAT_LET ||
-            peek(1).value().type == Tokens::STRING_LET ||
-            peek(1).value().type == Tokens::BOOL_LET ||
-            peek(1).value().type == Tokens::CHAR_LET))
+    else if ((peek().value().type == INT_LET || peek().value().type == FLOAT_LET ||
+            peek().value().type == STRING_LET || peek().value().type == BOOL_LET ||
+            peek().value().type == CHAR_LET) || peek().value().type == CONST &&
+        (peek(1).value().type == INT_LET ||
+            peek(1).value().type == FLOAT_LET ||
+            peek(1).value().type == STRING_LET ||
+            peek(1).value().type == BOOL_LET ||
+            peek(1).value().type == CHAR_LET))
     {
         auto letStmt = varParser::parseLet().value();
         stmtNode = {letStmt};
         varParser::m_vars.insert({letStmt.ident.value.value(), letToType[letStmt.letType]});
     }
-    else if (peek().value().type == Tokens::INC || peek().value().type == Tokens::DEC ||
+    else if (peek().value().type == INC || peek().value().type == DEC ||
         peek(1).has_value() &&
-        ((peek(1).value().type == Tokens::INC || peek(1).value().type == Tokens::DEC) && peek().value().type == Tokens::IDENT))
+        ((peek(1).value().type == INC || peek(1).value().type == DEC) && peek().value().type == IDENT))
     {
         if (auto const &incDecStmt = expressionParser::parseIncDec())
         {
             stmtNode = {incDecStmt.value()};
         }
     }
-    else if (peek().value().type == Tokens::IDENT)
+    else if (peek().value().type == IDENT)
     {
         const auto &varIdent = consume();
         if (!varParser::m_vars.contains(varIdent.value.value()))
@@ -152,7 +152,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
                 {MULTEQ, MULT},
                 {DIVEQ, DIV},
             };
-            if (oper.type == Tokens::PLUSEQ || oper.type == Tokens::MINUSEQ || oper.type == Tokens::MULTEQ || oper.type == Tokens::DIVEQ)
+            if (oper.type == PLUSEQ || oper.type == MINUSEQ || oper.type == MULTEQ || oper.type == DIVEQ)
             {
                 stmtNode = {
                     node::StmtVar{
@@ -163,7 +163,7 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
                     }
                 };
             }
-            else if (oper.type == Tokens::EQ)
+            else if (oper.type == EQ)
             {
                 stmtNode = {
                     {
@@ -191,6 +191,11 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
     {
         stmtNode = {node::StmtBreak{}};
         consume();
+    }
+    else if (peek().value().type == SWITCH)
+    {
+        stmtNode = {scopeParser::parseSwitchStmt().value()};
+        expectSemi = false;
     }
     else
     {

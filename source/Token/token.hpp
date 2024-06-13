@@ -65,6 +65,9 @@ enum Tokens
     DEC,
     CONTINUE,
     BREAK,
+    SWITCH,
+    CASE,
+    COLON,
 };
 
 extern std::map<std::string, Tokens> tokensMap;

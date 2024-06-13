@@ -37,7 +37,7 @@ std::optional<node::IfPred> scopeParser::parseIfPred()
         return {};
     }
     std::optional<node::IfPred> stmtPred;
-    if (parser::peek().value().type == Tokens::ELIF)
+    if (parser::peek().value().type == ELIF)
     {
         auto const &tempIfStmt = parseIfStmt();
         if (tempIfStmt.pred.has_value())
@@ -49,7 +49,7 @@ std::optional<node::IfPred> scopeParser::parseIfPred()
             stmtPred = {new node::StmtElIf({tempIfStmt.cond, tempIfStmt.scope})};
         }
     }
-    else if (parser::peek().value().type == Tokens::ELSE)
+    else if (parser::peek().value().type == ELSE)
     {
         parser::consume();
         auto const &scope = parseScope();
@@ -91,4 +91,50 @@ node::StmtWhileLoop scopeParser::parseWhileLoop()
     }
     std::cerr << "[Parse Error] ERR007 Expected Condition";
     exit(EXIT_FAILURE);
+}
+
+std::optional<node::StmtSwitch> scopeParser::parseSwitchStmt()
+{
+    parser::consume();
+    parser::tryConsume('(');
+    if (auto constant = expressionParser::parseExpr(ANY_TYPE))
+    {
+        parser::tryConsume(')');
+        parser::tryConsume('{');
+        std::vector<node::Case> cases;
+        while (const auto &Case = parseCase())
+        {
+            cases.push_back(Case.value());
+        }
+        parser::tryConsume('}');
+        return {node::StmtSwitch{new node::Expr(constant.value()), new std::vector<node::Case>(cases)}};
+    }
+    std::cerr << "[Parse Error] ERR014 Expected Constant For Switch-Case";
+    exit(EXIT_FAILURE);
+}
+
+std::optional<node::Case> scopeParser::parseCase()
+{
+    if (parser::peek().has_value() && parser::peek().value().type == CASE)
+    {
+        parser::consume();
+        if (auto cond = expressionParser::parseExpr(ANY_TYPE))
+        {
+            parser::tryConsume(':');
+            if (parser::peek().has_value() && parser::peek().value().type == LBRACKET)
+            {
+                auto const &scope = parseScope();
+                return {node::Case{new node::Expr(cond.value()), {scope}}};
+            }
+            std::vector<node::Stmt> stmts;
+            while (const auto &stmt = parser::parseStmt())
+            {
+                stmts.push_back(stmt.value());
+            }
+            return {node::Case{new node::Expr(cond.value()), {}, stmts}};
+        }
+        std::cerr << "[Parse Error] ERR007 Expected Condition";
+        exit(EXIT_FAILURE);
+    }
+    return {};
 }
