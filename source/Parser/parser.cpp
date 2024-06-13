@@ -22,7 +22,6 @@ void parser::tryConsume(const char &charToConsume)
 {
     if (peek().has_value() && peek().value().type != tokensMap[std::string(1, charToConsume)] || !peek().has_value())
     {
-        auto x = peek().value();
         std::cerr << "[Parse Error] ERR001 Invalid Syntax Expected '" + std::string(1, charToConsume) + "'";
         exit(EXIT_FAILURE);
     }
@@ -121,7 +120,8 @@ std::optional<node::Stmt> parser::parseStmt(bool expectSemi)
         varParser::m_vars.insert({letStmt.ident.value.value(), letToType[letStmt.letType]});
     }
     else if (peek().value().type == Tokens::INC || peek().value().type == Tokens::DEC ||
-        peek(1).has_value() && (peek(1).value().type == Tokens::INC || peek(1).value().type == Tokens::DEC))
+        peek(1).has_value() &&
+        ((peek(1).value().type == Tokens::INC || peek(1).value().type == Tokens::DEC) && peek().value().type == Tokens::IDENT))
     {
         if (auto const &incDecStmt = expressionParser::parseIncDec())
         {

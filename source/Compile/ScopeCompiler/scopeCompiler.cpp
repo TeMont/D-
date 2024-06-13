@@ -5,13 +5,13 @@ std::vector<std::string> scopeCompiler::lastLoopEnd;
 
 void scopeCompiler::compScope(const node::Scope &scope)
 {
-    const auto &beginVars = varCompiler::m_vars;
-    const size_t &beginStackSize = varCompiler::m_stackSize;
+    const auto beginVars = varCompiler::m_vars;
+    const size_t beginStackSize = varCompiler::m_stackSize;
     for (const auto &stmt : scope.statements)
     {
         compiler::compStmt(stmt);
     }
-    const size_t &popCount = varCompiler::m_stackSize - beginStackSize;
+    const size_t popCount = varCompiler::m_stackSize - beginStackSize;
     if (popCount != 0)
     {
         compiler::m_output << "\tadd rsp, " << popCount * 8 << "\n";
@@ -107,8 +107,8 @@ void scopeCompiler::compForLoop(const node::StmtForLoop &forLoop)
     const std::string &endLabel = compiler::createLabel();
     lastLoopBegin.push_back(iterLabel);
     lastLoopEnd.push_back(endLabel);
-    const size_t &beginStackSize = varCompiler::m_stackSize;
-    const auto &beginVars = varCompiler::m_vars;
+    const size_t beginStackSize = varCompiler::m_stackSize;
+    const auto beginVars = varCompiler::m_vars;
     if (forLoop.initStmt.has_value())
     {
         compiler::compStmt(*forLoop.initStmt.value());
@@ -141,9 +141,10 @@ void scopeCompiler::compForLoop(const node::StmtForLoop &forLoop)
     compiler::m_output << "\txor rdx, rdx\n";
     compiler::m_output << "\tjmp " << startLabel << "\n";
     compiler::m_output << "\t" << endLabel << ":\n";
-    if (const size_t &popCount = varCompiler::m_stackSize - beginStackSize; popCount != 0)
+    if (const size_t popCount = varCompiler::m_stackSize - beginStackSize; popCount != 0)
     {
         compiler::m_output << "\tadd rsp, " << popCount * 8 << "\n";
+        varCompiler::m_stackSize -= popCount;
     }
     varCompiler::m_vars = beginVars;
     compiler::m_output << "\txor rdx, rdx\n";

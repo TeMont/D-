@@ -202,8 +202,8 @@ void compiler::compStmt(const node::Stmt &stmt)
     };
     stmtVisitor visitor;
     std::visit(visitor, stmt.var);
-}\
-\
+}
+
 std::stringstream compiler::compile()
 {
     m_output << "extern GetStdHandle, WriteConsoleA, ReadConsoleA, ExitProcess\n\n"
